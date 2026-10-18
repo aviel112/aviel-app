@@ -252,6 +252,7 @@ function sugg(e,L){
   return {kg:top,reps:tr,why:'אותו משקל, הפעם '+tr+' חזרות'+(R?' (כשמגיעים ל-'+R[1]+' בכל הסטים עולים במשקל)':'')};
 }
 var LASTIN={}, RT=null;
+function normLifts(o){ o=o||{}; Object.keys(o).forEach(function(k){ var x=o[k]; if(x&&!x.hist){ var e={d:'',kg:Number(x.kg)||0,reps:Number(x.reps)||0}; o[k]={first:e,best:e.kg,hist:[e]}; } }); return o; }
 function restStart(min){
   var sec=Math.round(min*60); if(!(sec>0)) return; clearInterval(RT); var end=Date.now()+sec*1000; $('#rest').hidden=false;
   var tick=function(){ var l=Math.max(0,Math.round((end-Date.now())/1000)); $('#restT').textContent='מנוחה '+Math.floor(l/60)+':'+('0'+l%60).slice(-2);
@@ -331,7 +332,7 @@ function renderTrain(){
     var e=d.ex[+f.dataset.i], ins=f.querySelectorAll('input'), kg=parseFloat(String(ins[0].value).replace(',','.')), reps=parseInt(ins[1].value,10);
     if(!(kg>=0&&kg<500)||!(reps>=1&&reps<=100)){ toast('ממלאים משקל וחזרות',1); return; }
     var L0=P.lifts&&P.lifts[e.ex], best=L0&&L0.hist.length?L0.best:null, btn=f.querySelector('button'); btn.disabled=true;
-    api('lift',{ex:e.ex,mu:e.mu,kg:kg,reps:reps}).then(function(r){ P.lifts=r; LASTIN[e.ex]={kg:kg,reps:reps};
+    api('lift',{ex:e.ex,mu:e.mu,kg:kg,reps:reps}).then(function(r){ P.lifts=normLifts(r); LASTIN[e.ex]={kg:kg,reps:reps};
       toast(best!=null&&kg>best?'🏆 שיא חדש! '+kg+' ק״ג':'נשמר · '+kg+' ק״ג × '+reps); renderTrain(); drawStrength(); restStart(restMin(e.rest)); })
     .catch(function(er){ toast(er.message||'לא נשמר',1); btn.disabled=false; });
   }; });
@@ -410,7 +411,7 @@ $('#mForm').addEventListener('submit',function(e){ e.preventDefault(); var vals=
 $('#sForm').addEventListener('submit',function(e){ e.preventDefault(); var v=parseInt(String($('#sIn').value).replace(/[^0-9]/g,''),10); if(!(v>=0&&v<100000)){ toast('מקלידים מספר צעדים, למשל 8500',1); return; }
   $('#sBtn').disabled=true; api('steps',{n:v}).then(function(r){ D=r; render(); $('#sIn').value=''; toast('נשמר · '+v.toLocaleString('en')+' צעדים'); }).catch(function(er){ toast(er.message||'לא נשמר',1); }).then(function(){ $('#sBtn').disabled=false; }); });
 var LOADED=Date.now();
-document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&T&&Date.now()-LOADED>20*60*1000){ LOADED=Date.now(); api('data').then(function(r){ D=r; render(); }).catch(function(){}); api('plan').then(function(r){ P=r; renderMenu(); renderTrain(); drawStrength(); }).catch(function(){}); } });
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&T&&Date.now()-LOADED>20*60*1000){ LOADED=Date.now(); api('data').then(function(r){ D=r; render(); }).catch(function(){}); api('plan').then(function(r){ P=r; P.lifts=normLifts(P.lifts); renderMenu(); renderTrain(); drawStrength(); }).catch(function(){}); } });
 
 /* ---------- התקנה למסך הבית ---------- */
 var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
@@ -429,7 +430,7 @@ if(!T){ fatal('צריך לפתוח את האפליקציה מהקישור האי
 else {
   api('data').then(function(r){ D=r; $('#boot').hidden=true; $('#tabs').hidden=false; var last='home'; try{ last=localStorage.getItem('aviel_tab')||'home'; }catch(e){} show(last); render(); renderMenu(); renderTrain(); drawStrength(); })
     .catch(function(er){ fatal(er.message); });
-  api('plan').then(function(r){ P=r; if(D){ renderMenu(); renderTrain(); drawStrength(); } }).catch(function(){ P={menu:null,program:null,lifts:{}}; if(D){ renderMenu(); renderTrain(); } });
+  api('plan').then(function(r){ P=r; P.lifts=normLifts(P.lifts); if(D){ renderMenu(); renderTrain(); drawStrength(); } }).catch(function(){ P={menu:null,program:null,lifts:{}}; if(D){ renderMenu(); renderTrain(); } });
 }
 </script>
 </body></html>
