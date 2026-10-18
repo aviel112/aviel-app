@@ -107,6 +107,23 @@ nav.tabs button[aria-selected="true"]{color:var(--gold)}
 .plain{font-size:14.5px;margin:8px 0 0;white-space:pre-wrap}
 .small{display:inline-block;margin-top:6px;color:var(--mute);font-size:13px}
 .installbtn{width:100%;margin-top:10px}
+.toast{bottom:calc(150px + env(safe-area-inset-bottom,0px))!important}
+.steps{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:10px}
+.steps input{font-size:16px;padding:8px}
+.sugg{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:right;background:rgba(212,172,91,.12);color:var(--text);border:1px solid var(--gold-d);border-radius:12px;padding:9px 12px;font-weight:600}
+.sugg b{color:var(--gold);font-size:15px}
+.sugg small{color:var(--mute);font-size:12px;font-weight:600}
+.setc{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--mute);font-weight:700}
+.setc span{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:2px 8px;color:var(--text)}
+.setc.ok{color:var(--good)}
+.chip.done::after{content:" ✓";color:var(--good)}
+.chip[aria-pressed="true"].done::after{color:var(--ink)}
+.rest{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));width:min(408px,calc(100% - 32px));display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel2);border:1px solid var(--gold-d);border-radius:14px;padding:10px 14px;z-index:8;font-weight:800;font-size:17px}
+.ate{background:var(--panel2);color:var(--mute);border:1px solid var(--line);padding:6px 12px;font-size:13px;border-radius:20px}
+.ate[aria-pressed="true"]{background:var(--good);color:var(--ink);border-color:var(--good)}
+.mealhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.str{display:grid;grid-template-columns:1fr auto auto;gap:4px 10px;align-items:center;font-size:14px;margin-top:8px}
+.str .pct{font-weight:800}
 </style></head>
 <body>
 <div class="app">
@@ -122,7 +139,7 @@ nav.tabs button[aria-selected="true"]{color:var(--gold)}
         <div class="row"><span class="label">שקילת בוקר · היום</span><span class="sub num" id="todayDate"></span></div>
         <form class="weigh" id="wForm"><input id="wIn" inputmode="decimal" placeholder="ק״ג" aria-label="משקל בקילוגרמים"><button type="submit" id="wBtn">שמירה</button></form>
         <div class="week" id="week"></div>
-        <div class="sub" style="margin-top:10px" id="weekNote"></div>
+        <div class="sub" style="margin-top:10px" id="weekNote"></div><form class="steps" id="sForm"><input id="sIn" inputmode="numeric" placeholder="צעדים היום" aria-label="צעדים היום"><button type="submit" class="ghost" id="sBtn">שמירה</button></form>
       </div>
       <div class="kpis">
         <div class="kpi"><b class="num" id="kAvg">—</b><span>ממוצע אחרון</span></div>
@@ -160,7 +177,7 @@ nav.tabs button[aria-selected="true"]{color:var(--gold)}
     <h1>ההתקדמות שלך</h1>
     <div class="sub">ממוצע שבועי, כי משקל יומי קופץ ממים ומלח</div>
     <div class="stack">
-      <div class="card"><div class="label">ממוצע שבועי (ק״ג)</div><div id="chart"></div></div>
+      <div class="card"><div class="label">ממוצע שבועי (ק״ג)</div><div id="chart"></div></div><div class="card"><div class="label">כוח · מאיפה התחלת ולאן הגעת</div><div id="strength"></div></div>
       <div class="card">
         <div class="row"><span class="label">היקפים · פעם בחודש (ס״מ)</span><button class="ghost sm" type="button" id="mOpen">+ מדידה חדשה</button></div>
         <form id="mForm" class="mform" hidden><div class="sub">מודדים בבוקר, לפני אוכל, עם סרט צמוד אבל לא לוחץ.</div><div class="mgrid" id="mGrid"></div><button type="submit" id="mBtn">שמירת המדידה</button></form>
@@ -170,6 +187,7 @@ nav.tabs button[aria-selected="true"]{color:var(--gold)}
   </section>
 </div>
 
+<div class="rest" id="rest" hidden><span id="restT"></span><button type="button" class="ghost sm" id="restX">דלג</button></div>
 <nav class="tabs" aria-label="ניווט" hidden id="tabs"><div class="in" role="tablist">
   <button role="tab" aria-selected="true" data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>בית</button>
   <button role="tab" aria-selected="false" data-tab="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-3 5-3 8h3v10"/></svg>תפריט</button>
@@ -214,6 +232,34 @@ function fileBlock(f, what){
 }
 function emptyBlock(what){ return '<div class="card"><div class="sub">ה'+what+' שלך עוד בהכנה. אביאל יעדכן כאן ברגע שהוא מוכן.</div></div>'; }
 
+/* ---------- עזרים ---------- */
+var TODAY=(function(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); })();
+function ls(k,def){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):def; }catch(e){ return def; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function weekStart(){ var d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-d.getDay()); return d; }
+function rng(r){ var m=String(r||'').match(/(\d+)\s*[-–]\s*(\d+)/); if(m) return [+m[1],+m[2]]; var n=String(r||'').match(/\d+/); return n?[+n[0],+n[0]]:null; }
+function restMin(r){ var m=String(r||'').match(/(\d+):(\d+)/); if(m) return +m[1]+(+m[2])/60; var f=parseFloat(String(r||'').replace(',','.')); return f>0&&f<10?f:0; }
+var LOWER=/ארבע|המסטרינג|ישבן|רגל|תאומ|מקרב|מרחיק|קוואד/;
+/* progressive overload: לפי האימון הקודם בתרגיל */
+function sugg(e,L){
+  if(!L||!L.hist||!L.hist.length) return null;
+  var prev=L.hist.filter(function(x){ return x.d && x.d<TODAY; }); if(!prev.length) return null;
+  var lastD=prev[prev.length-1].d, ses=prev.filter(function(x){ return x.d===lastD; });
+  var top=Math.max.apply(null,ses.map(function(x){ return x.kg; })), atTop=ses.filter(function(x){ return x.kg===top; }), minR=Math.min.apply(null,atTop.map(function(x){ return x.reps; }));
+  var R=/כשל/.test(e.r)?null:rng(e.r), inc=top<=10?1:(LOWER.test(e.mu+' '+e.ex)?5:2.5);
+  if(R&&minR>=R[1]) return {kg:top+inc,reps:R[0],why:'עשית '+minR+' חזרות בכל הסטים בפעם הקודמת, אז עולים '+inc+' ק״ג'};
+  var tr=R?Math.min(R[1],minR+1):minR+1;
+  return {kg:top,reps:tr,why:'אותו משקל, הפעם '+tr+' חזרות'+(R?' (כשמגיעים ל-'+R[1]+' בכל הסטים עולים במשקל)':'')};
+}
+var LASTIN={}, RT=null;
+function restStart(min){
+  var sec=Math.round(min*60); if(!(sec>0)) return; clearInterval(RT); var end=Date.now()+sec*1000; $('#rest').hidden=false;
+  var tick=function(){ var l=Math.max(0,Math.round((end-Date.now())/1000)); $('#restT').textContent='מנוחה '+Math.floor(l/60)+':'+('0'+l%60).slice(-2);
+    if(!l){ clearInterval(RT); $('#rest').hidden=true; try{ if(navigator.vibrate) navigator.vibrate([250,120,250]); }catch(e){} toast('יאללה, לסט הבא 💪'); } };
+  tick(); RT=setInterval(tick,500);
+}
+$('#restX').addEventListener('click',function(){ clearInterval(RT); $('#rest').hidden=true; });
+
 /* ---------- תפריט ---------- */
 function renderMenu(){
   var m=P&&P.menu, box=$('#menuBox');
@@ -221,22 +267,29 @@ function renderMenu(){
   if(!P){ box.innerHTML='<div class="skel"></div><div class="skel"></div>'; return; }
   if(!m){ box.innerHTML=emptyBlock('תפריט'); return; }
   if(m.file||!m.blocks||!m.blocks.length){ box.innerHTML=fileBlock(m,'תפריט'); return; }
-  box.innerHTML=m.blocks.map(function(b){
-    var h='<div class="card meal">'+(b.title?'<h3>'+esc(b.title)+'</h3>':'');
+  var ate=ls('aviel_ate_'+TODAY,[]), meals=m.blocks.filter(function(b){ return b.title; });
+  var h=meals.length?'<div class="card"><div class="row"><span class="label">ארוחות היום</span><b class="num">'+ate.filter(function(t){ return meals.some(function(b){ return b.title===t; }); }).length+'/'+meals.length+'</b></div><div class="sub" style="margin-top:4px">מסמנים כל ארוחה שאכלת לפי התפריט. זה נשאר רק אצלך בטלפון.</div></div>':'';
+  h+=m.blocks.map(function(b){
+    var on=b.title&&ate.indexOf(b.title)>=0;
+    var x='<div class="card meal">'+(b.title?'<div class="mealhead"><h3>'+esc(b.title)+'</h3><button type="button" class="ate" data-meal="'+esc(b.title)+'" aria-pressed="'+on+'">'+(on?'✓ אכלתי':'אכלתי')+'</button></div>':'');
     b.lines.forEach(function(l){
-      if(/^ערכי הארוחה/.test(l)){ h+='<div class="vals">'+ltr(esc(l.replace(/^ערכי הארוחה:\s*/,'')))+'</div>'; return; }
+      if(/^ערכי הארוחה/.test(l)){ x+='<div class="vals">'+ltr(esc(l.replace(/^ערכי הארוחה:\s*/,'')))+'</div>'; return; }
       var k=l.indexOf(': ');
       if(k>0&&k<40){ var lab=l.slice(0,k), rest=l.slice(k+2), opts=rest.split(' / ');
-        if(opts.length>1) h+='<div class="opt"><b>'+esc(lab)+'</b><ul>'+opts.map(function(o){return '<li>'+esc(o)+'</li>';}).join('')+'</ul></div>';
-        else h+='<p class="plain"><b>'+esc(lab)+':</b> '+esc(rest)+'</p>';
-      } else h+='<p class="plain">'+esc(l)+'</p>';
+        if(opts.length>1) x+='<div class="opt"><b>'+esc(lab)+'</b><ul>'+opts.map(function(o){ return '<li>'+esc(o)+'</li>'; }).join('')+'</ul></div>';
+        else x+='<p class="plain"><b>'+esc(lab)+':</b> '+esc(rest)+'</p>';
+      } else x+='<p class="plain">'+esc(l)+'</p>';
     });
-    b.rows.forEach(function(r){ h+='<p class="plain">'+r.map(esc).join(' · ')+'</p>'; });
-    return h+'</div>';
+    b.rows.forEach(function(r){ x+='<p class="plain">'+r.map(esc).join(' · ')+'</p>'; });
+    return x+'</div>';
   }).join('');
+  box.innerHTML=h;
+  box.querySelectorAll('.ate').forEach(function(btn){ btn.onclick=function(){ var t=btn.dataset.meal, a=ls('aviel_ate_'+TODAY,[]), i=a.indexOf(t); if(i>=0) a.splice(i,1); else a.push(t); lsSet('aviel_ate_'+TODAY,a); renderMenu(); }; });
 }
 
 /* ---------- אימון ---------- */
+function doneMap(){ var m=ls('aviel_done',{}), ws=weekStart().getTime(), out={}; Object.keys(m).forEach(function(k){ if(new Date(m[k]+'T12:00:00').getTime()>=ws) out[k]=m[k]; }); return out; }
+var DAYSET=false;
 function renderTrain(){
   var p=P&&P.program, box=$('#progBox');
   $('#progName').textContent=p?(p.title||''):'';
@@ -244,31 +297,49 @@ function renderTrain(){
   if(!p){ box.innerHTML=emptyBlock('תוכנית'); return; }
   var days=(p.blocks||[]).filter(function(b){ return b.ex&&b.ex.length; });
   if(p.file||!days.length){ box.innerHTML=fileBlock(p,'תוכנית'); return; }
+  var done=doneMap();
+  if(!DAYSET){ DAYSET=true; for(var q=0;q<days.length;q++){ if(!done[q]){ DAY=q; break; } } }
   if(DAY>=days.length) DAY=0;
   var info=(p.blocks||[]).filter(function(b){ return !(b.ex&&b.ex.length)&&b.lines.length; });
-  var h=(days.length>1?'<div class="chips" role="group" aria-label="בחירת אימון">'+days.map(function(d,i){ return '<button type="button" class="chip" data-day="'+i+'" aria-pressed="'+(i===DAY)+'">אימון '+(i+1)+'</button>'; }).join('')+'</div>':'');
+  var h='<div class="sub">השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים</div>';
+  h+=(days.length>1?'<div class="chips" role="group" aria-label="בחירת אימון">'+days.map(function(d,i){ return '<button type="button" class="chip'+(done[i]?' done':'')+'" data-day="'+i+'" aria-pressed="'+(i===DAY)+'">אימון '+(i+1)+'</button>'; }).join('')+'</div>':'');
   var d=days[DAY];
   h+='<div class="sub" style="margin-top:4px">'+esc(d.title)+'</div>';
   d.ex.forEach(function(e,i){
-    var warm=/חימום/.test(e.mu), last=P.lifts&&P.lifts[e.ex];
+    var warm=/חימום/.test(e.mu), L=P.lifts&&P.lifts[e.ex];
     h+='<div class="card ex">'+(e.mu?'<div class="mu">'+esc(e.mu)+'</div>':'')+'<div class="nm">'+esc(e.ex)+'</div>'+
-      '<div class="spec">'+(e.s&&e.s!=='-'?'<span><i>סטים</i>'+esc(e.s)+'</span>':'')+(e.r?'<span><i>'+(/דק/.test(e.r)?'זמן':'חזרות')+'</i>'+ltr(esc(e.r))+'</span>':'')+(e.rest&&e.rest!=='-'?'<span><i>מנוחה</i>'+esc(e.rest)+' דק׳</span>':'')+'</div>'+
+      '<div class="spec">'+(e.s&&e.s!=='-'?'<span><i>סטים</i>'+esc(e.s)+'</span>':'')+(e.r?'<span><i>'+(/דק/.test(e.r)?'זמן':'חזרות')+'</i>'+ltr(esc(e.r))+'</span>':'')+(e.rest&&e.rest!=='-'?'<span><i>מנוחה</i>'+esc(e.rest)+(/דק/.test(e.rest)?'':' דק׳')+'</span>':'')+'</div>'+
       (e.note?'<div class="exnote">'+esc(e.note)+'</div>':'');
     if(!warm){
-      h+=(last?'<div class="last">בפעם הקודמת: '+esc(last.kg)+' ק״ג × '+esc(last.reps)+(last.d?' · '+esc(last.d):'')+'</div>':'')+
-        '<form class="lift" data-i="'+i+'"><input inputmode="decimal" placeholder="ק״ג" aria-label="משקל בקילוגרם"><input inputmode="numeric" placeholder="חזרות" aria-label="חזרות"><button type="submit">שמירה</button></form>';
+      var hist=L?L.hist:[], today=hist.filter(function(x){ return x.d===TODAY; }), prev=hist.filter(function(x){ return x.d&&x.d<TODAY; }), n=parseInt(e.s,10)||0, sg=sugg(e,L);
+      if(sg) h+='<button type="button" class="sugg" data-fill="'+i+'" data-kg="'+sg.kg+'" data-reps="'+sg.reps+'">📈 היום: <b>'+sg.kg+' ק״ג × '+sg.reps+'</b><small>'+esc(sg.why)+' · לחיצה ממלאת</small></button>';
+      else if(!hist.length) h+='<div class="exnote">פעם ראשונה בתרגיל: בוחרים משקל שאפשר לעשות איתו את כל החזרות בטכניקה נקייה.</div>';
+      if(prev.length){ var pd2=prev[prev.length-1].d, ps=prev.filter(function(x){ return x.d===pd2; }); h+='<div class="last">בפעם הקודמת ('+esc(pd2.slice(8,10)+'/'+pd2.slice(5,7))+'): '+ps.map(function(x){ return '<bdi dir="ltr">'+x.kg+'×'+x.reps+'</bdi>'; }).join(' · ')+'</div>'; }
+      h+='<div class="setc'+(n&&today.length>=n?' ok':'')+'">סטים היום: '+today.length+(n?'/'+n:'')+(n&&today.length>=n?' ✓':'')+today.map(function(x){ return '<span class="num" dir="ltr">'+x.kg+'×'+x.reps+'</span>'; }).join('')+'</div>';
+      var li=LASTIN[e.ex]||{};
+      h+='<form class="lift" data-i="'+i+'"><input inputmode="decimal" placeholder="ק״ג" aria-label="משקל בקילוגרם" value="'+(li.kg!=null?li.kg:'')+'"><input inputmode="numeric" placeholder="חזרות" aria-label="חזרות" value="'+(li.reps!=null?li.reps:'')+'"><button type="submit">סט '+(today.length+1)+'</button></form>';
     }
     h+='</div>';
   });
-  info.forEach(function(b){ h+='<div class="card">'+(b.title?'<div class="label">'+esc(b.title)+'</div>':'')+b.lines.map(function(l){return '<p class="plain">'+esc(l)+'</p>';}).join('')+'</div>'; });
+  h+='<button type="button" class="installbtn" id="finish">'+(done[DAY]?'✓ האימון הזה כבר סומן השבוע':'✓ סיימתי את אימון '+(DAY+1))+'</button>';
+  info.forEach(function(b){ h+='<div class="card">'+(b.title?'<div class="label">'+esc(b.title)+'</div>':'')+b.lines.map(function(l){ return '<p class="plain">'+esc(l)+'</p>'; }).join('')+'</div>'; });
   box.innerHTML=h;
-  box.querySelectorAll('.chip').forEach(function(c){ c.onclick=function(){ DAY=+c.dataset.day; renderTrain(); }; });
+  box.querySelectorAll('.chip').forEach(function(c){ c.onclick=function(){ DAY=+c.dataset.day; renderTrain(); window.scrollTo(0,0); }; });
+  box.querySelectorAll('.sugg').forEach(function(b){ b.onclick=function(){ var f=box.querySelector('form.lift[data-i="'+b.dataset.fill+'"]'), ins=f.querySelectorAll('input'); ins[0].value=b.dataset.kg; ins[1].value=b.dataset.reps; ins[1].focus(); }; });
+  $('#finish').onclick=function(){ var m=ls('aviel_done',{}); m[DAY]=TODAY; lsSet('aviel_done',m); toast('כל הכבוד! אימון '+(DAY+1)+' הושלם 🔥'); var dm=doneMap(); for(var q=0;q<days.length;q++){ if(!dm[q]){ DAY=q; break; } } renderTrain(); window.scrollTo(0,0); };
   box.querySelectorAll('form.lift').forEach(function(f){ f.onsubmit=function(ev){ ev.preventDefault();
     var e=d.ex[+f.dataset.i], ins=f.querySelectorAll('input'), kg=parseFloat(String(ins[0].value).replace(',','.')), reps=parseInt(ins[1].value,10);
     if(!(kg>=0&&kg<500)||!(reps>=1&&reps<=100)){ toast('ממלאים משקל וחזרות',1); return; }
-    var btn=f.querySelector('button'); btn.disabled=true;
-    api('lift',{ex:e.ex,mu:e.mu,kg:kg,reps:reps}).then(function(r){ P.lifts=r; toast('נשמר · '+kg+' ק״ג × '+reps); renderTrain(); }).catch(function(er){ toast(er.message||'לא נשמר',1); btn.disabled=false; });
+    var L0=P.lifts&&P.lifts[e.ex], best=L0&&L0.hist.length?L0.best:null, btn=f.querySelector('button'); btn.disabled=true;
+    api('lift',{ex:e.ex,mu:e.mu,kg:kg,reps:reps}).then(function(r){ P.lifts=r; LASTIN[e.ex]={kg:kg,reps:reps};
+      toast(best!=null&&kg>best?'🏆 שיא חדש! '+kg+' ק״ג':'נשמר · '+kg+' ק״ג × '+reps); renderTrain(); drawStrength(); restStart(restMin(e.rest)); })
+    .catch(function(er){ toast(er.message||'לא נשמר',1); btn.disabled=false; });
   }; });
+}
+function drawStrength(){
+  var el=$('#strength'); if(!el) return;
+  var L=P&&P.lifts||{}, rows=Object.keys(L).map(function(k){ var h=L[k].hist, f=L[k].first, l=h[h.length-1]; return {ex:k, from:f.kg, to:l.kg, n:h.length, pct:f.kg>0?Math.round((l.kg-f.kg)/f.kg*100):0}; }).filter(function(x){ return x.n>1; }).sort(function(a,b){ return b.pct-a.pct; }).slice(0,8);
+  el.innerHTML=rows.length?'<div class="str">'+rows.map(function(r){ return '<span>'+esc(r.ex)+'</span><span class="num" dir="ltr">'+r.from+' → '+r.to+'</span><span class="num pct '+(r.pct>0?'good':'')+'" dir="ltr">'+(r.pct>0?'+':'')+r.pct+'%</span>'; }).join('')+'</div>':'<div class="sub" style="padding-top:8px">אחרי כמה אימונים עם רישום משקלים, כאן תראה כמה התחזקת בכל תרגיל.</div>';
 }
 
 function render(){
@@ -283,6 +354,7 @@ function render(){
   var n=wk.filter(function(x){return x.kg;}).length;
   $('#weekNote').innerHTML=n+' שקילות ב-7 הימים האחרונים'+(n>=5?' · <span class="good">מצוין</span>':' · <span class="warn">עוד '+(5-n)+' לממוצע אמין</span>');
   if(todayKg){ $('#wIn').placeholder=todayKg+' (עודכן היום)'; }
+  var todaySteps=wk.length?wk[wk.length-1].steps:null; $('#sIn').placeholder=todaySteps?todaySteps.toLocaleString('en')+' צעדים (עודכן)':'צעדים היום';
   var avg=(d.weekly||[]).slice(-1)[0];
   $('#kAvg').textContent = avg!=null ? avg : (d.lastKg!=null?d.lastKg:'—');
   if(d.firstKg!=null&&d.lastKg!=null){ var ch=Math.round((d.lastKg-d.firstKg)*10)/10; var goodDir=d.goal==='עלייה'?ch>0:ch<0; $('#kChg').innerHTML='<span class="'+(ch===0?'':goodDir?'good':'warn')+'">'+(ch>0?'+':ch<0?'−':'')+Math.abs(ch)+'</span>'; }
@@ -335,6 +407,11 @@ $('#mForm').addEventListener('submit',function(e){ e.preventDefault(); var vals=
   if(!cnt){ toast('ממלאים לפחות מדידה אחת בס״מ',1); return; }
   $('#mBtn').disabled=true; api('measure',{vals:vals}).then(function(r){ D=r; render(); $('#mForm').hidden=true; toast('המדידה נשמרה'); }).catch(function(er){ toast(er.message||'לא נשמר',1); }).then(function(){ $('#mBtn').disabled=false; }); });
 
+$('#sForm').addEventListener('submit',function(e){ e.preventDefault(); var v=parseInt(String($('#sIn').value).replace(/[^0-9]/g,''),10); if(!(v>=0&&v<100000)){ toast('מקלידים מספר צעדים, למשל 8500',1); return; }
+  $('#sBtn').disabled=true; api('steps',{n:v}).then(function(r){ D=r; render(); $('#sIn').value=''; toast('נשמר · '+v.toLocaleString('en')+' צעדים'); }).catch(function(er){ toast(er.message||'לא נשמר',1); }).then(function(){ $('#sBtn').disabled=false; }); });
+var LOADED=Date.now();
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&T&&Date.now()-LOADED>20*60*1000){ LOADED=Date.now(); api('data').then(function(r){ D=r; render(); }).catch(function(){}); api('plan').then(function(r){ P=r; renderMenu(); renderTrain(); drawStrength(); }).catch(function(){}); } });
+
 /* ---------- התקנה למסך הבית ---------- */
 var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 var ios = /iphone|ipad|ipod/i.test(navigator.userAgent), deferred=null;
@@ -350,9 +427,9 @@ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catc
 function fatal(msg){ $('#boot').hidden=true; var f=$('#fatal'); f.hidden=false; f.innerHTML='<b>לא הצלחנו לפתוח את האפליקציה</b><div class="sub" style="margin-top:6px">'+esc(msg||'')+'</div><a class="wa" style="margin-top:12px" href="https://wa.me/972537718200" target="_blank" rel="noopener">לכתוב לאביאל</a>'; }
 if(!T){ fatal('צריך לפתוח את האפליקציה מהקישור האישי שאביאל שלח בוואטסאפ.'); }
 else {
-  api('data').then(function(r){ D=r; $('#boot').hidden=true; $('#tabs').hidden=false; var last='home'; try{ last=localStorage.getItem('aviel_tab')||'home'; }catch(e){} show(last); render(); renderMenu(); renderTrain(); })
+  api('data').then(function(r){ D=r; $('#boot').hidden=true; $('#tabs').hidden=false; var last='home'; try{ last=localStorage.getItem('aviel_tab')||'home'; }catch(e){} show(last); render(); renderMenu(); renderTrain(); drawStrength(); })
     .catch(function(er){ fatal(er.message); });
-  api('plan').then(function(r){ P=r; if(D){ renderMenu(); renderTrain(); } }).catch(function(){ P={menu:null,program:null,lifts:{}}; if(D){ renderMenu(); renderTrain(); } });
+  api('plan').then(function(r){ P=r; if(D){ renderMenu(); renderTrain(); drawStrength(); } }).catch(function(){ P={menu:null,program:null,lifts:{}}; if(D){ renderMenu(); renderTrain(); } });
 }
 </script>
 </body></html>
