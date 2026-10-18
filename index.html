@@ -107,6 +107,8 @@ nav.tabs button[aria-selected="true"]{color:var(--gold)}
 .plain{font-size:14.5px;margin:8px 0 0;white-space:pre-wrap}
 .small{display:inline-block;margin-top:6px;color:var(--mute);font-size:13px}
 .installbtn{width:100%;margin-top:10px}
+.sa ol{margin:8px 0 0;padding-inline-start:20px;display:flex;flex-direction:column;gap:10px;font-size:14px}
+.sa .code{font-family:monospace;font-size:14px;direction:ltr;text-align:left;padding:8px}
 .toast{bottom:calc(150px + env(safe-area-inset-bottom,0px))!important}
 .steps{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:10px}
 .steps input{font-size:16px;padding:8px}
@@ -164,6 +166,16 @@ nav.tabs button[aria-selected="true"]{color:var(--gold)}
         <div class="row"><span class="label">להוסיף למסך הבית</span><button class="ghost sm" type="button" id="instX" aria-label="סגירה">✕</button></div>
         <div style="margin-top:6px;font-size:14px" id="instTxt"></div>
         <button type="button" class="installbtn" id="instBtn" hidden>התקנה במסך הבית</button>
+      </div>
+      <div class="card sa" id="stepsAuto" hidden>
+        <div class="row"><span class="label">צעדים אוטומטיים מהאייפון</span><button class="ghost sm" type="button" id="saX" aria-label="סגירה">✕</button></div>
+        <div style="margin-top:6px;font-size:14px">חיבור חד-פעמי של דקה, ומאז הצעדים נכנסים לבד כל ערב.</div>
+        <ol>
+          <li><button type="button" class="sm" id="saCopy">העתקת הקוד האישי שלי</button><input class="code" id="saCode" readonly hidden aria-label="הקוד האישי"></li>
+          <li><a class="open" id="saGet" target="_blank" rel="noopener">התקנת קיצור הדרך</a><span class="sub">כשהוא שואל על הקוד, מדביקים.</span></li>
+          <li>באפליקציית <b>קיצורים</b>: <b>אוטומציה</b> ← <b>+</b> ← <b>שעה ביום</b> ← 21:30, כל יום ← <b>הפעלה מיידית</b> ← בוחרים <b>צעדים לאביאל</b>.</li>
+        </ol>
+        <button type="button" class="ghost installbtn" id="saDone">חיברתי ✓</button>
       </div>
       <div class="card" id="noteCard" hidden><div class="label">ההודעה של אביאל לשבוע</div><p style="margin:6px 0 0;white-space:pre-wrap" id="note"></p></div>
       <a class="wa" href="https://wa.me/972537718200" target="_blank" rel="noopener">שאלה לאביאל בוואטסאפ</a>
@@ -412,6 +424,17 @@ $('#sForm').addEventListener('submit',function(e){ e.preventDefault(); var v=par
   $('#sBtn').disabled=true; api('steps',{n:v}).then(function(r){ D=r; render(); $('#sIn').value=''; toast('נשמר · '+v.toLocaleString('en')+' צעדים'); }).catch(function(er){ toast(er.message||'לא נשמר',1); }).then(function(){ $('#sBtn').disabled=false; }); });
 var LOADED=Date.now();
 document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&T&&Date.now()-LOADED>20*60*1000){ LOADED=Date.now(); api('data').then(function(r){ D=r; render(); }).catch(function(){}); api('plan').then(function(r){ P=r; P.lifts=normLifts(P.lifts); renderMenu(); renderTrain(); drawStrength(); }).catch(function(){}); } });
+
+/* ---------- צעדים אוטומטיים (קיצור דרך באייפון) ---------- */
+var SHORTCUT='';
+(function(){
+  var iosDev=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(!(iosDev&&SHORTCUT&&!ls('aviel_sa',false))) return;
+  $('#stepsAuto').hidden=false; $('#saGet').href=SHORTCUT;
+  $('#saCopy').onclick=function(){ var c=$('#saCode'); c.value=T; var ok=function(){ toast('הקוד הועתק · עכשיו שלב 2'); }; if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(T).then(ok,function(){ c.hidden=false; c.select(); }); } else { c.hidden=false; c.select(); } };
+  var close=function(){ lsSet('aviel_sa',true); $('#stepsAuto').hidden=true; };
+  $('#saDone').onclick=function(){ close(); toast('מעולה! מהערב הצעדים נכנסים לבד'); }; $('#saX').onclick=close;
+})();
 
 /* ---------- התקנה למסך הבית ---------- */
 var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
