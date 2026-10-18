@@ -207,6 +207,7 @@ function previewUrl(u){
   return /docs\.google\.com\/document/.test(u) ? 'https://docs.google.com/document/d/'+m[1]+'/preview' : 'https://drive.google.com/file/d/'+m[1]+'/preview';
 }
 function fileBlock(f, what){
+  if(f.file&&!f.open) return '<div class="card"><div class="sub">ה'+what+' שלך עובר עכשיו לאפליקציה ויופיע כאן בקרוב. בינתיים אפשר לבקש אותו מאביאל בוואטסאפ.</div></div><a class="wa" href="https://wa.me/972537718200" target="_blank" rel="noopener">לבקש מאביאל בוואטסאפ</a>';
   var pv=previewUrl(f.url);
   return (pv?'<iframe class="doc" src="'+pv+'" title="'+esc(f.name)+'" loading="lazy"></iframe>':'')+'<a class="open" href="'+esc(f.url)+'" target="_blank" rel="noopener">לפתוח את ה'+what+' במסך מלא</a>';
 }
@@ -231,7 +232,7 @@ function renderMenu(){
     });
     b.rows.forEach(function(r){ h+='<p class="plain">'+r.map(esc).join(' · ')+'</p>'; });
     return h+'</div>';
-  }).join('')+'<a class="small" href="'+esc(m.url)+'" target="_blank" rel="noopener">למסמך המקורי</a>';
+  }).join('');
 }
 
 /* ---------- אימון ---------- */
@@ -259,7 +260,6 @@ function renderTrain(){
     h+='</div>';
   });
   info.forEach(function(b){ h+='<div class="card">'+(b.title?'<div class="label">'+esc(b.title)+'</div>':'')+b.lines.map(function(l){return '<p class="plain">'+esc(l)+'</p>';}).join('')+'</div>'; });
-  h+='<a class="small" href="'+esc(p.url)+'" target="_blank" rel="noopener">למסמך המקורי</a>';
   box.innerHTML=h;
   box.querySelectorAll('.chip').forEach(function(c){ c.onclick=function(){ DAY=+c.dataset.day; renderTrain(); }; });
   box.querySelectorAll('form.lift').forEach(function(f){ f.onsubmit=function(ev){ ev.preventDefault();
