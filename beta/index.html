@@ -127,7 +127,7 @@ nav.tabs button[aria-selected="true"]{color:var(--gold)}
 .str{display:grid;grid-template-columns:1fr auto auto;gap:4px 10px;align-items:center;font-size:14px;margin-top:8px}
 .str .pct{font-weight:800}
 
-.beta{font-size:10px;background:var(--gold);color:var(--ink);border-radius:6px;padding:1px 6px;margin-right:4px;vertical-align:middle}
+.beta{font-size:11px;background:var(--gold);color:var(--ink);border-radius:6px;padding:1px 6px;margin-right:4px;vertical-align:middle}
 nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
 .fsearch{display:flex;flex-direction:column;gap:8px}
 .flist{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto}
@@ -161,6 +161,21 @@ nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
 .opt li.picked::before{content:"✓ ";color:var(--good);font-weight:800}
 .swaphint{font-size:12px;color:var(--mute);margin-top:6px}
 .cmp img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;border:1px solid var(--gold-d)}
+.ic{width:1.05em;height:1.05em;vertical-align:-.16em;flex:none}
+button .ic{width:18px;height:18px}
+.vid{display:inline-flex;align-items:center;gap:5px}
+.mine{display:inline-block;font-size:11px;font-weight:800;color:var(--gold);border:1px solid var(--gold-d);border-radius:6px;padding:0 5px;margin-left:6px;line-height:1.5;vertical-align:1px}
+.mhint{font-size:13px;color:var(--gold);margin-top:4px}
+.plus{font-size:12px;font-weight:800;color:var(--mute);margin:10px 0 0;display:flex;align-items:center;gap:8px}
+.plus::before,.plus::after{content:"";flex:1;height:1px;background:var(--line)}
+.meal.mnote{background:transparent;border-style:dashed}
+.meal.mnote .plain:first-child{font-weight:800;color:var(--gold)}
+.kpi b span{font-size:inherit}
+.sdot{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--mute);margin-top:6px}
+.sdot.s-good{background:var(--good)}.sdot.s-warn{background:var(--warn)}.sdot.s-bad{background:var(--bad)}
+::selection{background:rgba(212,172,91,.35);color:var(--text)}
+input,textarea{caret-color:var(--gold)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 </style></head>
 <body>
 <div class="app">
@@ -198,12 +213,12 @@ nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
         <div class="sent" id="ciDone" hidden>✓ הצ׳ק-אין של השבוע נשלח. אביאל יחזור אליך.</div>
       </div>
       <div class="card" id="install" hidden>
-        <div class="row"><span class="label">להוסיף למסך הבית</span><button class="ghost sm" type="button" id="instX" aria-label="סגירה">✕</button></div>
+        <div class="row"><span class="label">להוסיף למסך הבית</span><button class="ghost sm" type="button" id="instX" aria-label="סגירה"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
         <div style="margin-top:6px;font-size:14px" id="instTxt"></div>
         <button type="button" class="installbtn" id="instBtn" hidden>התקנה במסך הבית</button>
       </div>
       <div class="card sa" id="stepsAuto" hidden>
-        <div class="row"><span class="label">צעדים אוטומטיים מהאייפון</span><button class="ghost sm" type="button" id="saX" aria-label="סגירה">✕</button></div>
+        <div class="row"><span class="label">צעדים אוטומטיים מהאייפון</span><button class="ghost sm" type="button" id="saX" aria-label="סגירה"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
         <div style="margin-top:6px;font-size:14px">חיבור חד-פעמי של דקה, ומאז הצעדים נכנסים לבד כל ערב.</div>
         <ol>
           <li><button type="button" class="sm" id="saCopy">העתקת הקוד האישי שלי</button><input class="code" id="saCode" readonly hidden aria-label="הקוד האישי"></li>
@@ -213,7 +228,7 @@ nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
         <button type="button" class="ghost installbtn" id="saDone">חיברתי ✓</button>
       </div>
       <div class="card" id="pushCard" hidden>
-        <div class="row"><span class="label">🔔 תזכורות לטלפון</span><button class="ghost sm" type="button" id="pushX" aria-label="סגירה">✕</button></div>
+        <div class="row"><span class="label">תזכורות לטלפון</span><button class="ghost sm" type="button" id="pushX" aria-label="סגירה"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
         <div style="margin-top:6px;font-size:14px" id="pushTxt">תזכורת עדינה לשקילת בוקר, לצעדים בערב ולצ׳ק-אין ביום ראשון. אפשר לכבות בכל רגע בהגדרות הטלפון.</div>
         <button type="button" class="installbtn" id="pushBtn">הפעלת תזכורות</button>
       </div>
@@ -228,7 +243,7 @@ nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
   
   <section data-view="food" hidden>
     <h1>יומן אוכל</h1>
-    <div class="sub">רושמים מה אכלת, ורואים כמה נשאר להיום. ⭐ = המאגר של אביאל, והשאר מהמאגר הלאומי של משרד הבריאות.</div>
+    <div class="sub">רושמים מה אכלת ורואים כמה נשאר להיום. מאכלים עם התג <span class="mine">אביאל</span> הם מהמאגר שלי, והשאר מהמאגר הלאומי של משרד הבריאות.</div>
     <div class="stack">
       <div class="card" id="fTot"></div>
       <div class="card fsearch">
@@ -246,7 +261,7 @@ nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
     <h1>ההתקדמות שלך</h1>
     <div class="sub">ממוצע שבועי, כי משקל יומי קופץ ממים ומלח</div>
     <div class="stack">
-      <div class="card"><div class="label">ממוצע שבועי (ק״ג)</div><div id="chart"></div></div><div class="card"><div class="row"><span class="label">📸 תמונות התקדמות · פעם בחודש</span><label class="ghost sm" for="phIn" style="border:1px solid var(--line);border-radius:12px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer">+ תמונה</label></div>
+      <div class="card"><div class="label">ממוצע שבועי (ק״ג)</div><div id="chart"></div></div><div class="card"><div class="row"><span class="label">תמונות התקדמות · פעם בחודש</span><label class="ghost sm" for="phIn" style="border:1px solid var(--line);border-radius:12px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer">+ תמונה</label></div>
         <input type="file" id="phIn" accept="image/*" hidden>
         <div class="sub" style="margin-top:6px">מצלמים באותו מקום ובאותה תאורה, בבוקר. רק אתה ואביאל רואים את התמונות.</div>
         <div id="phBox"></div></div>
@@ -330,7 +345,7 @@ function normLifts(o){ o=o||{}; Object.keys(o).forEach(function(k){ var x=o[k]; 
 function restStart(min){
   var sec=Math.round(min*60); if(!(sec>0)) return; clearInterval(RT); var end=Date.now()+sec*1000; $('#rest').hidden=false;
   var tick=function(){ var l=Math.max(0,Math.round((end-Date.now())/1000)); $('#restT').textContent='מנוחה '+Math.floor(l/60)+':'+('0'+l%60).slice(-2);
-    if(!l){ clearInterval(RT); $('#rest').hidden=true; try{ if(navigator.vibrate) navigator.vibrate([250,120,250]); }catch(e){} toast('יאללה, לסט הבא 💪'); } };
+    if(!l){ clearInterval(RT); $('#rest').hidden=true; try{ if(navigator.vibrate) navigator.vibrate([250,120,250]); }catch(e){} toast('יאללה, לסט הבא'); } };
   tick(); RT=setInterval(tick,500);
 }
 $('#restX').addEventListener('click',function(){ clearInterval(RT); $('#rest').hidden=true; });
@@ -401,7 +416,7 @@ function renderTrain(){
   box.innerHTML=h;
   box.querySelectorAll('.chip').forEach(function(c){ c.onclick=function(){ DAY=+c.dataset.day; renderTrain(); window.scrollTo(0,0); }; });
   box.querySelectorAll('.sugg').forEach(function(b){ b.onclick=function(){ var f=box.querySelector('form.lift[data-i="'+b.dataset.fill+'"]'), ins=f.querySelectorAll('input'); ins[0].value=b.dataset.kg; ins[1].value=b.dataset.reps; ins[1].focus(); }; });
-  $('#finish').onclick=function(){ var m=ls('aviel_done',{}); m[DAY]=TODAY; lsSet('aviel_done',m); toast('כל הכבוד! אימון '+(DAY+1)+' הושלם 🔥'); var dm=doneMap(); for(var q=0;q<days.length;q++){ if(!dm[q]){ DAY=q; break; } } renderTrain(); window.scrollTo(0,0); };
+  $('#finish').onclick=function(){ var m=ls('aviel_done',{}); m[DAY]=TODAY; lsSet('aviel_done',m); toast('כל הכבוד! אימון '+(DAY+1)+' הושלם'); var dm=doneMap(); for(var q=0;q<days.length;q++){ if(!dm[q]){ DAY=q; break; } } renderTrain(); window.scrollTo(0,0); };
   box.querySelectorAll('form.lift').forEach(function(f){ f.onsubmit=function(ev){ ev.preventDefault();
     var e=d.ex[+f.dataset.i], ins=f.querySelectorAll('input'), kg=parseFloat(String(ins[0].value).replace(',','.')), reps=parseInt(ins[1].value,10);
     if(!(kg>=0&&kg<500)||!(reps>=1&&reps<=100)){ toast('ממלאים משקל וחזרות',1); return; }
@@ -433,7 +448,7 @@ function render(){
   var avg=(d.weekly||[]).slice(-1)[0];
   $('#kAvg').textContent = avg!=null ? avg : (d.lastKg!=null?d.lastKg:'—');
   if(d.firstKg!=null&&d.lastKg!=null){ var ch=Math.round((d.lastKg-d.firstKg)*10)/10; var goodDir=d.goal==='עלייה'?ch>0:ch<0; $('#kChg').innerHTML='<span class="'+(ch===0?'':goodDir?'good':'warn')+'">'+(ch>0?'+':ch<0?'−':'')+Math.abs(ch)+'</span>'; }
-  if(d.status){ $('#kStat').textContent=d.status.icon||'—'; $('#kStatL').textContent=d.status.note||'מול היעד'; }
+  if(d.status){ var _si=d.status.icon||'', _sc=/🟢|✅/.test(_si)?'good':/🟡|🟠/.test(_si)?'warn':/🔴/.test(_si)?'bad':''; if(_si){ $('#kStat').innerHTML='<i class="sdot'+(_sc?' s-'+_sc:'')+'"></i>'; } else $('#kStat').textContent='—'; $('#kStatL').textContent=d.status.note||'מול היעד'; }
   if(d.meeting){ var md=pd(d.meeting.date); $('#calM').textContent=MON[md.getMonth()]; $('#calD').textContent=('0'+md.getDate()).slice(-2); $('#meetTxt').textContent='יום '+DAYS[md.getDay()]+(d.meeting.time?' · '+d.meeting.time:''); $('#meetCard').hidden=false; }
   if(d.note){ $('#note').textContent=d.note; $('#noteCard').hidden=false; }
   $('#ciForm').hidden=!!d.checkinDone; $('#ciDone').hidden=!d.checkinDone; $('#ciState').textContent=d.checkinDone?'נשלח השבוע':'2 דקות';
@@ -533,7 +548,7 @@ function renderFood(){
   var row=function(lbl,v,t,u){ return '<div><b class="num">'+Math.round(v)+'</b>'+(t?' / '+t:'')+' '+u+'<div class="sub">'+lbl+'</div>'+bar(v,t)+'</div>'; };
   $('#fTot').innerHTML='<div class="row"><span class="label">היום</span><span class="sub">'+it.length+' רישומים</span></div><div style="margin-top:6px"><b class="num" style="font-size:26px">'+Math.round(s.k)+'</b>'+(T['קלוריות']?' <span class="sub">מתוך '+T['קלוריות']+' קק״ל · נשארו '+Math.max(0,T['קלוריות']-Math.round(s.k))+'</span>':' <span class="sub">קק״ל</span>')+bar(s.k,T['קלוריות'])+'</div>'+
     '<div class="mac">'+row('חלבון',s.p,T['חלבון'],'ג׳')+row('פחמימה',s.c,T['פחמימות'],'ג׳')+row('שומן',s.fat,T['שומן'],'ג׳')+'</div>';
-  $('#fItems').innerHTML=it.length?it.map(function(x){ return '<div class="fitem"><span><b>'+esc(x.f)+'</b> <small>'+esc(x.g)+' ג׳ · '+esc(x.t||'')+'</small></span><span><span class="num">'+esc(x.k)+'</span> <small>קק״ל</small> <button class="ghost sm" data-del="'+x.row+'" data-f="'+esc(x.f)+'" aria-label="מחיקה">✕</button></span></div>'; }).join(''):'<div class="sub" style="padding-top:6px">עוד לא נרשם כלום היום.</div>';
+  $('#fItems').innerHTML=it.length?it.map(function(x){ return '<div class="fitem"><span><b>'+esc(x.f)+'</b> <small>'+esc(x.g)+' ג׳ · '+esc(x.t||'')+'</small></span><span><span class="num">'+esc(x.k)+'</span> <small>קק״ל</small> <button class="ghost sm" data-del="'+x.row+'" data-f="'+esc(x.f)+'" aria-label="מחיקה"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></span></div>'; }).join(''):'<div class="sub" style="padding-top:6px">עוד לא נרשם כלום היום.</div>';
   document.querySelectorAll('#fItems [data-del]').forEach(function(b){ b.onclick=function(){ b.disabled=true; api('fooddel',{row:+b.dataset.del,f:b.dataset.f,d:FDAY.d}).then(function(r){ FDAY=r; renderFood(); }).catch(function(e){ toast(e.message,1); b.disabled=false; }); }; });
 }
 /* חיפוש: קודם המאגר המאושר של אביאל, ואז המאגר הלאומי של משרד הבריאות (data.gov.il, ערכים ל-100 ג׳) */
@@ -542,7 +557,7 @@ var UNAMES=null, FQT=null, FQN=0;
 function unitNames(){ if(UNAMES) return Promise.resolve(UNAMES); return fetch(MOH+MOH_UNAMES+'&limit=300').then(function(r){ return r.json(); }).then(function(j){ UNAMES={}; (j.result.records||[]).forEach(function(r){ var v=Object.keys(r).filter(function(k){ return k!=='_id'; }).map(function(k){ return r[k]; }); UNAMES[String(v[0])]=String(v[1]).trim(); }); return UNAMES; }).catch(function(){ UNAMES={}; return UNAMES; }); }
 function shortName(n){ return String(n).replace(/\s+/g,' ').trim(); }
 function drawList(local, nat, q){
-  var h=local.map(function(f){ return '<button type="button" data-loc="'+FOODS.indexOf(f)+'">⭐ '+esc(f[0])+'<small>'+Math.round(4*f[2]+4*f[3]+9*f[4])+' קק״ל ל-100 ג׳ · מאגר אביאל</small></button>'; }).join('');
+  var h=local.map(function(f){ return '<button type="button" data-loc="'+FOODS.indexOf(f)+'"><span class="mine">אביאל</span>'+esc(f[0])+'<small>'+Math.round(4*f[2]+4*f[3]+9*f[4])+' קק״ל ל-100 ג׳ · מאגר אביאל</small></button>'; }).join('');
   if(nat===null) h+='<div class="sub">מחפש במאגר הלאומי…</div>';
   else h+=nat.map(function(r,i){ return '<button type="button" data-nat="'+i+'">'+esc(shortName(r.shmmitzrach))+'<small>'+Math.round(+r.food_energy||0)+' קק״ל ל-100 ג׳</small></button>'; }).join('');
   if(!local.length&&nat&&!nat.length) h='<div class="sub">לא נמצא. נסו מילה אחרת, למשל "קוטג׳" או "אורז".</div>';
@@ -589,7 +604,7 @@ function b64ToU8(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) 
       return Promise.all([navigator.serviceWorker.ready, api('vapid')]); })
     .then(function(x){ return x[0].pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToU8(x[1].pub)}); })
     .then(function(sub){ return api('pushsub',{sub:{endpoint:sub.endpoint}}); })
-    .then(function(){ try{ localStorage.setItem('aviel_push','1'); }catch(e){} $('#pushCard').hidden=true; toast('התזכורות הופעלו 🔔'); })
+    .then(function(){ try{ localStorage.setItem('aviel_push','1'); }catch(e){} $('#pushCard').hidden=true; toast('התזכורות הופעלו'); })
     .catch(function(e){ toast((e&&e.message)||'לא הצלחנו להפעיל',1); b.disabled=false; }); };
 })();
 
@@ -598,8 +613,9 @@ document.querySelector('[data-tab=food]').addEventListener('click',function(){ a
 document.querySelector('[data-tab=prog]').addEventListener('click',function(){ api('photos',{}).then(renderPhotos).catch(function(){}); });
 if(T){ api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){ renderFood(); }); api('photos',{}).then(renderPhotos).catch(function(){ renderPhotos([]); }); }
 </script>
-<script>/* ===== בטא 2: טבלת סטים, סרטון לתרגיל, החלפת מאכל ===== */
-function vidLink(e){ var V=(P&&P.videos)||{}, u=V[e.ex]; return u?'<a class="vid" href="'+esc(u)+'" target="_blank" rel="noopener">🎥 איך עושים</a>':'<a class="vid ghost" href="https://www.youtube.com/results?search_query='+encodeURIComponent(e.ex+' תרגיל')+'" target="_blank" rel="noopener">🔎 חיפוש ביוטיוב</a>'; }
+<script>var IC_PLAY='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>', IC_SRCH='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>', IC_CHECK='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+/* ===== בטא 2: טבלת סטים, סרטון לתרגיל, החלפת מאכל ===== */
+function vidLink(e){ var V=(P&&P.videos)||{}, u=V[e.ex]; return u?'<a class="vid" href="'+esc(u)+'" target="_blank" rel="noopener">'+IC_PLAY+'איך עושים</a>':'<a class="vid ghost" href="https://www.youtube.com/results?search_query='+encodeURIComponent(e.ex+' תרגיל')+'" target="_blank" rel="noopener">'+IC_SRCH+'חיפוש ביוטיוב</a>'; }
 function renderTrain(){
   var p=P&&P.program, box=$('#progBox');
   $('#progName').textContent=p?(p.title||''):'';
@@ -629,7 +645,7 @@ function renderTrain(){
       for(var k=0;k<Math.max(n,today.length);k++){
         var dn=today[k], pv=ps[k]||ps[ps.length-1], li=LASTIN[e.ex]||{};
         var kg=dn?dn.kg:(li.kg!=null?li.kg:(sg?sg.kg:(pv?pv.kg:''))), rp=dn?dn.reps:(li.reps!=null?li.reps:(sg?sg.reps:(R?R[1]:(pv?pv.reps:''))));
-        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal" value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><button type="submit"'+(dn?' disabled':'')+' aria-label="סיום סט '+(k+1)+'">✓</button></form>';
+        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal" value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><button type="submit"'+(dn?' disabled':'')+' aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button></form>';
       }
       h+='</div>';
     }
@@ -638,7 +654,7 @@ function renderTrain(){
   h+='<button type="button" class="installbtn" id="finish">'+(done[DAY]?'✓ האימון הזה כבר סומן השבוע':'✓ סיימתי את אימון '+(DAY+1))+'</button>';
   box.innerHTML=h;
   box.querySelectorAll('.chip').forEach(function(c){ c.onclick=function(){ DAY=+c.dataset.day; renderTrain(); window.scrollTo(0,0); }; });
-  $('#finish').onclick=function(){ var m=ls('aviel_done',{}); m[DAY]=TODAY; lsSet('aviel_done',m); toast('כל הכבוד! אימון '+(DAY+1)+' הושלם 🔥'); var dm=doneMap(); for(var q=0;q<days.length;q++){ if(!dm[q]){ DAY=q; break; } } renderTrain(); window.scrollTo(0,0); };
+  $('#finish').onclick=function(){ var m=ls('aviel_done',{}); m[DAY]=TODAY; lsSet('aviel_done',m); toast('כל הכבוד! אימון '+(DAY+1)+' הושלם'); var dm=doneMap(); for(var q=0;q<days.length;q++){ if(!dm[q]){ DAY=q; break; } } renderTrain(); window.scrollTo(0,0); };
   box.querySelectorAll('form.setrow').forEach(function(f){ f.onsubmit=function(ev){ ev.preventDefault();
     var e=d.ex[+f.dataset.i], ins=f.querySelectorAll('input'), kg=parseFloat(String(ins[0].value).replace(',','.')), reps=parseInt(ins[1].value,10);
     if(!(kg>=0&&kg<500)||!(reps>=1&&reps<=100)){ toast('ממלאים משקל וחזרות',1); return; }
@@ -650,15 +666,34 @@ function renderTrain(){
 }
 /* תפריט: לוחצים על האפשרות שבחרת — ההחלפה נשמרת להיום */
 var _renderMenuBase=renderMenu;
+var MEAL_RE=/ארוח|בוקר|צהר|ערב|ביניים|נשנוש|אימון|לילה|שייק/;
+function tidyMenu(m){
+  if(!m||!m.blocks||m._tidy) return; m._tidy=1;
+  m.blocks.forEach(function(b){
+    // כותרת שהיא בעצם הערה ("אני רוצה 8-10 אלף צעדים") — לא ארוחה, בלי כפתור "אכלתי"
+    if(b.title&&!MEAL_RE.test(b.title)){ b.lines.unshift(b.title); b.title=''; b.note=1; }
+    // "ארוחת צהריים(לשים דגש...)" — ההערה בסוגריים יורדת לשורה מתחת לכותרת
+    var mm=b.title&&b.title.match(/^([^()]+?)\s*\(([^)]+)\)\s*$/); if(mm){ b.title=mm[1].trim(); b.hint=mm[2].trim(); }
+    // "200 גרם בורגול/200 גרם תפוח אדמה/..." — רשימת אפשרויות לבחירה
+    b.lines=b.lines.map(function(l){ var parts=l.split('/').map(function(x){ return x.trim(); });
+      return (l.indexOf(': ')<0&&!/ או /.test(l)&&parts.length>=3&&parts.every(function(x){ return /^\d/.test(x)&&x.length>=4; }))?'לבחירה: '+parts.join(' / '):l; });
+  });
+}
 renderMenu=function(){
+  if(typeof P!=='undefined'&&P) tidyMenu(P.menu);
   _renderMenuBase();
+  var M=P&&P.menu, heads=document.querySelectorAll('#menuBox .meal');
+  if(M&&M.blocks) heads.forEach(function(card,i){ var b=M.blocks[i]; if(!b) return;
+    if(b.hint&&!card.querySelector('.mhint')){ var mh=card.querySelector('.mealhead'); if(mh) mh.insertAdjacentHTML('afterend','<div class="mhint">'+esc(b.hint)+'</div>'); }
+    if(b.note) card.classList.add('mnote'); });
+  document.querySelectorAll('#menuBox .plain').forEach(function(p){ if(p.textContent.trim()==='+'){ p.className='plus'; p.textContent='ועוד'; } });
   var pick=ls('aviel_pick_'+TODAY,{});
   document.querySelectorAll('#menuBox .meal').forEach(function(card){
     var meal=(card.querySelector('h3')||{}).textContent||'';
     card.querySelectorAll('.opt').forEach(function(o){
       var lab=(o.querySelector('b')||{}).textContent||'', key=meal+'|'+lab, lis=o.querySelectorAll('li');
       if(lis.length<2) return;
-      if(!o.querySelector('.swaphint')) o.insertAdjacentHTML('beforeend','<div class="swaphint">🔄 לוחצים על מה שאכלת. כל האפשרויות שוות בערך.</div>');
+      if(!o.querySelector('.swaphint')) o.insertAdjacentHTML('beforeend','<div class="swaphint">לוחצים על מה שאכלת. כל האפשרויות שוות בערך.</div>');
       lis.forEach(function(li,i){ li.classList.toggle('picked',pick[key]===i); li.onclick=function(){ var p2=ls('aviel_pick_'+TODAY,{}); if(p2[key]===i) delete p2[key]; else p2[key]=i; lsSet('aviel_pick_'+TODAY,p2); renderMenu(); }; });
     });
   });
