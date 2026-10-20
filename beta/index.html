@@ -717,6 +717,12 @@ sugg=function(e,L){
 var IC_PLAY='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>', IC_SRCH='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>', IC_CHECK='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
 /* ===== בטא 2: טבלת סטים, סרטון לתרגיל, החלפת מאכל ===== */
 function vidLink(e){ var V=(P&&P.videos)||{}, u=V[e.ex]; return u?'<a class="vid" href="'+esc(u)+'" target="_blank" rel="noopener">'+IC_PLAY+'איך עושים</a>':'<a class="vid ghost" href="https://www.youtube.com/results?search_query='+encodeURIComponent(e.ex+' תרגיל')+'" target="_blank" rel="noopener">'+IC_SRCH+'חיפוש ביוטיוב</a>'; }
+/* כוח משוער (1RM) — אפליי, כולל RIR אם נרשם */
+function e1rm(x){ var r=(x.reps||0)+(x.rir||0); return r>0&&r<=20&&x.kg>0?x.kg*(1+r/30):0; }
+function e1Line(L){ if(!L||!L.hist) return ''; var by={}; L.hist.forEach(function(x){ if(!x.d) return; var v=e1rm(x); if(v>(by[x.d]||0)) by[x.d]=v; });
+  var ds=Object.keys(by).sort(); if(ds.length<2) return ''; var cur=by[ds[ds.length-1]], lim=new Date(Date.now()-28*864e5).toISOString().slice(0,10), base=ds.filter(function(d){ return d<=lim; }).pop()||ds[0], b=by[base], pc=b?Math.round((cur-b)/b*100):0;
+  return '<div class="exnote">כוח משוער (1RM): <b dir="ltr">'+Math.round(cur)+' ק״ג</b>'+(pc?' · <b style="color:var('+(pc>0?'--good':'--mute')+')">'+(pc>0?'↑':'↓')+Math.abs(pc)+'%</b> מאז '+base.slice(8,10)+'/'+base.slice(5,7):'')+'</div>'; }
+function r25(x){ return Math.max(0,Math.round(x/2.5)*2.5); }
 function renderTrain(){
   var p=P&&P.program, box=$('#progBox');
   $('#progName').textContent=p?(p.title||''):'';
@@ -730,6 +736,7 @@ function renderTrain(){
   var d=days[DAY], h='<div class="sub">השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים</div>';
   h+=(days.length>1?'<div class="chips" role="group" aria-label="בחירת אימון">'+days.map(function(x,i){ return '<button type="button" class="chip'+(done[i]?' done':'')+'" data-day="'+i+'" aria-pressed="'+(i===DAY)+'">אימון '+(i+1)+'</button>'; }).join('')+'</div>':'');
   h+='<div class="sub" style="margin-top:4px">'+esc(d.title)+'</div>';
+  var heavyN=0;
   d.ex.forEach(function(e,i){
     var warm=/חימום/.test(e.mu), L=P.lifts&&P.lifts[e.ex];
     h+='<div class="card ex">'+(e.mu?'<div class="mu">'+esc(e.mu)+'</div>':'')+'<div class="nm">'+esc(e.ex)+'</div>'+
@@ -739,7 +746,10 @@ function renderTrain(){
       h+=vidLink(e);
       var hist=L?L.hist:[], today=hist.filter(function(x){ return x.d===TODAY; }), prev=hist.filter(function(x){ return x.d&&x.d<TODAY; }), n=parseInt(e.s,10)||3, sg=sugg(e,L), R=rng(e.r);
       var lastD=prev.length?prev[prev.length-1].d:'', ps=prev.filter(function(x){ return x.d===lastD; });
-      if(sg) h+='<div class="last">היום: <b dir="ltr">'+sg.kg+'×'+sg.reps+'</b> · '+esc(sg.why)+'</div>';
+      if(sg) h+='<div class="last"'+(sg.stall?' style="color:var(--warn,#d98a1c)"':'')+'>היום: <b dir="ltr">'+sg.kg+'×'+sg.reps+'</b> · '+esc(sg.why)+'</div>';
+      h+=e1Line(L);
+      var wk=sg?sg.kg:(ps.length?Math.max.apply(null,ps.map(function(x){ return x.kg; })):0);
+      if(wk>=30&&incFor(e,wk)>=2.5&&heavyN<2&&!today.length){ heavyN++; h+='<div class="exnote">סטי חימום לפני (לא נרשמים): <bdi dir="ltr">'+r25(wk*0.5)+'×10</bdi> · <bdi dir="ltr">'+r25(wk*0.7)+'×5</bdi> · <bdi dir="ltr">'+r25(wk*0.85)+'×2</bdi></div>'; }
       else if(ps.length) h+='<div class="last">בפעם הקודמת: '+ps.map(function(x){ return '<bdi dir="ltr">'+x.kg+'×'+x.reps+'</bdi>'; }).join(' · ')+'</div>';
       else h+='<div class="exnote">פעם ראשונה בתרגיל: בוחרים משקל שאפשר לעשות איתו את כל החזרות בטכניקה נקייה.</div>';
       h+='<div class="sets"><div class="sh"><span>סט</span><span>ק״ג</span><span>חזרות</span><span>RIR</span><span></span></div>';
@@ -756,7 +766,10 @@ function renderTrain(){
   h+='<button type="button" class="installbtn" id="finish">'+(done[DAY]?'✓ האימון הזה כבר סומן השבוע':'✓ סיימתי את אימון '+(DAY+1))+'</button>';
   box.innerHTML=h;
   box.querySelectorAll('.chip').forEach(function(c){ c.onclick=function(){ DAY=+c.dataset.day; renderTrain(); window.scrollTo(0,0); }; });
-  $('#finish').onclick=function(){ var m=ls('aviel_done',{}); m[DAY]=TODAY; lsSet('aviel_done',m); toast('כל הכבוד! אימון '+(DAY+1)+' הושלם'); var dm=doneMap(); for(var q=0;q<days.length;q++){ if(!dm[q]){ DAY=q; break; } } renderTrain(); window.scrollTo(0,0); };
+  $('#finish').onclick=function(){ var m=ls('aviel_done',{}); m[DAY]=TODAY; lsSet('aviel_done',m);
+    var sets=0, vol=0, prs=0, rdy=0; d.ex.forEach(function(e){ var L=P.lifts&&P.lifts[e.ex]; if(!L||!L.hist) return; var td=L.hist.filter(function(x){ return x.d===TODAY; }); if(!td.length) return; var pb=L.hist.filter(function(x){ return x.d&&x.d<TODAY; }).reduce(function(a,x){ return Math.max(a,x.kg); },0), tt=Math.max.apply(null,td.map(function(x){ return x.kg; }));
+      sets+=td.length; td.forEach(function(x){ vol+=x.kg*x.reps; }); if(pb&&tt>pb) prs++; var R3=/כשל/.test(e.r)?null:rng(e.r), at=td.filter(function(x){ return x.kg===tt; }), ns=parseInt(e.s,10)||1; if(R3&&at.length>=ns&&at.every(function(x){ return x.reps>=R3[1]; })) rdy++; });
+    toast(sets?'אימון '+(DAY+1)+' הושלם · '+sets+' סטים · '+Math.round(vol).toLocaleString('he-IL')+' ק״ג נפח'+(prs?' · '+prs+' שיאים':'')+(rdy?' · '+rdy+' מוכנים להעלאה':''):'כל הכבוד! אימון '+(DAY+1)+' הושלם'); var dm=doneMap(); for(var q=0;q<days.length;q++){ if(!dm[q]){ DAY=q; break; } } renderTrain(); window.scrollTo(0,0); };
   box.querySelectorAll('form.setrow').forEach(function(f){ f.onsubmit=function(ev){ ev.preventDefault();
     var e=d.ex[+f.dataset.i], ins=f.querySelectorAll('input'), kg=parseFloat(String(ins[0].value).replace(',','.')), reps=parseInt(ins[1].value,10), rs=f.querySelector('select'), rir=rs&&rs.value!==''?+rs.value:null;
     if(!(kg>=0&&kg<500)||!(reps>=1&&reps<=100)){ toast('ממלאים משקל וחזרות',1); return; }
