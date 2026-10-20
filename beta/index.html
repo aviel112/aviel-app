@@ -692,7 +692,20 @@ document.querySelector('[data-tab=food]').addEventListener('click',function(){ a
 document.querySelector('[data-tab=prog]').addEventListener('click',function(){ api('photos',{}).then(renderPhotos).catch(function(){}); });
 if(T){ api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){ renderFood(); }); api('photos',{}).then(renderPhotos).catch(function(){ renderPhotos([]); }); }
 </script>
-<script>var IC_PLAY='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>', IC_SRCH='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>', IC_CHECK='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+<script>
+/* progressive overload כמו בנוטריקל: המאמן קובע בכמה ק״ג עולים בכל תרגיל (P.inc), אחרת ברירת מחדל לפי סוג התרגיל */
+function incFor(e,top){ var I=(typeof P!=='undefined'&&P&&P.inc)||{}, k=String(e.ex||'').replace(/\s*\(.*\)\s*$/,'').trim(), x=+I[k]||+I[e.ex]; if(x>0) return x; return top<=10?1:(LOWER.test((e.mu||'')+' '+e.ex)?5:2.5); }
+sugg=function(e,L){
+  if(!L||!L.hist||!L.hist.length) return null;
+  var prev=L.hist.filter(function(x){ return x.d && x.d<TODAY; }); if(!prev.length) return null;
+  var lastD=prev[prev.length-1].d, ses=prev.filter(function(x){ return x.d===lastD; });
+  var top=Math.max.apply(null,ses.map(function(x){ return x.kg; })), atTop=ses.filter(function(x){ return x.kg===top; }), minR=Math.min.apply(null,atTop.map(function(x){ return x.reps; }));
+  var R=/כשל/.test(e.r)?null:rng(e.r), inc=incFor(e,top), ns=parseInt(e.s,10)||0;
+  if(R&&minR>=R[1]&&(!ns||atTop.length>=ns)) return {kg:Math.round((top+inc)*100)/100,reps:R[0],why:'בפעם הקודמת הגעת ל-'+R[1]+' חזרות בכל הסטים, אז עולים '+inc+' ק״ג וחוזרים ל-'+R[0]};
+  var tr=R?Math.min(R[1],minR+1):minR+1;
+  return {kg:top,reps:tr,why:'אותו משקל, הפעם '+tr+' חזרות'+(R?' (כשמגיעים ל-'+R[1]+' בכל הסטים עולים '+inc+' ק״ג)':'')};
+};
+var IC_PLAY='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>', IC_SRCH='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>', IC_CHECK='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
 /* ===== בטא 2: טבלת סטים, סרטון לתרגיל, החלפת מאכל ===== */
 function vidLink(e){ var V=(P&&P.videos)||{}, u=V[e.ex]; return u?'<a class="vid" href="'+esc(u)+'" target="_blank" rel="noopener">'+IC_PLAY+'איך עושים</a>':'<a class="vid ghost" href="https://www.youtube.com/results?search_query='+encodeURIComponent(e.ex+' תרגיל')+'" target="_blank" rel="noopener">'+IC_SRCH+'חיפוש ביוטיוב</a>'; }
 function renderTrain(){
@@ -741,7 +754,9 @@ function renderTrain(){
     // המשקל עובר מיד לסטים הבאים שעוד לא בוצעו — בלי לחכות לשמירה
     var nx=f.nextElementSibling; while(nx&&nx.classList.contains('setrow')){ if(!nx.classList.contains('ok')){ var ni=nx.querySelectorAll('input'); if(ni[0]&&!ni[0].value) ni[0].value=kg; } nx=nx.nextElementSibling; }
     api('lift',{ex:e.ex,mu:e.mu,kg:kg,reps:reps}).then(function(r){ P.lifts=normLifts(r); LASTIN[e.ex]={kg:kg,reps:reps};
-      toast(best!=null&&kg>best?'שיא חדש! '+kg+' ק״ג':'סט נשמר · '+kg+'×'+reps); var y=window.scrollY; renderTrain(); window.scrollTo(0,y); drawStrength(); restStart(restMin(e.rest)); })
+      var R2=/כשל/.test(e.r)?null:rng(e.r), L2=P.lifts&&P.lifts[e.ex], td=L2?L2.hist.filter(function(x){ return x.d===TODAY&&x.kg===kg; }):[], ns=parseInt(e.s,10)||0;
+      var done=R2&&ns&&td.length>=ns&&td.every(function(x){ return x.reps>=R2[1]; });
+      toast(done?'הגעת ל-'+R2[1]+' חזרות בכל הסטים! בפעם הבאה עולים '+incFor(e,kg)+' ק״ג':(best!=null&&kg>best?'שיא חדש! '+kg+' ק״ג':'סט נשמר · '+kg+'×'+reps)); var y=window.scrollY; renderTrain(); window.scrollTo(0,y); drawStrength(); restStart(restMin(e.rest)); })
     .catch(function(er){ toast(er.message||'לא נשמר',1); btn.disabled=false; f.classList.remove('ok'); });
   }; });
 }
