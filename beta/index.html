@@ -293,6 +293,19 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .tdg{color:var(--mute);display:flex}
 .tdg svg{width:18px;height:18px}
 .tdall{font-size:13.5px;color:var(--gold);font-weight:700;padding:4px 2px 10px}
+.fin{text-align:center}
+.fin .label{font-size:14px}
+.fbig{font-family:var(--f-display);font-weight:700;font-size:56px;line-height:1.05;margin:8px 0 4px;color:var(--text);letter-spacing:-.01em}
+.fbig small{font-family:'Assistant',Arial,sans-serif;font-size:18px;font-weight:700;color:var(--mute)}
+.flike{font-size:17px;color:var(--text);margin-bottom:16px}
+.flike b{color:var(--gold)}
+.fstats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0}
+.fstats div{display:flex;flex-direction:column;gap:2px}
+.fstats div+div{border-inline-start:1px solid var(--line)}
+.fstats b{font-size:22px;font-weight:800}
+.fstats span{font-size:12.5px;color:var(--mute)}
+.fin .fbig{animation:fup .6s cubic-bezier(.16,1,.3,1)}
+@keyframes fup{from{transform:translateY(10px);opacity:0}}
 @keyframes shf{from{background:rgba(20,15,8,0)}}
 @keyframes shu{from{transform:translateY(24px);opacity:.4}}
 @media (prefers-reduced-motion:reduce){.sheet,.sheet-in{animation:none}button{transition:none}}
@@ -871,7 +884,7 @@ function renderTrain(){
   $('#finish').onclick=function(){ var m=ls('aviel_done',{}); m[DAY]=TODAY; lsSet('aviel_done',m);
     var sets=0, vol=0, prs=0, rdy=0; d.ex.forEach(function(e){ var L=P.lifts&&P.lifts[e.ex]; if(!L||!L.hist) return; var td=L.hist.filter(function(x){ return x.d===TODAY; }); if(!td.length) return; var pb=L.hist.filter(function(x){ return x.d&&x.d<TODAY; }).reduce(function(a,x){ return Math.max(a,x.kg); },0), tt=Math.max.apply(null,td.map(function(x){ return x.kg; }));
       sets+=td.length; td.forEach(function(x){ vol+=x.kg*x.reps; }); if(pb&&tt>pb) prs++; var R3=/כשל/.test(e.r)?null:rng(e.r), at=td.filter(function(x){ return x.kg===tt; }), ns=parseInt(e.s,10)||1; if(R3&&at.length>=ns&&at.every(function(x){ return x.reps>=R3[1]; })) rdy++; });
-    toast(sets?'אימון '+(DAY+1)+' הושלם · '+sets+' סטים · '+Math.round(vol).toLocaleString('he-IL')+' ק״ג נפח'+(prs?' · '+prs+' שיאים':'')+(rdy?' · '+rdy+' מוכנים להעלאה':''):'כל הכבוד! אימון '+(DAY+1)+' הושלם'); var dm=doneMap(); for(var q=0;q<days.length;q++){ if(!dm[q]){ DAY=q; break; } } renderTrain(); window.scrollTo(0,0); };
+    if(sets) showFinish(DAY+1,sets,vol,prs,rdy); else toast('כל הכבוד! אימון '+(DAY+1)+' הושלם'); var dm=doneMap(); for(var q=0;q<days.length;q++){ if(!dm[q]){ DAY=q; break; } } renderTrain(); window.scrollTo(0,0); };
   box.querySelectorAll('form.setrow').forEach(function(f){ f.onsubmit=function(ev){ ev.preventDefault();
     var e=d.ex[+f.dataset.i], ins=f.querySelectorAll('input'), kg=parseFloat(String(ins[0].value).replace(',','.')), reps=parseInt(ins[1].value,10), rs=f.querySelector('select'), rir=rs&&rs.value!==''?+rs.value:null;
     if(!(kg>=0&&kg<500)||!(reps>=1&&reps<=100)){ toast('ממלאים משקל וחזרות',1); return; }
@@ -954,6 +967,22 @@ function renderTodayCard(){
 var _renderToday0=render; render=function(){ _renderToday0.apply(this,arguments); renderTodayCard(); };
 var _show0=show; show=function(t){ _show0.apply(this,arguments); if(t==='home') renderTodayCard(); };
 var _renderTrainTC=renderTrain; renderTrain=function(){ _renderTrainTC.apply(this,arguments); renderTodayCard(); };
+
+/* ===== מסך סיום אימון: כמה הרמת, ולמה זה שווה ===== */
+var LIFTED=[{w:12000,n:'אוטובוס',p:'אוטובוסים'},{w:6000,n:'פיל',p:'פילים'},{w:2500,n:'טנדר',p:'טנדרים'},{w:1300,n:'מכונית',p:'מכוניות'},{w:500,n:'סוס',p:'סוסים'},{w:250,n:'פסנתר',p:'פסנתרים'},{w:100,n:'מקרר',p:'מקררים'},{w:35,n:'כלב גדול',p:'כלבים גדולים'}];
+function liftedLike(v){ var big=LIFTED.filter(function(o){ return v/o.w>=2; })[0]; if(big&&v/big.w<12) return liftedLike1(v,big); for(var i=0;i<LIFTED.length;i++){ var o=LIFTED[i], c=v/o.w; if(c>=1){ var r=c<10?Math.round(c*2)/2:Math.round(c); return r===1?o.n+' שלם':(String(r).replace('.5','.5')+' '+o.p); } } return ''; }
+function liftedLike1(v,o){ var c=v/o.w, r=c<10?Math.round(c*2)/2:Math.round(c); return r+' '+o.p; }
+function showFinish(day,sets,vol,prs,rdy){
+  var like=liftedLike(vol), s=document.createElement('div'); s.className='sheet'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true'); s.setAttribute('aria-labelledby','fnT');
+  s.innerHTML='<div class="sheet-in fin"><div class="label" id="fnT">אימון '+day+' הושלם</div><div class="fbig num">'+Math.round(vol).toLocaleString('he-IL')+'<small> ק״ג</small></div>'+
+    (like?'<div class="flike">הרמת היום בערך כמו <b>'+esc(like)+'</b></div>':'')+
+    '<div class="fstats"><div><b class="num">'+sets+'</b><span>סטים</span></div><div><b class="num">'+prs+'</b><span>שיאים חדשים</span></div><div><b class="num">'+rdy+'</b><span>מוכנים להעלאה</span></div></div>'+
+    '<button type="button">סגירה</button></div>';
+  var close=function(){ s.remove(); document.removeEventListener('keydown',onk); }, onk=function(e){ if(e.key==='Escape') close(); };
+  s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('button').onclick=close; document.addEventListener('keydown',onk);
+  document.body.appendChild(s); s.querySelector('button').focus();
+  try{ if(navigator.vibrate) navigator.vibrate([30,40,60]); }catch(e){}
+}
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
