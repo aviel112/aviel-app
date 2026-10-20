@@ -720,7 +720,7 @@ sugg=function(e,L){
   var top=Math.max.apply(null,ses.map(function(x){ return x.kg; })), atTop=ses.filter(function(x){ return x.kg===top; }), minR=Math.min.apply(null,atTop.map(function(x){ return x.reps; }));
   var R=/כשל/.test(e.r)?null:rng(e.r), inc=incFor(e,top), ns=parseInt(e.s,10)||0;
   var rr=atTop.map(function(x){ return x.rir; }).filter(function(x){ return x!=null&&x!==''; }).map(Number), rirAll=rr.length&&rr.length===atTop.length, rirMin=rirAll?Math.min.apply(null,rr):null;
-  if(R&&minR>=R[1]&&(!ns||atTop.length>=ns)){ var big=rirMin!=null&&rirMin>=3, up=big?inc*2:inc; return {kg:Math.round((top+up)*100)/100,reps:R[0],why:big?'הגעת ל-'+R[1]+' חזרות ועוד נשארו לך 3+ בטנק, אז קפיצה כפולה: +'+up+' ק״ג':'בפעם הקודמת הגעת ל-'+R[1]+' חזרות בכל הסטים, אז עולים '+inc+' ק״ג וחוזרים ל-'+R[0]}; }
+  if(R&&minR>=R[1]&&(!ns||atTop.length>=ns)){ var big=rirMin!=null&&rirMin>=3, up=big?inc*2:inc; return {kg:Math.round((top+up)*100)/100,reps:R[0],why:big?'הגעת ל-'+R[1]+' חזרות והיה לך כוח לעוד 3 חזרות לפחות, אז קפיצה כפולה: +'+up+' ק״ג':'בפעם הקודמת הגעת ל-'+R[1]+' חזרות בכל הסטים, אז עולים '+inc+' ק״ג וחוזרים ל-'+R[0]}; }
   // RIR 0 בכל הסטים ועדיין מתחת לטווח — המשקל כבד מדי
   if(R&&rirMin===0&&minR<R[0]&&top>inc){ var dn2=Math.round((top-inc)*100)/100; return {kg:dn2,reps:R[0],why:'בפעם הקודמת הגעת לכשל לפני '+R[0]+' חזרות. יורדים ל-'+dn2+' ק״ג ונכנסים לטווח',stall:true}; }
   // תקיעות: 3 אימונים אחרונים באותו משקל עליון בלי שיפור בחזרות — יורדים 10% ובונים מחדש
@@ -775,7 +775,7 @@ function renderTrain(){
       for(var k=0;k<Math.max(n,today.length);k++){
         var dn=today[k], pv=ps[k]||ps[ps.length-1], li=LASTIN[e.ex]||{};
         var kg=dn?dn.kg:(li.kg!=null?li.kg:(sg?sg.kg:(pv?pv.kg:''))), rp=dn?dn.reps:(li.reps!=null?li.reps:(sg?sg.reps:(R?R[1]:(pv?pv.reps:''))));
-        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal" value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select aria-label="כמה חזרות נשארו בטנק בסט '+(k+1)+'"'+(dn?' disabled':'')+'>'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):''; return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+(o===''?'—':(o==='4'?'4+':o))+'</option>'; }).join('')+'</select><button type="submit"'+(dn?' disabled':'')+' aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button></form>';
+        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal" value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select aria-label="כמה חזרות עוד יכולת לעשות בסט '+(k+1)+'"'+(dn?' disabled':'')+'>'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):''; return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+(o===''?'—':(o==='4'?'4+':o))+'</option>'; }).join('')+'</select><button type="submit"'+(dn?' disabled':'')+' aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button></form>';
       }
       h+='</div>';
       if(!ls('aviel_rir_seen',0)&&!rirHelp&&(rirHelp=1)) h+='<div class="rirhelp">RIR = כמה חזרות עוד יכולת לעשות בסוף הסט (0 = כשל). לא חובה, אבל ככה ההמלצה מדויקת יותר</div>';
