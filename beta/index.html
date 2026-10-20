@@ -323,6 +323,16 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .ba-sum b{color:var(--gold)}
 .photos figure[data-i]{cursor:pointer}
 .photos figure.on img{outline:2px solid var(--gold);outline-offset:1px}
+.lvl,.hit{display:flex;align-items:center;gap:8px;border-radius:12px;padding:9px 12px;font-size:14px;font-weight:700;animation:lvlin .7s cubic-bezier(.16,1,.3,1)}
+.lvl{background:var(--soft);border:1px solid var(--gold-d);color:var(--text)}
+.lvl b{margin-inline-start:auto;color:var(--gold);font-size:16px;font-variant-numeric:tabular-nums}
+.lvl svg,.hit svg{width:18px;height:18px;color:var(--gold);flex:none}
+.hit{background:var(--gold);color:var(--cta-t)}
+.hit svg{color:var(--cta-t)}
+.hit b{font-variant-numeric:tabular-nums}
+.setrow input.upk{border-color:var(--gold);box-shadow:0 0 0 3px var(--soft);color:var(--gold)}
+@keyframes lvlin{0%{transform:scale(.97)}60%{transform:scale(1.02)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.lvl,.hit{animation:none}}
 @keyframes shf{from{background:rgba(20,15,8,0)}}
 @keyframes shu{from{transform:translateY(24px);opacity:.4}}
 @media (prefers-reduced-motion:reduce){.sheet,.sheet-in{animation:none}button{transition:none}}
@@ -815,7 +825,7 @@ if(T){ api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(functi
 </script>
 <script>
 /* progressive overload כמו בנוטריקל: המאמן קובע בכמה ק״ג עולים בכל תרגיל (P.inc), אחרת ברירת מחדל לפי סוג התרגיל */
-function incFor(e,top){ var I=(typeof P!=='undefined'&&P&&P.inc)||{}, k=String(e.ex||'').replace(/\s*\(.*\)\s*$/,'').trim(), x=+I[k]||+I[e.ex]; if(x>0) return x; return top<=10?1:(LOWER.test((e.mu||'')+' '+e.ex)?5:2.5); }
+function incFor(e,top){ var I=(typeof P!=='undefined'&&P&&P.inc)||{}, k=String(e.ex||'').replace(/\s*\(.*\)\s*$/,'').trim(), x=+I[k]||+I[e.ex]; if(x>0) return x; return top<=10?1:(/סקוואט|דדליפט|לג.?פרס|היפ.?טראסט|היפ.?תראסט|Squat|Deadlift|Leg Press|Hip Thrust/i.test(e.ex)?5:2.5); }
 /* דילואד: כל שבוע אימונים שביעי (6 שבועות עבודה + שבוע הורדה). סופרים רק שבועות שהיו בהם אימונים, כך שחופשה לא "שורפת" שבועות */
 function wkKey(d){ var t=new Date(d+'T12:00:00'); t.setDate(t.getDate()-t.getDay()); return t.toISOString().slice(0,10); }
 var DL=null;
@@ -833,7 +843,7 @@ sugg=function(e,L){
   var top=Math.max.apply(null,ses.map(function(x){ return x.kg; })), atTop=ses.filter(function(x){ return x.kg===top; }), minR=Math.min.apply(null,atTop.map(function(x){ return x.reps; }));
   var R=/כשל/.test(e.r)?null:rng(e.r), inc=incFor(e,top), ns=parseInt(e.s,10)||0;
   var rr=atTop.map(function(x){ return x.rir; }).filter(function(x){ return x!=null&&x!==''; }).map(Number), rirAll=rr.length&&rr.length===atTop.length, rirMin=rirAll?Math.min.apply(null,rr):null;
-  if(R&&minR>=R[1]&&(!ns||atTop.length>=ns)){ var big=rirMin!=null&&rirMin>=3, up=big?inc*2:inc; return {kg:Math.round((top+up)*100)/100,reps:R[0],why:big?'הגעת ל-'+R[1]+' חזרות והיה לך כוח לעוד 3 חזרות לפחות, אז קפיצה כפולה: +'+up+' ק״ג':'בפעם הקודמת הגעת ל-'+R[1]+' חזרות בכל הסטים, אז עולים '+inc+' ק״ג וחוזרים ל-'+R[0]}; }
+  if(R&&minR>=R[1]&&(!ns||atTop.length>=ns)){ var big=rirMin!=null&&rirMin>=3, up=big?inc*2:inc; return {up:true,from:top,kg:Math.round((top+up)*100)/100,reps:R[0],why:big?'הגעת ל-'+R[1]+' חזרות והיה לך כוח לעוד 3 חזרות לפחות, אז קפיצה כפולה: +'+up+' ק״ג':'בפעם הקודמת הגעת ל-'+R[1]+' חזרות בכל הסטים, אז עולים '+inc+' ק״ג וחוזרים ל-'+R[0]}; }
   // RIR 0 בכל הסטים ועדיין מתחת לטווח — המשקל כבד מדי
   if(R&&rirMin===0&&minR<R[0]&&top>inc){ var dn2=Math.round((top-inc)*100)/100; return {kg:dn2,reps:R[0],why:'בפעם הקודמת הגעת לכשל לפני '+R[0]+' חזרות. יורדים ל-'+dn2+' ק״ג ונכנסים לטווח',stall:true}; }
   // תקיעות: 3 אימונים אחרונים באותו משקל עליון בלי שיפור בחזרות — יורדים 10% ובונים מחדש
@@ -843,6 +853,7 @@ sugg=function(e,L){
   var add=rirMin!=null&&rirMin>=3?2:1, tr=R?Math.min(R[1],minR+add):minR+add;
   return {kg:top,reps:tr,why:'אותו משקל, הפעם '+tr+' חזרות'+(add>1?' כי נשאר לך כוח בפעם הקודמת':'')+(R?' (כשמגיעים ל-'+R[1]+' בכל הסטים עולים '+inc+' ק״ג)':'')};
 };
+var IC_UP='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
 var IC_PLAY='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>', IC_SRCH='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>', IC_CHECK='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
 /* ===== בטא 2: טבלת סטים, סרטון לתרגיל, החלפת מאכל ===== */
 function vidLink(e){ var V=(P&&P.videos)||{}, u=V[e.ex]; return u?'<a class="vid" href="'+esc(u)+'" target="_blank" rel="noopener">'+IC_PLAY+'איך עושים</a>':'<a class="vid ghost" href="https://www.youtube.com/results?search_query='+encodeURIComponent(e.ex+' תרגיל')+'" target="_blank" rel="noopener">'+IC_SRCH+'חיפוש ביוטיוב</a>'; }
@@ -878,6 +889,9 @@ function renderTrain(){
       h+=vidLink(e);
       var hist=L?L.hist:[], today=hist.filter(function(x){ return x.d===TODAY; }), prev=hist.filter(function(x){ return x.d&&x.d<TODAY; }), n=parseInt(e.s,10)||3, sg=sugg(e,L), R=rng(e.r); if(sg&&sg.deload&&n>1) n--;
       var lastD=prev.length?prev[prev.length-1].d:'', ps=prev.filter(function(x){ return x.d===lastD; });
+      var Rh=/כשל/.test(e.r)?null:rng(e.r), nsh=parseInt(e.s,10)||0, tdTop=today.length?Math.max.apply(null,today.map(function(x){ return x.kg; })):0, tdAt=today.filter(function(x){ return x.kg===tdTop; });
+      if(Rh&&nsh&&tdAt.length>=nsh&&tdAt.every(function(x){ return x.reps>=Rh[1]; })) h+='<div class="hit">'+IC_UP+'<span>יעד הושג היום! בפעם הבאה <b dir="ltr">'+(Math.round((tdTop+incFor(e,tdTop))*100)/100)+' ק״ג</b></span></div>';
+      else if(sg&&sg.up&&!today.length) h+='<div class="lvl">'+IC_UP+'<span>עולים במשקל היום</span><b>מ-'+sg.from+' ל-'+sg.kg+' ק״ג</b></div>';
       if(sg) h+='<div class="last"'+(sg.stall?' style="color:var(--warn,#d98a1c)"':'')+'>היום: <b dir="ltr">'+sg.kg+'×'+sg.reps+'</b> · '+esc(sg.why)+'</div>';
       h+=e1Line(L);
       var wk=sg?sg.kg:(ps.length?Math.max.apply(null,ps.map(function(x){ return x.kg; })):0);
@@ -888,7 +902,7 @@ function renderTrain(){
       for(var k=0;k<Math.max(n,today.length);k++){
         var dn=today[k], pv=ps[k]||ps[ps.length-1], li=LASTIN[e.ex]||{};
         var kg=dn?dn.kg:(li.kg!=null?li.kg:(sg?sg.kg:(pv?pv.kg:''))), rp=dn?dn.reps:(li.reps!=null?li.reps:(sg?sg.reps:(R?R[1]:(pv?pv.reps:''))));
-        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal" value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select aria-label="כמה חזרות עוד יכולת לעשות בסט '+(k+1)+'"'+(dn?' disabled':'')+'>'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):''; return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+(o===''?'—':(o==='4'?'4+':o))+'</option>'; }).join('')+'</select><button type="submit"'+(dn?' disabled':'')+' aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button></form>';
+        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal"'+(sg&&sg.up&&!dn?' class="upk"':'')+' value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select aria-label="כמה חזרות עוד יכולת לעשות בסט '+(k+1)+'"'+(dn?' disabled':'')+'>'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):''; return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+(o===''?'—':(o==='4'?'4+':o))+'</option>'; }).join('')+'</select><button type="submit"'+(dn?' disabled':'')+' aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button></form>';
       }
       h+='</div>';
       if(!ls('aviel_rir_seen',0)&&!rirHelp&&(rirHelp=1)) h+='<div class="rirhelp">RIR = כמה חזרות עוד יכולת לעשות בסוף הסט (0 = כשל). לא חובה, אבל ככה ההמלצה מדויקת יותר</div>';
