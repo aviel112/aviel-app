@@ -171,6 +171,21 @@ button .ic{width:18px;height:18px}
 .meal.mnote{background:transparent;border-style:dashed}
 .meal.mnote .plain:first-child{font-weight:800;color:var(--gold)}
 .kpi b span{font-size:inherit}
+:root[data-theme="light"]{--ink:#f6f2ea;--panel:#ffffff;--panel2:#f0eadf;--line:#e3d9c8;--text:#1f1b16;--mute:#6b6358;--gold:#94691c;--gold-d:#c9a560;--good:#2e8551;--warn:#a8650f;--bad:#c2443a;color-scheme:light}
+:root[data-theme="light"] nav.tabs{background:rgba(255,255,255,.96);box-shadow:0 -2px 12px rgba(60,45,20,.06)}
+:root[data-theme="light"] .card,:root[data-theme="light"] .kpi{box-shadow:0 1px 3px rgba(60,45,20,.06)}
+:root[data-theme="light"] .chart line{stroke:var(--line)}
+:root[data-theme="light"] .chart text{fill:var(--mute)}
+:root[data-theme="light"] .chart text[fill="#f2efe8"]{fill:var(--text)}
+:root[data-theme="light"] .chart path[stroke]{stroke:var(--gold)}
+:root[data-theme="light"] .chart circle{fill:var(--panel);stroke:var(--gold)}
+:root[data-theme="light"] .sdot{background:#b9b0a2}
+:root[data-theme="light"] .setrow.ok input,:root[data-theme="light"] .setrow.ok button{background:rgba(46,133,81,.1)}
+:root[data-theme="light"] .opt li.picked{background:rgba(46,133,81,.1)}
+.thbtn{width:38px;height:38px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);color:var(--gold);display:flex;align-items:center;justify-content:center;padding:0;flex:none}
+.thbtn svg{width:19px;height:19px}
+.topr{display:flex;gap:8px;align-items:center}
+
 .scan{position:fixed;inset:0;background:#000;z-index:60;display:flex;flex-direction:column}
 .scan[hidden]{display:none}
 .scan .bar2{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px));color:#fff;font-weight:800}
@@ -196,10 +211,10 @@ body:has(#rest:not([hidden])) .app{padding-bottom:calc(170px + env(safe-area-ins
 ::selection{background:rgba(212,172,91,.35);color:var(--text)}
 input,textarea{caret-color:var(--gold)}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-</style><script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script></head>
+</style><script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script><script>(function(){var t='light';try{t=localStorage.getItem('aviel_theme')||'light';}catch(e){}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#f6f2ea':'#0d0d0f';})();</script></head>
 <body>
 <div class="app">
-  <header class="top"><div class="brand">AVIEL · ליווי אישי <span class="beta">בטא</span></div><div class="avatar" id="av" aria-hidden="true"></div></header>
+  <header class="top"><div class="brand">AVIEL · ליווי אישי <span class="beta">בטא</span></div><div class="topr"><button type="button" class="thbtn" id="thBtn" aria-label="החלפת עיצוב"></button><div class="avatar" id="av" aria-hidden="true"></div></div></header>
   <div id="boot" class="stack"><div class="skel"></div><div class="skel"></div></div>
   <div id="fatal" class="card err" hidden></div>
 
@@ -765,5 +780,13 @@ renderMenu=function(){
   });
 };
 if(typeof P!=='undefined'&&P){ renderTrain(); renderMenu(); }
+</script>
+<script>
+(function(){ var b=document.getElementById('thBtn'); if(!b) return;
+  var SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>', MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
+  function cur(){ return document.documentElement.getAttribute('data-theme')||'light'; }
+  function paint(){ var l=cur()==='light'; b.innerHTML=l?MOON:SUN; b.setAttribute('aria-label',l?'מעבר לעיצוב כהה':'מעבר לעיצוב בהיר'); var m=document.querySelector('meta[name=theme-color]'); if(m) m.content=l?'#f6f2ea':'#0d0d0f'; }
+  b.onclick=function(){ var n=cur()==='light'?'dark':'light'; document.documentElement.setAttribute('data-theme',n); try{ localStorage.setItem('aviel_theme',n); }catch(e){} paint(); try{ if(typeof drawChart==='function') drawChart(); }catch(e){} };
+  paint(); })();
 </script>
 </body></html>
