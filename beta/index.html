@@ -570,10 +570,16 @@ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catc
 
 /* ---------- טעינה ---------- */
 function fatal(msg){ $('#boot').hidden=true; var f=$('#fatal'); f.hidden=false; f.innerHTML='<b>לא הצלחנו לפתוח את האפליקציה</b><div class="sub" style="margin-top:6px">'+esc(msg||'')+'</div><a class="wa" style="margin-top:12px" href="https://wa.me/972537718200" target="_blank" rel="noopener">לכתוב לאביאל</a>'; }
-if(!T){ fatal('צריך לפתוח את האפליקציה מהקישור האישי שאביאל שלח בוואטסאפ.'); }
+function showLogin(){ $('#boot').hidden=true; $('#tabs').hidden=true; var f=$('#fatal'); f.hidden=false;
+  f.innerHTML='<b style="font-size:20px">כניסה לאפליקציה</b><div class="sub" style="margin:6px 0 14px">מספר הטלפון והשם הפרטי, כמו שמסרת לאביאל</div><form id="lg" class="stack" style="gap:10px"><input id="lgPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="מספר טלפון" aria-label="מספר טלפון" style="font-size:18px"><input id="lgName" autocomplete="given-name" placeholder="שם פרטי" aria-label="שם פרטי" style="font-size:18px"><button type="submit" class="installbtn">כניסה</button></form><div class="sub" style="margin-top:12px">נכנסים פעם אחת, ומאז האפליקציה זוכרת אותך</div>';
+  $('#lg').onsubmit=function(ev){ ev.preventDefault(); var b=this.querySelector('button'); b.disabled=true; b.textContent='בודק...';
+    fetch(API+'?api=login&p='+encodeURIComponent(JSON.stringify({phone:$('#lgPhone').value,name:$('#lgName').value}))+'&_='+Date.now()).then(function(r){ return r.json(); })
+      .then(function(j){ if(!j.ok) throw new Error(j.error||'לא הצלחנו להיכנס'); try{ localStorage.setItem('aviel_tb',j.r.t); }catch(e){} location.replace(location.pathname+'?t='+j.r.t); })
+      .catch(function(e){ toast(/fetch|network/i.test(e.message)?'אין חיבור לאינטרנט':e.message,1); b.disabled=false; b.textContent='כניסה'; }); }; }
+if(!T){ showLogin(); }
 else {
   api('data').then(function(r){ D=r; $('#boot').hidden=true; $('#tabs').hidden=false; var last='home'; try{ last=localStorage.getItem('aviel_tab')||'home'; }catch(e){} show(last); render(); renderMenu(); renderTrain(); drawStrength(); })
-    .catch(function(er){ fatal(er.message); });
+    .catch(function(er){ if(/הקישור לא בתוקף/.test(er.message||'')){ try{ localStorage.removeItem('aviel_tb'); }catch(e){} showLogin(); } else fatal(er.message); });
   api('plan').then(function(r){ P=r; P.lifts=normLifts(P.lifts); if(D){ renderMenu(); renderTrain(); drawStrength(); } }).catch(function(){ P={menu:null,program:null,lifts:{}}; if(D){ renderMenu(); renderTrain(); } });
 }
 </script>
