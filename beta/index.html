@@ -149,7 +149,7 @@ nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
 .cmp figure{margin:0;text-align:center;font-size:12px;color:var(--mute)}
 .sets{display:flex;flex-direction:column;gap:6px;margin-top:4px}
 .sets .sh,.setrow{display:grid;grid-template-columns:28px 1fr 1fr 58px 48px;gap:6px;align-items:center}
-.setrow select{font-size:15px;padding:7px 2px;border-radius:10px;border:1px solid var(--line);background:var(--card2,var(--card));color:var(--fg,inherit);text-align:center}
+.setrow select{font-family:inherit;font-size:16px;font-weight:800;padding:7px 2px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);text-align:center;text-align-last:center;width:100%;-webkit-appearance:none;appearance:none}
 .rirhelp{font-size:11px;color:var(--mute);margin:4px 2px 0}
 .sets .sh{font-size:11px;color:var(--mute);font-weight:700;text-align:center}
 .setrow input{font-size:16px;padding:7px}
@@ -736,7 +736,7 @@ function renderTrain(){
   var d=days[DAY], h='<div class="sub">השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים</div>';
   h+=(days.length>1?'<div class="chips" role="group" aria-label="בחירת אימון">'+days.map(function(x,i){ return '<button type="button" class="chip'+(done[i]?' done':'')+'" data-day="'+i+'" aria-pressed="'+(i===DAY)+'">אימון '+(i+1)+'</button>'; }).join('')+'</div>':'');
   h+='<div class="sub" style="margin-top:4px">'+esc(d.title)+'</div>';
-  var heavyN=0;
+  var heavyN=0, rirHelp=0;
   d.ex.forEach(function(e,i){
     var warm=/חימום/.test(e.mu), L=P.lifts&&P.lifts[e.ex];
     h+='<div class="card ex">'+(e.mu?'<div class="mu">'+esc(e.mu)+'</div>':'')+'<div class="nm">'+esc(e.ex)+'</div>'+
@@ -759,7 +759,7 @@ function renderTrain(){
         h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal" value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select aria-label="כמה חזרות נשארו בטנק בסט '+(k+1)+'"'+(dn?' disabled':'')+'>'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):''; return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+(o===''?'—':(o==='4'?'4+':o))+'</option>'; }).join('')+'</select><button type="submit"'+(dn?' disabled':'')+' aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button></form>';
       }
       h+='</div>';
-      if(!ls('aviel_rir_seen',0)) h+='<div class="rirhelp">RIR = כמה חזרות עוד יכולת לעשות בסוף הסט (0 = כשל). לא חובה, אבל ככה ההמלצה מדויקת יותר</div>';
+      if(!ls('aviel_rir_seen',0)&&!rirHelp&&(rirHelp=1)) h+='<div class="rirhelp">RIR = כמה חזרות עוד יכולת לעשות בסוף הסט (0 = כשל). לא חובה, אבל ככה ההמלצה מדויקת יותר</div>';
     }
     h+='</div>';
   });
