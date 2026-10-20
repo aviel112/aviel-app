@@ -308,6 +308,21 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .fin .fshare{width:100%;margin-top:16px;min-height:48px;border-color:var(--gold-d);color:var(--gold)}
 .fin .fclose{margin-top:10px}
 @keyframes fup{from{transform:translateY(10px);opacity:0}}
+.ba{position:relative;margin-top:12px;border-radius:16px;overflow:hidden;aspect-ratio:3/4;background:var(--panel2);user-select:none;-webkit-user-select:none;touch-action:pan-y}
+.ba img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.ba-b{clip-path:inset(0 0 0 var(--p))}
+.ba-l{position:absolute;top:0;bottom:0;left:var(--p);width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);pointer-events:none}
+.ba-l b{position:absolute;top:50%;left:50%;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.ba-l b::before,.ba-l b::after{content:"";position:absolute;top:50%;width:0;height:0;border:6px solid transparent;margin-top:-6px}
+.ba-l b::before{left:5px;border-right-color:#1c1813}
+.ba-l b::after{right:5px;border-left-color:#1c1813}
+.ba-t{position:absolute;top:10px;font-size:12px;font-weight:700;color:#fff;background:rgba(20,15,8,.55);border-radius:999px;padding:3px 10px;pointer-events:none}
+.ba-tr{right:10px}.ba-tl{left:10px}
+.ba input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:ew-resize;-webkit-appearance:none;appearance:none;background:none;border:0;padding:0}
+.ba-sum{font-size:14.5px;margin-top:10px;color:var(--text)}
+.ba-sum b{color:var(--gold)}
+.photos figure[data-i]{cursor:pointer}
+.photos figure.on img{outline:2px solid var(--gold);outline-offset:1px}
 @keyframes shf{from{background:rgba(20,15,8,0)}}
 @keyframes shu{from{transform:translateY(24px);opacity:.4}}
 @media (prefers-reduced-motion:reduce){.sheet,.sheet-in{animation:none}button{transition:none}}
@@ -795,8 +810,8 @@ function b64ToU8(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) 
 
 /* ----- טעינת נתוני בטא ----- */
 document.querySelector('[data-tab=food]').addEventListener('click',function(){ api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){}); });
-document.querySelector('[data-tab=prog]').addEventListener('click',function(){ api('photos',{}).then(renderPhotos).catch(function(){}); });
-if(T){ api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){ renderFood(); }); api('photos',{}).then(renderPhotos).catch(function(){ renderPhotos([]); }); }
+document.querySelector('[data-tab=prog]').addEventListener('click',function(){ api('photos',{}).then(function(r){ renderPhotos(r); }).catch(function(){}); });
+if(T){ api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){ renderFood(); }); api('photos',{}).then(function(r){ renderPhotos(r); }).catch(function(){ renderPhotos([]); }); }
 </script>
 <script>
 /* progressive overload כמו בנוטריקל: המאמן קובע בכמה ק״ג עולים בכל תרגיל (P.inc), אחרת ברירת מחדל לפי סוג התרגיל */
@@ -1017,6 +1032,23 @@ function shareStory(btn,o){
     var cl=function(){ v.remove(); URL.revokeObjectURL(u); }; v.querySelector('button').onclick=cl; v.addEventListener('click',function(e){ if(e.target===v) cl(); }); document.body.appendChild(v);
   },'image/png'); });
 }
+/* ===== לפני ואחרי: סליידר השוואה בין התמונה הראשונה לכל תמונה אחרת ===== */
+var BA_IDX=-1;
+renderPhotos=function(L){ var box=$('#phBox'); if(!box) return;
+  if(!L||!L.length){ box.innerHTML='<div class="sub" style="padding-top:8px">עוד אין תמונות. התמונה הראשונה היא נקודת ההתחלה, ואחרי חודש תראו כאן לפני ואחרי.</div>'; return; }
+  var d=function(x){ return x.d.slice(8,10)+'/'+x.d.slice(5,7); }, h='';
+  if(L.length>1){ var ai=(BA_IDX>0&&BA_IDX<L.length)?BA_IDX:L.length-1, f=L[0], a=L[ai];
+    var days=Math.round((new Date(a.d+'T12:00:00')-new Date(f.d+'T12:00:00'))/864e5);
+    h+='<div class="ba" style="--p:50%"><img class="ba-a" src="'+a.data+'" alt="עכשיו, '+d(a)+'"><img class="ba-b" src="'+f.data+'" alt="התחלה, '+d(f)+'"><i class="ba-l" aria-hidden="true"><b></b></i>'+
+      '<span class="ba-t ba-tr">לפני · '+d(f)+'</span><span class="ba-t ba-tl">'+(ai===L.length-1?'עכשיו':'אחרי')+' · '+d(a)+'</span>'+
+      '<input type="range" dir="ltr" min="0" max="100" value="50" aria-label="גוררים כדי להשוות לפני ואחרי"></div>'+
+      '<div class="ba-sum">'+days+' ימים בין התמונות'+(D&&D.firstKg!=null&&D.lastKg!=null?' · <b>'+(D.lastKg-D.firstKg>0?'+':'')+(Math.round((D.lastKg-D.firstKg)*10)/10)+' ק״ג</b> מההתחלה':'')+'</div>'+
+      '<div class="sub" style="font-size:12.5px;margin-top:2px">גוררים את הקו. לחיצה על תמונה למטה משווה אותה להתחלה.</div>'; }
+  h+='<div class="photos">'+L.map(function(x,i){ return {x:x,i:i}; }).reverse().map(function(o){ return '<figure'+(o.i>0?' data-i="'+o.i+'" tabindex="0" role="button" aria-label="השוואת התמונה מ-'+d(o.x)+' להתחלה"':'')+(o.i===(BA_IDX>0?BA_IDX:L.length-1)&&L.length>1?' class="on"':'')+'><img src="'+o.x.data+'" alt=""><figcaption>'+d(o.x)+(o.i===0?' · התחלה':'')+'</figcaption></figure>'; }).join('')+'</div>';
+  box.innerHTML=h;
+  var ba=box.querySelector('.ba'); if(ba){ var r=ba.querySelector('input'); r.oninput=function(){ ba.style.setProperty('--p',r.value+'%'); }; }
+  box.querySelectorAll('figure[data-i]').forEach(function(fg){ var go=function(){ BA_IDX=+fg.dataset.i; renderPhotos(L); var b2=box.querySelector('.ba'); if(b2) b2.scrollIntoView({behavior:'smooth',block:'center'}); }; fg.onclick=go; fg.onkeydown=function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } }; });
+};
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
