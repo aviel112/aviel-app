@@ -570,7 +570,7 @@ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catc
 
 /* ---------- טעינה ---------- */
 function fatal(msg){ $('#boot').hidden=true; var f=$('#fatal'); f.hidden=false; f.innerHTML='<b>לא הצלחנו לפתוח את האפליקציה</b><div class="sub" style="margin-top:6px">'+esc(msg||'')+'</div><a class="wa" style="margin-top:12px" href="https://wa.me/972537718200" target="_blank" rel="noopener">לכתוב לאביאל</a>'; }
-function showLogin(){ $('#boot').hidden=true; $('#tabs').hidden=true; var f=$('#fatal'); f.hidden=false;
+function showLogin(){ $('#boot').hidden=true; $('#tabs').hidden=true; var f=$('#fatal'); f.hidden=false; f.style.borderColor='var(--line)';
   f.innerHTML='<b style="font-size:20px">כניסה לאפליקציה</b><div class="sub" style="margin:6px 0 14px">מספר הטלפון והשם הפרטי, כמו שמסרת לאביאל</div><form id="lg" class="stack" style="gap:10px"><input id="lgPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="מספר טלפון" aria-label="מספר טלפון" style="font-size:18px"><input id="lgName" autocomplete="given-name" placeholder="שם פרטי" aria-label="שם פרטי" style="font-size:18px"><button type="submit" class="installbtn">כניסה</button></form><div class="sub" style="margin-top:12px">נכנסים פעם אחת, ומאז האפליקציה זוכרת אותך</div>';
   $('#lg').onsubmit=function(ev){ ev.preventDefault(); var b=this.querySelector('button'); b.disabled=true; b.textContent='בודק...';
     fetch(API+'?api=login&p='+encodeURIComponent(JSON.stringify({phone:$('#lgPhone').value,name:$('#lgName').value}))+'&_='+Date.now()).then(function(r){ return r.json(); })
