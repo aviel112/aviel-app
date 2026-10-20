@@ -697,9 +697,19 @@ if(T){ api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(functi
 <script>
 /* progressive overload כמו בנוטריקל: המאמן קובע בכמה ק״ג עולים בכל תרגיל (P.inc), אחרת ברירת מחדל לפי סוג התרגיל */
 function incFor(e,top){ var I=(typeof P!=='undefined'&&P&&P.inc)||{}, k=String(e.ex||'').replace(/\s*\(.*\)\s*$/,'').trim(), x=+I[k]||+I[e.ex]; if(x>0) return x; return top<=10?1:(LOWER.test((e.mu||'')+' '+e.ex)?5:2.5); }
+/* דילואד: כל שבוע אימונים שביעי (6 שבועות עבודה + שבוע הורדה). סופרים רק שבועות שהיו בהם אימונים, כך שחופשה לא "שורפת" שבועות */
+function wkKey(d){ var t=new Date(d+'T12:00:00'); t.setDate(t.getDate()-t.getDay()); return t.toISOString().slice(0,10); }
+var DL=null;
+function deloadState(){ if(DL) return DL; var ws=(P&&P.wk)||[];
+  if(!ws.length&&P&&P.lifts){ var m={}; Object.keys(P.lifts).forEach(function(k){ ((P.lifts[k]&&P.lifts[k].hist)||[]).forEach(function(x){ if(x.d) m[wkKey(x.d)]=1; }); }); ws=Object.keys(m); }
+  var cur=wkKey(TODAY), past=ws.filter(function(w){ return w<cur; }).sort(), dw={};
+  past.forEach(function(w,i){ if((i+1)%7===0) dw[w]=1; });
+  DL={on:past.length>=6&&(past.length+1)%7===0, dw:dw, n:past.length%7+1}; return DL; }
 sugg=function(e,L){
   if(!L||!L.hist||!L.hist.length) return null;
-  var prev=L.hist.filter(function(x){ return x.d && x.d<TODAY; }); if(!prev.length) return null;
+  var S=deloadState(), prev=L.hist.filter(function(x){ return x.d && x.d<TODAY && !S.dw[wkKey(x.d)]; }); if(!prev.length) return null;
+  if(S.on){ var lt=prev[prev.length-1].d, tp=Math.max.apply(null,prev.filter(function(x){ return x.d===lt; }).map(function(x){ return x.kg; })), Rd=/כשל/.test(e.r)?null:rng(e.r), dk=tp<=10?Math.round(tp*0.85):r25(tp*0.85);
+    return {kg:dk,reps:Rd?Rd[0]:prev[prev.length-1].reps,why:'שבוע הורדה: 85% מהמשקל, סט אחד פחות, עוצרים 3 חזרות לפני כשל',deload:true}; }
   var lastD=prev[prev.length-1].d, ses=prev.filter(function(x){ return x.d===lastD; });
   var top=Math.max.apply(null,ses.map(function(x){ return x.kg; })), atTop=ses.filter(function(x){ return x.kg===top; }), minR=Math.min.apply(null,atTop.map(function(x){ return x.reps; }));
   var R=/כשל/.test(e.r)?null:rng(e.r), inc=incFor(e,top), ns=parseInt(e.s,10)||0;
@@ -724,6 +734,7 @@ function e1Line(L){ if(!L||!L.hist) return ''; var by={}; L.hist.forEach(functio
   return '<div class="exnote">כוח משוער (1RM): <b dir="ltr">'+Math.round(cur)+' ק״ג</b>'+(pc?' · <b style="color:var('+(pc>0?'--good':'--mute')+')">'+(pc>0?'↑':'↓')+Math.abs(pc)+'%</b> מאז '+base.slice(8,10)+'/'+base.slice(5,7):'')+'</div>'; }
 function r25(x){ return Math.max(0,Math.round(x/2.5)*2.5); }
 function renderTrain(){
+  DL=null;
   var p=P&&P.program, box=$('#progBox');
   $('#progName').textContent=p?(p.title||''):'';
   if(!P){ box.innerHTML='<div class="skel"></div><div class="skel"></div>'; return; }
@@ -735,6 +746,8 @@ function renderTrain(){
   if(DAY>=days.length) DAY=0;
   var d=days[DAY], h='<div class="sub">השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים</div>';
   h+=(days.length>1?'<div class="chips" role="group" aria-label="בחירת אימון">'+days.map(function(x,i){ return '<button type="button" class="chip'+(done[i]?' done':'')+'" data-day="'+i+'" aria-pressed="'+(i===DAY)+'">אימון '+(i+1)+'</button>'; }).join('')+'</div>':'');
+  var S0=deloadState(); if(S0.on) h+='<div class="card" style="border-color:var(--gold);margin-top:8px"><b>השבוע: שבוע הורדה (דילואד)</b><div class="exnote" style="margin-top:4px">אחרי 6 שבועות של עבודה הגוף צריך שבוע קל כדי להתאושש ולהתחזק. השבוע עובדים על 85% מהמשקל, סט אחד פחות בכל תרגיל, ולא מגיעים לכשל. בשבוע הבא חוזרים חזקים יותר.</div></div>';
+  else if(S0.n>1) h+='<div class="sub" style="margin-top:4px">שבוע '+S0.n+' מתוך 6 בבלוק · שבוע הורדה אחרי שבוע 6</div>';
   h+='<div class="sub" style="margin-top:4px">'+esc(d.title)+'</div>';
   var heavyN=0, rirHelp=0;
   d.ex.forEach(function(e,i){
@@ -744,7 +757,7 @@ function renderTrain(){
       (e.note?'<div class="exnote">'+esc(e.note)+'</div>':'');
     if(!warm){
       h+=vidLink(e);
-      var hist=L?L.hist:[], today=hist.filter(function(x){ return x.d===TODAY; }), prev=hist.filter(function(x){ return x.d&&x.d<TODAY; }), n=parseInt(e.s,10)||3, sg=sugg(e,L), R=rng(e.r);
+      var hist=L?L.hist:[], today=hist.filter(function(x){ return x.d===TODAY; }), prev=hist.filter(function(x){ return x.d&&x.d<TODAY; }), n=parseInt(e.s,10)||3, sg=sugg(e,L), R=rng(e.r); if(sg&&sg.deload&&n>1) n--;
       var lastD=prev.length?prev[prev.length-1].d:'', ps=prev.filter(function(x){ return x.d===lastD; });
       if(sg) h+='<div class="last"'+(sg.stall?' style="color:var(--warn,#d98a1c)"':'')+'>היום: <b dir="ltr">'+sg.kg+'×'+sg.reps+'</b> · '+esc(sg.why)+'</div>';
       h+=e1Line(L);
