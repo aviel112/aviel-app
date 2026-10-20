@@ -171,6 +171,20 @@ button .ic{width:18px;height:18px}
 .meal.mnote{background:transparent;border-style:dashed}
 .meal.mnote .plain:first-child{font-weight:800;color:var(--gold)}
 .kpi b span{font-size:inherit}
+.scan{position:fixed;inset:0;background:#000;z-index:60;display:flex;flex-direction:column}
+.scan[hidden]{display:none}
+.scan .bar2{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px));color:#fff;font-weight:800}
+.scan .bar2 button{background:rgba(255,255,255,.15);color:#fff}
+.scan .vw{position:relative;flex:1;display:flex;min-height:0}
+.scan video{width:100%;height:100%;object-fit:cover}
+.scanbox{position:absolute;left:10%;right:10%;top:38%;height:24%;border:2px solid var(--gold);border-radius:12px;pointer-events:none}
+.qrow{display:flex;gap:8px}
+.qrow input{flex:1;min-width:0}
+.qrow button{flex:none;width:48px;padding:0;display:flex;align-items:center;justify-content:center}
+.label-form{display:flex;flex-direction:column;gap:8px}
+.label-form input{font-size:16px;padding:10px}
+.flist button .tag2{display:inline-block;font-size:11px;font-weight:800;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:0 5px;margin-left:6px;line-height:1.5;vertical-align:1px}
+
 #wBtn:disabled,#sBtn:disabled,#ciBtn:disabled,#mBtn:disabled,#fBtn:disabled,#pushBtn:disabled{color:transparent;position:relative;opacity:1}
 #wBtn:disabled::after,#sBtn:disabled::after,#ciBtn:disabled::after,#mBtn:disabled::after,#fBtn:disabled::after,#pushBtn:disabled::after{content:"";position:absolute;inset:0;margin:auto;width:18px;height:18px;border-radius:50%;border:2.5px solid var(--ink);border-top-color:transparent;animation:spin .7s linear infinite}
 #sBtn:disabled::after{border-color:var(--gold);border-top-color:transparent}
@@ -182,7 +196,7 @@ body:has(#rest:not([hidden])) .app{padding-bottom:calc(170px + env(safe-area-ins
 ::selection{background:rgba(212,172,91,.35);color:var(--text)}
 input,textarea{caret-color:var(--gold)}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-</style></head>
+</style><script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script></head>
 <body>
 <div class="app">
   <header class="top"><div class="brand">AVIEL · ליווי אישי <span class="beta">בטא</span></div><div class="avatar" id="av" aria-hidden="true"></div></header>
@@ -254,14 +268,21 @@ input,textarea{caret-color:var(--gold)}
       <div class="card" id="fTot"></div>
       <div class="card fsearch">
         <span class="label">הוספה</span>
-        <input id="fQ" type="search" placeholder="חיפוש: עוף, אורז, קוטג׳…" aria-label="חיפוש מאכל" style="font-size:16px;text-align:right">
+        <div class="qrow"><input id="fQ" type="search" placeholder="חיפוש: עוף, אורז, קוטג׳…" aria-label="חיפוש מאכל" style="font-size:16px;text-align:right;flex:1"><button type="button" class="ghost" id="fScan" aria-label="סריקת ברקוד" title="סריקת ברקוד"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M7 8v8M10 8v8M13 8v8M17 8v8"/></svg></button></div>
         <div class="flist" id="fList"></div>
         <div class="chips" id="fUnits"></div>
         <form class="fadd" id="fAdd" hidden><input id="fG" inputmode="numeric" aria-label="גרם"><button type="submit" id="fBtn">הוספה</button></form>
         <div class="sub" id="fPick"></div>
+        <div id="fLabel" class="label-form" hidden>
+          <div class="sub">לא נמצא במאגרים. כותבים את שם המוצר ומצלמים את טבלת הערכים התזונתיים. אביאל מאשר, ומאז המוצר בחיפוש.</div>
+          <input id="flName" placeholder="שם המוצר, למשל: קוטג׳ 5% תנובה" aria-label="שם המוצר">
+          <label class="installbtn" for="flIn" style="text-align:center;cursor:pointer">צילום התווית</label>
+          <input type="file" id="flIn" accept="image/*" capture="environment" hidden>
+        </div>
       </div>
       <div class="card"><span class="label">היום</span><div id="fItems"></div></div>
     </div>
+    <div class="scan" id="scan" hidden><div class="bar2"><span>מכוונים את הברקוד למסגרת</span><button type="button" id="scanX">סגירה</button></div><div class="vw"><video id="scanV" playsinline muted></video><div class="scanbox"></div></div></div>
   </section>
   <section data-view="prog" hidden>
     <h1>ההתקדמות שלך</h1>
@@ -563,18 +584,22 @@ var UNAMES=null, FQT=null, FQN=0;
 function unitNames(){ if(UNAMES) return Promise.resolve(UNAMES); return fetch(MOH+MOH_UNAMES+'&limit=300').then(function(r){ return r.json(); }).then(function(j){ UNAMES={}; (j.result.records||[]).forEach(function(r){ var v=Object.keys(r).filter(function(k){ return k!=='_id'; }).map(function(k){ return r[k]; }); UNAMES[String(v[0])]=String(v[1]).trim(); }); return UNAMES; }).catch(function(){ UNAMES={}; return UNAMES; }); }
 function shortName(n){ return String(n).replace(/\s+/g,' ').trim(); }
 function drawList(local, nat, q){
-  var h=local.map(function(f){ return '<button type="button" data-loc="'+FOODS.indexOf(f)+'"><span class="mine">אביאל</span>'+esc(f[0])+'<small>'+Math.round(4*f[2]+4*f[3]+9*f[4])+' קק״ל ל-100 ג׳ · מאגר אביאל</small></button>'; }).join('');
+  var ex=ematch(q);
+  var h=ex.map(function(f,i){ return '<button type="button" data-ex="'+i+'"><span class="'+(f.ok?'mine':'tag2')+'">'+(f.ok?'אביאל':'סרוק')+'</span>'+esc(f.name)+(f.brand?' <small>'+esc(f.brand)+'</small>':'')+'<small>'+Math.round(f.k100)+' קק״ל ל-100 ג׳</small></button>'; }).join('');
+  h+=local.map(function(f){ return '<button type="button" data-loc="'+FOODS.indexOf(f)+'"><span class="mine">אביאל</span>'+esc(f[0])+'<small>'+Math.round(4*f[2]+4*f[3]+9*f[4])+' קק״ל ל-100 ג׳ · מאגר אביאל</small></button>'; }).join('');
   if(nat===null) h+='<div class="sub">מחפש במאגר הלאומי…</div>';
   else h+=nat.map(function(r,i){ return '<button type="button" data-nat="'+i+'">'+esc(shortName(r.shmmitzrach))+'<small>'+Math.round(+r.food_energy||0)+' קק״ל ל-100 ג׳</small></button>'; }).join('');
-  if(!local.length&&nat&&!nat.length) h='<div class="sub">לא נמצא. נסו מילה אחרת, למשל "קוטג׳" או "אורז".</div>';
+  if(!ex.length&&!local.length&&nat&&!nat.length) h='<div class="sub">לא נמצא במאגרים. מוצר ממותג? סורקים את הברקוד, או מצלמים את התווית.</div><button type="button" class="ghost" data-label="1">צילום התווית</button>';
   $('#fList').innerHTML=q?h:'';
+  var exBtns=ex; document.querySelectorAll('#fList [data-ex]').forEach(function(b){ b.onclick=function(){ pickExtra(exBtns[+b.dataset.ex]); }; });
   document.querySelectorAll('#fList [data-loc]').forEach(function(b){ b.onclick=function(){ var f=FOODS[+b.dataset.loc]; pick({name:f[0], p:f[2], c:f[3], fat:f[4], units:[['יחידה / מנה',f[5]]], g:f[5]}); }; });
+  var lb=document.querySelector('#fList [data-label]'); if(lb) lb.onclick=function(){ showLabel('', q); };
   document.querySelectorAll('#fList [data-nat]').forEach(function(b){ b.onclick=function(){ var r=nat[+b.dataset.nat]; var it={name:shortName(r.shmmitzrach), p:+r.protein||0, c:+r.carbohydrates||0, fat:+r.total_fat||0, k100:+r.food_energy||0, units:[], g:100};
     pick(it); Promise.all([unitNames(), fetch(MOH+MOH_UNITS+'&limit=20&filters='+encodeURIComponent(JSON.stringify({mmitzrach:String(r.Code)}))).then(function(x){ return x.json(); })]).then(function(z){ var N=z[0]; it.units=(z[1].result.records||[]).map(function(u){ return [N[String(u.mida)]||'מנה', Math.round(+u.mishkal)]; }).filter(function(u){ return u[1]>=5&&u[1]<1000&&!/^(גרם|ק"ג|קילו)/.test(u[0]); }).slice(0,6); if(FSEL===it) drawUnits(); }).catch(function(){}); }; });
 }
 function pick(it){ FSEL=it; $('#fAdd').hidden=false; $('#fG').value=it.g||100; $('#fList').innerHTML=''; $('#fQ').value=it.name; drawUnits(); updPick(); $('#fG').focus(); }
 function drawUnits(){ var it=FSEL; if(!it) return; var u=(it.units||[]); $('#fUnits').innerHTML=u.map(function(x,i){ return '<button type="button" class="chip" data-g="'+x[1]+'">'+esc(x[0])+' · '+x[1]+' ג׳</button>'; }).join(''); document.querySelectorAll('#fUnits .chip').forEach(function(c){ c.onclick=function(){ $('#fG').value=c.dataset.g; updPick(); }; }); }
-$('#fQ').addEventListener('input',function(){ var q=this.value.trim(), local=fmatch(q).slice(0,5); clearTimeout(FQT); if(q.length<2){ drawList(local,[],q); return; } drawList(local,null,q); var my=++FQN;
+$('#fQ').addEventListener('input',function(){ $('#fLabel').hidden=true; var q=this.value.trim(), local=fmatch(q).slice(0,5); clearTimeout(FQT); if(q.length<2){ drawList(local,[],q); return; } drawList(local,null,q); var my=++FQN;
   FQT=setTimeout(function(){ fetch(MOH+MOH_FOODS+'&limit=25&fields=Code,smlmitzrach,shmmitzrach,protein,total_fat,carbohydrates,food_energy&q='+encodeURIComponent(q)).then(function(r){ return r.json(); }).then(function(j){ if(my!==FQN) return; drawList(local,(j.result&&j.result.records)||[],q); }).catch(function(){ if(my===FQN) drawList(local,[],q); }); },350); });
 function mac(f,g){ var r=g/100, p=f.p*r, c=f.c*r, fat=f.fat*r; return {p:Math.round(p*10)/10, c:Math.round(c*10)/10, fat:Math.round(fat*10)/10, k:Math.round(f.k100?f.k100*r:4*p+4*c+9*fat)}; }
 function updPick(){ if(!FSEL) return; var g=+$('#fG').value||0, m=mac(FSEL,g); $('#fPick').textContent=g?(g+' ג׳ '+FSEL.name+' = '+m.k+' קק״ל · '+m.p+' ג׳ חלבון · '+m.c+' ג׳ פחמימה · '+m.fat+' ג׳ שומן'):''; }
@@ -582,6 +607,39 @@ $('#fG').addEventListener('input',updPick);
 $('#fAdd').addEventListener('submit',function(e){ e.preventDefault(); var g=Math.round(+$('#fG').value); if(!FSEL||!(g>0&&g<3000)){ toast('בוחרים מאכל וכמות בגרם',1); return; }
   var m=mac(FSEL,g); $('#fBtn').disabled=true;
   api('food',{f:FSEL.name.slice(0,80),g:g,k:m.k,p:m.p,c:m.c,fat:m.fat}).then(function(r){ FDAY=r; renderFood(); toast('נוסף · '+m.k+' קק״ל'); FSEL=null; $('#fAdd').hidden=true; $('#fQ').value=''; $('#fPick').textContent=''; }).catch(function(er){ toast(er.message||'לא נשמר',1); }).then(function(){ $('#fBtn').disabled=false; }); });
+
+
+/* ----- מאגר המזון של אביאל (מוצרים סרוקים) + סריקת ברקוד + צילום תווית ----- */
+var EXTRA=[]; function loadExtra(){ api('foods',{}).then(function(r){ EXTRA=r||[]; }).catch(function(){}); }
+function ematch(q){ q=String(q||'').trim(); if(q.length<2) return []; return EXTRA.filter(function(f){ return f.name.indexOf(q)>=0||(f.brand&&f.brand.indexOf(q)>=0); }).slice(0,6); }
+function pickExtra(f){ pick({name:f.name+(f.brand?' '+f.brand:''), p:f.p, c:f.c, fat:f.fat, k100:f.k100, units:[['מנה',f.g||100]], g:f.g||100}); }
+var SCAN={reader:null,stream:null};
+function scanStop(){ try{ if(SCAN.reader) SCAN.reader.reset(); }catch(e){} try{ (SCAN.stream&&SCAN.stream.getTracks()||[]).forEach(function(t){ t.stop(); }); }catch(e){} SCAN.stream=null; $('#scan').hidden=true; }
+function camFail(){ scanStop(); toast('אין גישה למצלמה. מאשרים מצלמה בהגדרות הטלפון ומנסים שוב.',1); }
+function scanStart(){ $('#scan').hidden=false; var v=$('#scanV');
+  if(window.BarcodeDetector){ navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(function(st){ SCAN.stream=st; v.srcObject=st; return v.play(); }).then(function(){ var det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});
+      (function loop(){ if($('#scan').hidden) return; det.detect(v).then(function(r){ if(r&&r.length) onCode(r[0].rawValue); else setTimeout(loop,250); }).catch(function(){ setTimeout(loop,400); }); })(); }).catch(camFail); return; }
+  if(!window.ZXing){ scanStop(); toast('הסורק עוד נטען, מנסים שוב בעוד רגע',1); return; }
+  var hints=new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.UPC_E,ZXing.BarcodeFormat.CODE_128]);
+  SCAN.reader=new ZXing.BrowserMultiFormatReader(hints);
+  SCAN.reader.decodeFromConstraints({video:{facingMode:'environment'}},v,function(res){ if(res) onCode(res.getText()); }).catch(camFail);
+}
+function onCode(code){ code=String(code||'').replace(/\D/g,''); if(!code) return; scanStop(); try{ if(navigator.vibrate) navigator.vibrate(60); }catch(e){}
+  var ex=EXTRA.filter(function(f){ return f.code===code; })[0]; if(ex){ pickExtra(ex); toast('נמצא במאגר של אביאל'); return; }
+  toast('מחפש את הברקוד…');
+  fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,product_name_he,brands,nutriments,serving_quantity').then(function(r){ return r.json(); }).then(function(j){
+    var p=j&&j.status===1&&j.product, n=(p&&p.nutriments)||{}; var k=+n['energy-kcal_100g']||0, pr=+n.proteins_100g||0, c=+n.carbohydrates_100g||0, fat=+n.fat_100g||0;
+    if(!p||(!k&&!pr&&!c&&!fat)){ showLabel(code,''); return; }
+    var it={code:code, name:String(p.product_name_he||p.product_name||('מוצר '+code)).slice(0,80), brand:String(p.brands||'').split(',')[0].trim(), k100:k, p:pr, c:c, fat:fat, g:Math.round(+p.serving_quantity)||100, ok:false};
+    pickExtra(it); toast('נמצא: '+it.name); api('foodsave',it).then(function(){ loadExtra(); }).catch(function(){});
+  }).catch(function(){ showLabel(code,''); });
+}
+function showLabel(code,q){ var L=$('#fLabel'); L.hidden=false; L.dataset.code=code||''; $('#fList').innerHTML=''; $('#fAdd').hidden=true; $('#flName').value=q||''; $('#flName').focus(); }
+$('#fScan').onclick=scanStart; $('#scanX').onclick=scanStop;
+$('#flIn').addEventListener('change',function(){ var file=this.files&&this.files[0]; if(!file) return; var nm=$('#flName').value.trim(); if(!nm){ toast('קודם כותבים את שם המוצר',1); this.value=''; return; } toast('שולח לאביאל…');
+  shrink(file,1280,.82).then(function(img){ return fetch(API,{method:'POST',body:JSON.stringify({api:'foodlabel',t:T,p:{code:$('#fLabel').dataset.code||'',name:nm,photo:img}})}).then(function(r){ return r.json(); }).then(function(j){ if(!j.ok) throw new Error(j.error); $('#fLabel').hidden=true; $('#fQ').value=''; toast('נשלח. כשאביאל יאשר, המוצר יופיע בחיפוש ותקבל הודעה'); }); })
+  .catch(function(e){ toast((e&&e.message)||'לא נשלח',1); }); this.value=''; });
+if(T) loadExtra();
 
 /* ----- תמונות ----- */
 function shrink(file,max,q){ return new Promise(function(res,rej){ var img=new Image(), u=URL.createObjectURL(file); img.onload=function(){ var s=Math.min(1,max/Math.max(img.width,img.height)), c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s); c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(u); res(c.toDataURL('image/jpeg',q)); }; img.onerror=rej; img.src=u; }); }
