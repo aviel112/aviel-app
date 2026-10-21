@@ -333,6 +333,21 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .setrow input.upk{border-color:var(--gold);box-shadow:0 0 0 3px var(--soft);color:var(--gold)}
 @keyframes lvlin{0%{transform:scale(.97)}60%{transform:scale(1.02)}100%{transform:none}}
 @media (prefers-reduced-motion:reduce){.lvl,.hit{animation:none}}
+.nmrow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.swapbtn{display:inline-flex;align-items:center;gap:5px;background:transparent;color:var(--gold);border:1px solid var(--gold-d);border-radius:999px;padding:5px 10px;font-size:12.5px;font-weight:700;flex:none;min-height:0}
+.swapbtn svg{width:15px;height:15px}
+.swapped{font-size:12.5px;color:var(--mute)}
+.linkbtn{background:none;border:0;padding:0;color:var(--gold);font-weight:700;font-size:12.5px;text-decoration:underline;min-height:0}
+.swapbox{border:1px solid var(--line);border-radius:14px;padding:10px;background:var(--panel2)}
+.swnav{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:6px}
+.swarr{width:40px;height:40px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;background:var(--panel);color:var(--text);border:1px solid var(--line);min-height:0}
+.swarr svg{width:18px;height:18px}
+.swarr.prev svg{transform:scaleX(-1)}
+.swcur{text-align:center;display:flex;flex-direction:column;gap:2px}
+.swcur b{font-size:15px}
+.swcur small{font-size:12px;color:var(--mute)}
+.swact{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.swact button{min-height:40px;padding:8px}
 @keyframes shf{from{background:rgba(20,15,8,0)}}
 @keyframes shu{from{transform:translateY(24px);opacity:.4}}
 @media (prefers-reduced-motion:reduce){.sheet,.sheet-in{animation:none}button{transition:none}}
@@ -853,6 +868,7 @@ sugg=function(e,L){
   var add=rirMin!=null&&rirMin>=3?2:1, tr=R?Math.min(R[1],minR+add):minR+add;
   return {kg:top,reps:tr,why:'אותו משקל, הפעם '+tr+' חזרות'+(add>1?' כי נשאר לך כוח בפעם הקודמת':'')+(R?' (כשמגיעים ל-'+R[1]+' בכל הסטים עולים '+inc+' ק״ג)':'')};
 };
+var IC_SWAP='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>';
 var IC_UP='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
 var IC_PLAY='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>', IC_SRCH='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>', IC_CHECK='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
 /* ===== בטא 2: טבלת סטים, סרטון לתרגיל, החלפת מאכל ===== */
@@ -874,7 +890,7 @@ function renderTrain(){
   var done=doneMap();
   if(!DAYSET){ DAYSET=true; for(var q=0;q<days.length;q++){ if(!done[q]){ DAY=q; break; } } }
   if(DAY>=days.length) DAY=0;
-  var d=days[DAY], h='<div class="sub">השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים</div>';
+  var d=applySwaps(days[DAY]), h='<div class="sub">השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים</div>';
   h+=(days.length>1?'<div class="chips" role="group" aria-label="בחירת אימון">'+days.map(function(x,i){ return '<button type="button" class="chip'+(done[i]?' done':'')+'" data-day="'+i+'" aria-pressed="'+(i===DAY)+'">אימון '+(i+1)+'</button>'; }).join('')+'</div>':'');
   var S0=deloadState(); if(S0.on) h+='<div class="card" style="border-color:var(--gold);margin-top:8px"><b>השבוע: שבוע הורדה (דילואד)</b><div class="exnote" style="margin-top:4px">אחרי 6 שבועות של עבודה הגוף צריך שבוע קל כדי להתאושש ולהתחזק. השבוע עובדים על 85% מהמשקל, סט אחד פחות בכל תרגיל, ולא מגיעים לכשל. בשבוע הבא חוזרים חזקים יותר.</div></div>';
   else if(S0.n>1) h+='<div class="sub" style="margin-top:4px">שבוע '+S0.n+' מתוך 6 בבלוק · שבוע הורדה אחרי שבוע 6</div>';
@@ -882,7 +898,7 @@ function renderTrain(){
   var heavyN=0, rirHelp=0;
   d.ex.forEach(function(e,i){
     var warm=/חימום/.test(e.mu), L=P.lifts&&P.lifts[e.ex];
-    h+='<div class="card ex">'+(e.mu?'<div class="mu">'+esc(e.mu)+'</div>':'')+'<div class="nm">'+esc(e.ex)+'</div>'+
+    h+='<div class="card ex">'+(e.mu?'<div class="mu">'+esc(e.mu)+'</div>':'')+'<div class="nmrow"><div class="nm">'+esc(e.ex)+'</div><button type="button" class="swapbtn" data-sw="'+i+'" aria-label="החלפת התרגיל בחלופה">'+IC_SWAP+'<span>חלופה</span></button></div>'+(e._orig?'<div class="swapped">במקום: '+esc(e._orig)+' · <button type="button" class="linkbtn" data-unsw="'+esc(e._orig)+'">חזרה למקורי</button></div>':'')+'<div class="swapbox" id="swb'+i+'" hidden></div>'+
       '<div class="spec">'+(e.s&&e.s!=='-'?'<span><i>סטים</i>'+esc(e.s)+'</span>':'')+(e.r?'<span><i>'+(/דק/.test(e.r)?'זמן':'חזרות')+'</i>'+ltr(esc(e.r))+'</span>':'')+(e.rest&&e.rest!=='-'?'<span><i>מנוחה</i>'+esc(e.rest)+(/דק/.test(e.rest)?'':' דק׳')+'</span>':'')+'</div>'+
       (e.note?'<div class="exnote">'+esc(e.note)+'</div>':'');
     if(!warm){
@@ -1063,6 +1079,35 @@ renderPhotos=function(L){ var box=$('#phBox'); if(!box) return;
   var ba=box.querySelector('.ba'); if(ba){ var r=ba.querySelector('input'); r.oninput=function(){ ba.style.setProperty('--p',r.value+'%'); }; }
   box.querySelectorAll('figure[data-i]').forEach(function(fg){ var go=function(){ BA_IDX=+fg.dataset.i; renderPhotos(L); var b2=box.querySelector('.ba'); if(b2) b2.scrollIntoView({behavior:'smooth',block:'center'}); }; fg.onclick=go; fg.onkeydown=function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } }; });
 };
+
+/* ===== חלופות לתרגילים: חץ להחלפה, מהמאגר של אביאל, ולומד אילו חלופות בוחרים ===== */
+var LIB=null, SWAP_LEARN={};
+try{ fetch('../data/exercise-library.json').then(function(r){ return r.json(); }).then(function(d){ LIB=d; }).catch(function(){}); }catch(e){}
+function swapStore(){ var m=ls('aviel_swaps',{}); return {day:(m.day&&m.day.d===TODAY)?m.day.m:{}, perm:m.perm||{}}; }
+function swapSave(day,perm){ lsSet('aviel_swaps',{day:{d:TODAY,m:day},perm:perm}); }
+function applySwaps(d){ if(!d||!d.ex) return d; var st=swapStore();
+  return {title:d.title, ex:d.ex.map(function(e){ var alt=st.day[e.ex]||st.perm[e.ex]; if(!alt) return e; var c={}; for(var k in e) c[k]=e[k]; c.ex=alt; c._orig=e.ex; c._perm=!!st.perm[e.ex]&&!st.day[e.ex]; c.note=''; return c; })}; }
+var GRP=[[/בטן|פלאנק|כפיפות בטן/,'בטן'],[/תאומים|עקבים/,'תאומים'],[/המסטרינג|כפיפת ברך|דדליפט רומני|RDL/,'המסטרינג'],[/ישבן|היפ.?(טראסט|תראסט)|גלוט|קיק.?ב|מרחיק|הרחקת ירך|פתיחת/,'ישבן'],[/ארבע ראשי|סקוואט|לג.?פרס|פשיטת ברך|לאנג|מקרב|קירוב ירך|סגירת רגליים/,'ארבע ראשי'],[/יד אחורית|פשיטת מרפק|טרייספס|דיפס/,'יד אחורית'],[/יד קדמית|כפיפת מרפק|בייספס|פטיש/,'יד קדמית'],[/כתף|הרחקת כתפ|פייס|פרפר הפוך|לחיצת כתפ/,'כתפיים'],[/גב|רחב|חתירה|מתח|פולי|פול/,'גב'],[/חזה|לחיצת חזה|פרפר|מקבילים|שכיבות/,'חזה']];
+function grpOf(e){ var t=(e.mu||'')+' '+e.ex; for(var i=0;i<GRP.length;i++) if(GRP[i][0].test(t)) return GRP[i][1]; return ''; }
+function toks(s){ return String(s).replace(/[()\-–,]/g,' ').split(/\s+/).filter(function(w){ return w.length>=3&&!/^(עם|על|בכבל|במכונה|ביד)$/.test(w); }); }
+function altsFor(e){ if(!LIB) return []; var orig=e._orig||e.ex, g=grpOf({mu:e.mu,ex:orig}); if(!g) return [];
+  var sub=(e.mu||'').trim(), ot=toks(orig), learnG=(P&&P.swaps&&P.swaps[orig])||{}, learnL=(ls('aviel_swap_learn',{})[orig])||{};
+  var seen={}; seen[orig]=1;
+  return LIB.filter(function(x){ return x[0]===g&&!seen[x[2]]&&(seen[x[2]]=1); }).map(function(x){ var sc=0, nt=toks(x[2]);
+      ot.forEach(function(w){ if(nt.indexOf(w)>=0) sc+=2; }); if(x[6]==='a') sc+=3; if(sub&&x[1]&&sub.indexOf(x[1])>=0) sc+=2; sc+=(+learnG[x[2]]||0)*3+(+learnL[x[2]]||0)*4;
+      return {n:x[2],s:x[3],r:x[4],sc:sc,pop:(+learnG[x[2]]||0)+(+learnL[x[2]]||0)}; })
+    .sort(function(a,b){ return b.sc-a.sc; }).slice(0,8); }
+function openSwap(i,e){ var box=document.getElementById('swb'+i); if(!box) return; if(!box.hidden){ box.hidden=true; return; }
+  var L=altsFor(e); if(!L.length){ box.hidden=false; box.innerHTML='<div class="exnote">'+(LIB?'אין חלופות במאגר לתרגיל הזה.':'טוען את מאגר התרגילים... נסו שוב בעוד רגע')+'</div>'; return; }
+  var k=0, draw=function(){ var a=L[k]; box.innerHTML='<div class="swnav"><button type="button" class="swarr" data-d="1" aria-label="החלופה הבאה">'+IC_GO+'</button><div class="swcur"><b>'+esc(a.n)+'</b><small>'+(k+1)+' מתוך '+L.length+(a.pop?' · נבחר '+a.pop+' פעמים':'')+'</small></div><button type="button" class="swarr prev" data-d="-1" aria-label="החלופה הקודמת">'+IC_GO+'</button></div><div class="swact"><button type="button" data-pick="day">להיום</button><button type="button" class="ghost" data-pick="perm">קבוע</button></div>';
+    box.querySelectorAll('.swarr').forEach(function(b){ b.onclick=function(){ k=(k+(+b.dataset.d)+L.length)%L.length; draw(); }; });
+    box.querySelectorAll('[data-pick]').forEach(function(b){ b.onclick=function(){ var orig=e._orig||e.ex, st=swapStore(); if(b.dataset.pick==='perm'){ st.perm[orig]=a.n; delete st.day[orig]; } else st.day[orig]=a.n; swapSave(st.day,st.perm);
+      var lr=ls('aviel_swap_learn',{}); lr[orig]=lr[orig]||{}; lr[orig][a.n]=(lr[orig][a.n]||0)+1; lsSet('aviel_swap_learn',lr);
+      try{ api('swap',{orig:orig,alt:a.n}).catch(function(){}); }catch(er){}
+      toast(b.dataset.pick==='perm'?'הוחלף קבוע: '+a.n:'להיום: '+a.n); var y=window.scrollY; renderTrain(); window.scrollTo(0,y); }; }); };
+  box.hidden=false; draw(); }
+document.addEventListener('click',function(ev){ var b=ev.target.closest('.swapbtn'); if(b){ var days=(P.program.blocks||[]).filter(function(x){ return x.ex&&x.ex.length; }), d=applySwaps(days[DAY]); openSwap(+b.dataset.sw,d.ex[+b.dataset.sw]); return; }
+  var u=ev.target.closest('[data-unsw]'); if(u){ var st=swapStore(), o=u.dataset.unsw; delete st.day[o]; delete st.perm[o]; swapSave(st.day,st.perm); toast('חזרנו לתרגיל המקורי'); var y=window.scrollY; renderTrain(); window.scrollTo(0,y); } });
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
