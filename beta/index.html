@@ -367,6 +367,22 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .setrow input.upk{border-color:var(--gold);box-shadow:0 0 0 3px var(--soft);color:var(--gold)}
 @keyframes lvlin{0%{transform:scale(.97)}60%{transform:scale(1.02)}100%{transform:none}}
 @media (prefers-reduced-motion:reduce){.lvl,.hit{animation:none}}
+.news,.recap,.board{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--sh)}
+.news{border-color:var(--gold-d)}
+.news .row b,.recap .row b,.board .row b{font-size:15px}
+.news ul{margin:8px 0 0;padding-right:18px;font-size:14px;line-height:1.55}
+.news li{margin-bottom:4px}
+.recap .row small,.board .row small{color:var(--mute);font-size:12px}
+.rgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+.rgrid>div{background:var(--panel2);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.rgrid b{font-size:20px}
+.rgrid small{font-size:12px;color:var(--mute)}
+.rbest{margin-top:10px;font-size:14px;color:var(--good)}
+.brow{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.brow:last-of-type{border:0}
+.brow.me{color:var(--gold)}
+.bn{width:26px;height:26px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.brow:first-of-type .bn{background:var(--gold);color:#1c1813}
 .streak{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--mute);margin:2px 0 8px}
 .streak svg{width:20px;height:20px;color:#d97b2b;flex:none}
 .streak b{color:var(--text);font-size:16px}
@@ -1123,6 +1139,7 @@ function renderTodayCard(){
     else if(k==='h'){ var hx=el.querySelector('.habits'); if(hx) hx.scrollIntoView({behavior:'smooth',block:'center'}); }
     else { var c=document.getElementById('ciForm')||document.getElementById('ciDone'); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); } }; });
   if(!INBOX_TRIED&&typeof api==='function'){ INBOX_TRIED=true; api('inbox',{}).then(function(r){ INBOX=r&&r.at?r:null; renderTodayCard(); }).catch(function(){}); }
+  renderExtras(el);
   if(!FDAY_TRIED&&typeof api==='function'){ FDAY_TRIED=true; api('foodday',{}).then(function(r){ FDAY=r; renderTodayCard(); }).catch(function(){}); }
 }
 var _renderToday0=render; render=function(){ _renderToday0.apply(this,arguments); renderTodayCard(); };
@@ -1268,6 +1285,28 @@ function techInput(){ if(TECH_IN) return TECH_IN; TECH_IN=document.createElement
       .catch(function(e){ toast(e.message||'הסרטון לא נשלח, נסו שוב עם וויפיי',1); }); }; fr.readAsDataURL(f); });
   return TECH_IN; }
 document.addEventListener('click',function(ev){ var b=ev.target.closest('[data-tech]'); if(!b) return; var days=(P.program.blocks||[]).filter(function(x){ return x.ex&&x.ex.length; }), d=applySwaps(days[DAY]), e=d.ex[+b.dataset.tech]; TECH_EX=e?e.ex:''; techInput().click(); });
+
+/* ===== מה חדש באפליקציה (פעם אחת לכל גרסה) ===== */
+var WHATS_NEW={v:'2026-10-22',t:'מה חדש באפליקציה',l:['חלופה לכל תרגיל: לוחצים "חלופה" ועוברים עם החצים. אין מכשיר פנוי? בעיה פתורה.','בדיקת טכניקה: מצלמים 2–3 חזרות מכרטיס התרגיל, ואני עונה בהודעה קולית.','בתפריט אפשר לעבור בין האפשרויות עם חצים, ומה שבחרת עולה ראשון.','יומן אוכל חדש: טבעת קלוריות, ארוחות, אחרונים, והעתקת אתמול.','הרגלים יומיים ורצף ימים בכרטיס "היום שלך".']};
+function whatsNewHtml(){ if(ls('aviel_news_seen','')===WHATS_NEW.v) return ''; return '<div class="news"><div class="row"><b>'+esc(WHATS_NEW.t)+'</b><button type="button" class="linkbtn" id="newsX">הבנתי</button></div><ul>'+WHATS_NEW.l.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul></div>'; }
+/* ===== השבוע שלך: סיכום קצר מהנתונים שכבר יש בטלפון ===== */
+function weekKeys(){ var ws=weekStart(), out=[]; for(var i=0;i<7;i++){ var d=new Date(ws.getTime()+i*864e5); var k=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); if(k>TODAY) break; out.push(k); } return out; }
+function recapHtml(){ var d=D||{}, wk=d.week||[], keys=weekKeys(), ws=weekStart().getTime();
+  var weighs=wk.filter(function(x){ return x.kg!=null&&new Date(x.d+'T12:00:00').getTime()>=ws; }).length;
+  var trains=Object.keys(doneMap()).length, hb=ls('aviel_habits',{}), hdays=keys.filter(function(k){ return hb[k]&&Object.keys(hb[k]).length>=HABITS.length; }).length;
+  var best=null; Object.keys((P&&P.lifts)||{}).forEach(function(ex){ (P.lifts[ex].hist||[]).forEach(function(h){ if(h.d>=keys[0]&&h.kg>=P.lifts[ex].best&&(!best||h.kg>best.kg)) best={ex:ex,kg:h.kg}; }); });
+  var steps=wk.filter(function(x){ return x.steps!=null&&new Date(x.d+'T12:00:00').getTime()>=ws; }).map(function(x){ return x.steps; }), sAvg=steps.length?Math.round(steps.reduce(function(a,b){ return a+b; },0)/steps.length):null;
+  if(!weighs&&!trains&&!hdays&&!best&&sAvg==null) return '';
+  var it=[['שקילות',weighs+' מתוך '+keys.length],['אימונים',String(trains)],['ימי הרגלים מלאים',String(hdays)]]; if(sAvg!=null) it.push(['צעדים ביום',sAvg.toLocaleString('he-IL')]);
+  return '<div class="recap"><div class="row"><b>השבוע שלך</b><small>מיום ראשון</small></div><div class="rgrid">'+it.map(function(x){ return '<div><b class="num">'+x[1]+'</b><small>'+x[0]+'</small></div>'; }).join('')+'</div>'+(best?'<div class="rbest">שיא חדש השבוע: <b>'+esc(best.ex)+'</b> · '+best.kg+' ק״ג</div>':'')+'</div>'; }
+/* ===== אתגר צעדים שבועי: מי הולך הכי הרבה (שמות פרטיים בלבד) ===== */
+var BOARD=null, BOARD_TRIED=false;
+function boardHtml(){ if(!BOARD||!BOARD.list||!BOARD.list.length) return ''; var me=BOARD.me||'';
+  return '<div class="board"><div class="row"><b>אתגר הצעדים השבועי</b><small>ממוצע ליום</small></div>'+BOARD.list.slice(0,5).map(function(x,i){ return '<div class="brow'+(x.n===me?' me':'')+'"><span class="bn num">'+(i+1)+'</span><span class="bname">'+esc(x.n)+(x.n===me?' (את/ה)':'')+'</span><span class="num">'+x.avg.toLocaleString('he-IL')+'</span></div>'; }).join('')+(BOARD.rank&&BOARD.rank>5?'<div class="brow me"><span class="bn num">'+BOARD.rank+'</span><span class="bname">'+esc(me)+' (את/ה)</span><span class="num">'+(BOARD.mine||0).toLocaleString('he-IL')+'</span></div>':'')+'<div class="swaphint">מתעדכן כל שעה מהצעדים שכולם רושמים. כל מי שמסיים את השבוע עם 7 ימי רישום מקבל ממני כבוד.</div></div>'; }
+function renderExtras(el){ var x=document.getElementById('extras'); if(!x){ x=document.createElement('div'); x.id='extras'; el.parentNode.insertBefore(x,el.nextSibling); }
+  x.innerHTML=whatsNewHtml()+recapHtml()+boardHtml();
+  var nb=x.querySelector('#newsX'); if(nb) nb.onclick=function(){ lsSet('aviel_news_seen',WHATS_NEW.v); renderExtras(el); };
+  if(!BOARD_TRIED&&typeof api==='function'){ BOARD_TRIED=true; api('board',{}).then(function(r){ BOARD=r; renderExtras(el); }).catch(function(){}); } }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
