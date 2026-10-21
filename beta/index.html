@@ -135,6 +135,9 @@ nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
 .flist button small{color:var(--mute);font-weight:600;margin-right:6px}
 .fadd{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .fadd input{font-size:17px;padding:8px}
+.fnav{margin-bottom:10px}
+.fnav b{font-size:15px}
+.fnav .swarr[disabled]{opacity:.35}
 .ftop{display:flex;align-items:center;gap:18px}
 .fringw{position:relative;width:118px;height:118px;flex:none}
 .fring{width:100%;height:100%}
@@ -811,20 +814,26 @@ function mealByTime(t){ var h=parseInt(String(t||'').slice(0,2),10); if(isNaN(h)
 function fMeal(){ return FMEAL||mealByTime(); }
 function ring(v,t){ var r=44, C=2*Math.PI*r, pc=t?Math.min(1,v/t):0, over=t&&v>t*1.05;
   return '<svg class="fring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="'+r+'" class="rbg"/>'+(pc>0?'<circle cx="50" cy="50" r="'+r+'" class="rfg'+(over?' over':'')+'" stroke-dasharray="'+(C*pc).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 50 50)"/>':'')+'</svg>'; }
+var FVIEW=null; /* תאריך שמוצג ביומן; null = היום */
+function dshift(d,n){ var x=new Date(d+'T12:00:00'); x.setDate(x.getDate()+n); return x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2); }
+function foodNav(n){ var cur=FVIEW||TODAY, d=dshift(cur,n); if(d>TODAY) return; FVIEW=d===TODAY?null:d; api('foodday',{d:d}).then(function(r){ FDAY=r; renderFood(); }).catch(function(e){ toast(e.message,1); }); }
 function renderFood(){
+  var past=!!FVIEW, vd=FVIEW||TODAY, vlab=past?(vd.slice(8,10)+'/'+vd.slice(5,7)+(dshift(TODAY,-1)===vd?' · אתמול':'')):'היום';
+  var fs=document.querySelector('.fsearch'); if(fs) fs.hidden=past;
   var it=FDAY.items||[], s={k:0,p:0,c:0,fat:0}; it.forEach(function(x){ s.k+=+x.k||0; s.p+=+x.p||0; s.c+=+x.c||0; s.fat+=+x.fat||0; });
   var T=targets(), bar=function(v,t){ if(!t) return ''; var pc=Math.min(100,Math.round(v/t*100)); return '<div class="bar"><i class="'+(v>t*1.05?'over':'')+'" style="width:'+pc+'%"></i></div>'; };
   var row=function(lbl,v,t,u){ return '<div><b class="num">'+Math.round(v)+'</b>'+(t?' / '+t:'')+' '+u+'<div class="sub">'+lbl+'</div>'+bar(v,t)+'</div>'; };
   var tk=T['קלוריות'], left=tk?tk-Math.round(s.k):null;
-  $('#fTot').innerHTML='<div class="ftop"><div class="fringw">'+ring(s.k,tk)+'<div class="fringt"><b class="num">'+(tk?Math.abs(left):Math.round(s.k))+'</b><small>'+(tk?(left>=0?'נשארו':'מעל היעד'):'קק״ל')+'</small></div></div>'+
+  $('#fTot').innerHTML='<div class="row fnav"><button type="button" class="swarr" data-fn="-1" aria-label="יום קודם">'+IC_GO+'</button><b>'+vlab+'</b><button type="button" class="swarr prev" data-fn="1" aria-label="יום הבא"'+(past?'':' disabled')+'>'+IC_GO+'</button></div><div class="ftop"><div class="fringw">'+ring(s.k,tk)+'<div class="fringt"><b class="num">'+(tk?Math.abs(left):Math.round(s.k))+'</b><small>'+(tk?(left>=0?'נשארו':'מעל היעד'):'קק״ל')+'</small></div></div>'+
     '<div class="feq"><div><span class="sub">יעד</span><b class="num">'+(tk||'–')+'</b></div><div><span class="sub">אכלת</span><b class="num">'+Math.round(s.k)+'</b></div><div class="sub">'+it.length+' רישומים היום</div></div></div>'+
     '<div class="mac">'+row('חלבון',s.p,T['חלבון'],'ג׳')+row('פחמימה',s.c,T['פחמימות'],'ג׳')+row('שומן',s.fat,T['שומן'],'ג׳')+'</div>'+
-    (it.length?'':'<button type="button" class="ghost fcopy" id="fCopy">העתקת היומן של אתמול</button>');
+    (it.length||past?'':'<button type="button" class="ghost fcopy" id="fCopy">העתקת היומן של אתמול</button>');
+  document.querySelectorAll('#fTot [data-fn]').forEach(function(b){ b.onclick=function(){ foodNav(+b.dataset.fn); }; });
   var del='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
   $('#fItems').innerHTML=MEALS.map(function(ml){ var xs=it.filter(function(x){ return (x.m||mealByTime(x.t))===ml; }), k=xs.reduce(function(a,x){ return a+(+x.k||0); },0);
     return '<div class="fmeal"><div class="fmh"><b>'+ml+'</b><span class="num">'+(xs.length?Math.round(k)+' קק״ל':'')+'</span></div>'+
       xs.map(function(x){ return '<div class="fitem"><span><b>'+esc(x.f)+'</b> <small>'+esc(x.g)+' ג׳</small></span><span><span class="num">'+esc(x.k)+'</span> <small>קק״ל</small> <button class="ghost sm" data-del="'+x.row+'" data-f="'+esc(x.f)+'" aria-label="מחיקה">'+del+'</button></span></div>'; }).join('')+
-      '<button type="button" class="fmadd" data-meal="'+ml+'">+ הוספה ל'+ml+'</button></div>'; }).join('');
+      (past?'':'<button type="button" class="fmadd" data-meal="'+ml+'">+ הוספה ל'+ml+'</button>')+'</div>'; }).join('');
   document.querySelectorAll('#fItems [data-del]').forEach(function(b){ b.onclick=function(){ b.disabled=true; api('fooddel',{row:+b.dataset.del,f:b.dataset.f,d:FDAY.d}).then(function(r){ FDAY=r; renderFood(); }).catch(function(e){ toast(e.message,1); b.disabled=false; }); }; });
   document.querySelectorAll('#fItems .fmadd').forEach(function(b){ b.onclick=function(){ FMEAL=b.dataset.meal; drawMealChips(); $('#fQ').scrollIntoView({block:'center',behavior:'smooth'}); $('#fQ').focus(); }; });
   var cp=$('#fCopy'); if(cp) cp.onclick=copyYesterday;
@@ -944,7 +953,7 @@ function b64ToU8(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) 
 })();
 
 /* ----- טעינת נתוני בטא ----- */
-document.querySelector('[data-tab=food]').addEventListener('click',function(){ api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){}); });
+document.querySelector('[data-tab=food]').addEventListener('click',function(){ FVIEW=null; api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){}); });
 document.querySelector('[data-tab=prog]').addEventListener('click',function(){ api('photos',{}).then(function(r){ renderPhotos(r); }).catch(function(){}); });
 if(T){ api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){ renderFood(); }); api('photos',{}).then(function(r){ renderPhotos(r); }).catch(function(){ renderPhotos([]); }); }
 </script>
