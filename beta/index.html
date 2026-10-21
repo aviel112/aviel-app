@@ -367,6 +367,21 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .setrow input.upk{border-color:var(--gold);box-shadow:0 0 0 3px var(--soft);color:var(--gold)}
 @keyframes lvlin{0%{transform:scale(.97)}60%{transform:scale(1.02)}100%{transform:none}}
 @media (prefers-reduced-motion:reduce){.lvl,.hit{animation:none}}
+.streak{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--mute);margin:2px 0 8px}
+.streak svg{width:20px;height:20px;color:#d97b2b;flex:none}
+.streak b{color:var(--text);font-size:16px}
+.habits{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.hb{display:flex;align-items:center;gap:8px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:9px 10px;font-size:13.5px;font-weight:600;min-height:0;text-align:right}
+.hb .tdc{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;flex:none}
+.hb.on{border-color:var(--good);background:rgba(46,133,81,.1)}
+.hb.on .tdc{background:var(--good);border-color:var(--good);color:#fff}
+.hb.on .tdc svg{width:12px;height:12px}
+.inbox{border:1px solid var(--gold-d);background:var(--soft);border-radius:14px;padding:10px 12px;margin:4px 0 10px}
+.inbox .row b{font-size:14px}
+.inbox .row small{color:var(--mute);font-size:12px}
+.inbox p{margin:6px 0 8px;font-size:14.5px;line-height:1.5}
+.vplay{display:inline-flex;align-items:center;gap:6px;background:var(--cta);color:var(--cta-t);border:0;border-radius:999px;padding:8px 14px;font-weight:700;font-size:14px;min-height:0;margin-left:10px}
+.vplay svg{width:18px;height:18px}
 .nmrow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .swapbtn{display:inline-flex;align-items:center;gap:5px;background:transparent;color:var(--gold);border:1px solid var(--gold-d);border-radius:999px;padding:5px 10px;font-size:12.5px;font-weight:700;flex:none;min-height:0}
 .swapbtn svg{width:15px;height:15px}
@@ -1074,19 +1089,37 @@ function todayItems(){
   var ate=(ls('aviel_ate_'+TODAY,[])||[]).length, fd=(typeof FDAY!=='undefined'&&FDAY&&FDAY.d===TODAY&&FDAY.items)?FDAY.items.length:0;
   it.push({k:'f', t:'אוכל', s:ate?ate+' ארוחות סומנו':fd?fd+' רישומים ביומן':'מסמנים מה אכלת', done:!!(ate||fd)});
   it.push({k:'c', t:'צ׳ק-אין שבועי', s:d.checkinDone?'נשלח השבוע':'2 דקות, פעם בשבוע', done:!!d.checkinDone});
+  var hb=habitsToday(); it.push({k:'h', t:'הרגלים', s:hb.done+' מתוך '+hb.total+(hb.done===hb.total?' · יום מלא':''), done:hb.done===hb.total});
   return it;
 }
+/* הרגלים יומיים (נשמרים בטלפון וגם בקובץ המעקב) + רצף ימים */
+var HABITS=[{id:'water',t:'2 ליטר מים'},{id:'sleep',t:'7 שעות שינה'},{id:'protein',t:'חלבון בכל ארוחה'},{id:'steps',t:'צעדים לפי היעד'}];
+function habitsToday(){ var m=ls('aviel_habits',{}), d=m[TODAY]||{}, n=HABITS.filter(function(h){ return d[h.id]; }).length; return {done:n,total:HABITS.length,map:d}; }
+function habitSet(id,on){ var m=ls('aviel_habits',{}); m[TODAY]=m[TODAY]||{}; if(on) m[TODAY][id]=1; else delete m[TODAY][id];
+  var keys=Object.keys(m).sort(); if(keys.length>120) keys.slice(0,keys.length-120).forEach(function(k){ delete m[k]; }); lsSet('aviel_habits',m);
+  var done=HABITS.filter(function(h){ return m[TODAY][h.id]; }).map(function(h){ return h.t; });
+  try{ api('habit',{d:TODAY,done:done,total:HABITS.length}).catch(function(){}); }catch(e){} }
+function activeDay(){ var a=ls('aviel_active',{}); if(!a[TODAY]){ a[TODAY]=1; var ks=Object.keys(a).sort(); if(ks.length>400) delete a[ks[0]]; lsSet('aviel_active',a); } }
+function streak(){ var a=ls('aviel_active',{}), n=0, d=new Date(); if(!a[TODAY]) d.setDate(d.getDate()-1);
+  for(var i=0;i<400;i++){ var k=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); if(!a[k]) break; n++; d.setDate(d.getDate()-1); } return n; }
+var IC_FLAME='<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2c1 4 4 5.5 4 10a4 4 0 0 1-8 0c0-1.5.5-2.5 1-3.5.3 1.2 1 2 2 2.5C11 8 10 5 12 2z"/><path d="M8.5 7C7 9 6 11 6 13.5a6 6 0 0 0 12 0c0-1-.2-2-.6-3-.4 2-1.6 3.2-3.2 3.7A5 5 0 0 1 8.5 7z" opacity=".55"/></svg>';
 function renderTodayCard(){
   if(!D) return; var host=document.getElementById('wForm'); if(!host) return; var anchor=host.closest('.card'); if(!anchor) return;
   var el=document.getElementById('todayCard'); if(!el){ el=document.createElement('div'); el.id='todayCard'; el.className='card today'; anchor.parentNode.insertBefore(el,anchor); }
   var it=todayItems(), n=it.filter(function(x){ return x.done; }).length, pc=Math.round(n/it.length*100);
-  el.innerHTML='<div class="row"><h2 class="tdh">היום שלך</h2><span class="tdn num">'+n+'/'+it.length+'</span></div><div class="tdbar" role="progressbar" aria-valuemin="0" aria-valuemax="'+it.length+'" aria-valuenow="'+n+'" aria-label="מה הושלם היום"><i style="width:'+pc+'%"></i></div>'+
+  if(n>0) activeDay(); var sk=streak(), hb=habitsToday();
+  el.innerHTML='<div class="row"><h2 class="tdh">היום שלך</h2><span class="tdn num">'+n+'/'+it.length+'</span></div>'+(sk>=2?'<div class="streak">'+IC_FLAME+'<b>'+sk+'</b> ימים ברצף שעשית משהו למען עצמך</div>':'')+inboxHtml()+'<div class="tdbar" role="progressbar" aria-valuemin="0" aria-valuemax="'+it.length+'" aria-valuenow="'+n+'" aria-label="מה הושלם היום"><i style="width:'+pc+'%"></i></div>'+
     it.map(function(x){ return '<button type="button" class="tdi'+(x.done?' ok':'')+'" data-k="'+x.k+'"><span class="tdc">'+(x.done?IC_OK:'')+'</span><span class="tdt"><b>'+esc(x.t)+'</b><small>'+esc(x.s)+'</small></span><span class="tdg">'+IC_GO+'</span></button>'; }).join('')+
+    '<div class="habits" role="group" aria-label="הרגלים להיום">'+HABITS.map(function(h){ var on=!!hb.map[h.id]; return '<button type="button" class="hb'+(on?' on':'')+'" data-h="'+h.id+'" aria-pressed="'+on+'"><span class="tdc">'+(on?IC_OK:'')+'</span>'+esc(h.t)+'</button>'; }).join('')+'</div>'+
     (n===it.length?'<div class="tdall">הכל סגור להיום. ככה בונים תוצאות.</div>':'');
+  el.querySelectorAll('.hb').forEach(function(b){ b.onclick=function(){ habitSet(b.dataset.h,b.getAttribute('aria-pressed')!=='true'); renderTodayCard(); }; });
+  wireInbox(el);
   el.querySelectorAll('.tdi').forEach(function(b){ b.onclick=function(){ var k=b.dataset.k;
     if(k==='w'){ var w=document.getElementById('wIn'); w.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){ w.focus(); },350); }
     else if(k==='t') show('train'); else if(k==='f') show(P&&P.menu&&P.menu.blocks&&P.menu.blocks.length?'menu':'food');
+    else if(k==='h'){ var hx=el.querySelector('.habits'); if(hx) hx.scrollIntoView({behavior:'smooth',block:'center'}); }
     else { var c=document.getElementById('ciForm')||document.getElementById('ciDone'); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); } }; });
+  if(!INBOX_TRIED&&typeof api==='function'){ INBOX_TRIED=true; api('inbox',{}).then(function(r){ INBOX=r&&r.at?r:null; renderTodayCard(); }).catch(function(){}); }
   if(!FDAY_TRIED&&typeof api==='function'){ FDAY_TRIED=true; api('foodday',{}).then(function(r){ FDAY=r; renderTodayCard(); }).catch(function(){}); }
 }
 var _renderToday0=render; render=function(){ _renderToday0.apply(this,arguments); renderTodayCard(); };
@@ -1204,6 +1237,22 @@ function menuCarousel(o,key,lis,pick){
     lsSet('aviel_pick_'+TODAY,p2); renderMenu(); };
   o.querySelector('.mall').onclick=function(){ MOPEN[key]=!MOPEN[key]; renderMenu(); };
 }
+
+/* ===== הודעה מאביאל (טקסט או קולית) — מופיעה בראש "היום שלך" ===== */
+var INBOX=null, INBOX_TRIED=false, VOICE=null;
+var IC_PLAY='<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>', IC_PAUSE='<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
+function inboxHtml(){ if(!INBOX||!INBOX.at) return ''; var age=(Date.now()-Date.parse(INBOX.at))/864e5; if(isNaN(age)||age>10) return ''; if(ls('aviel_inbox_seen','')===INBOX.at) return '';
+  var when=age<1?'היום':age<2?'אתמול':'לפני '+Math.round(age)+' ימים';
+  return '<div class="inbox"><div class="row"><b>'+esc(INBOX.title||'הודעה מאביאל')+'</b><small>'+when+'</small></div>'+(INBOX.body?'<p>'+esc(INBOX.body)+'</p>':'')+(INBOX.voice?'<button type="button" class="vplay" id="vPlay">'+IC_PLAY+'<span>השמעה</span></button>':'')+'<button type="button" class="linkbtn" id="inboxX">קראתי</button></div>'; }
+function wireInbox(el){ var x=el.querySelector('#inboxX'); if(x) x.onclick=function(){ lsSet('aviel_inbox_seen',INBOX.at); if(VOICE){ VOICE.pause(); VOICE=null; } renderTodayCard(); };
+  var p=el.querySelector('#vPlay'); if(!p) return;
+  p.onclick=function(){ if(VOICE&&!VOICE.paused){ VOICE.pause(); p.innerHTML=IC_PLAY+'<span>השמעה</span>'; return; }
+    if(VOICE){ VOICE.play(); p.innerHTML=IC_PAUSE+'<span>עצירה</span>'; return; }
+    p.disabled=true; p.innerHTML=IC_PLAY+'<span>טוען…</span>';
+    api('voice',{}).then(function(r){ p.disabled=false; if(!r||!r.b64){ toast('ההודעה הקולית לא נמצאה',1); p.innerHTML=IC_PLAY+'<span>השמעה</span>'; return; }
+      VOICE=new Audio('data:'+(r.mime||'audio/mp4')+';base64,'+r.b64); VOICE.onended=function(){ p.innerHTML=IC_PLAY+'<span>שוב</span>'; }; VOICE.onerror=function(){ toast('הטלפון לא מצליח לנגן את ההקלטה',1); p.innerHTML=IC_PLAY+'<span>השמעה</span>'; };
+      VOICE.play().then(function(){ p.innerHTML=IC_PAUSE+'<span>עצירה</span>'; }).catch(function(){ p.innerHTML=IC_PLAY+'<span>השמעה</span>'; }); })
+    .catch(function(e){ p.disabled=false; toast(e.message||'לא נטען',1); p.innerHTML=IC_PLAY+'<span>השמעה</span>'; }); }; }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
