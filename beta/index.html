@@ -765,6 +765,13 @@ function fmatch(q){ q=String(q||'').trim(); if(!q) return []; return FOODS.filte
 var FDAY={items:[]}, FSEL=null;
 function targets(){ var m=P&&P.menu, out={}; if(!m||!m.blocks) return out;
   m.blocks.forEach(function(b){ b.lines.forEach(function(l){ var mm=l.match(/^(קלוריות|חלבון|פחמימות|שומן):\s*([\d,]+)(?:\s*[–-]\s*([\d,]+))?/); if(mm){ var a=+mm[2].replace(/,/g,''), z=mm[3]?+mm[3].replace(/,/g,''):a; out[mm[1]]=Math.round((a+z)/2); } }); });
+  /* פורמט המסמכים החדש: טבלת "סה״כ קלוריות | כ-1,350" ו"· 1,350 קלוריות" בכותרת */
+  var KEYS={'קלוריות':'קלוריות','חלבון':'חלבון','חלבונים':'חלבון','פחמימות':'פחמימות','שומן':'שומן','שומנים':'שומן'};
+  m.blocks.forEach(function(b){ (b.rows||[]).forEach(function(r){ var k=String(r[0]||'').replace(/^סה["״]?כ\s*/,'').trim(), mm=String(r[1]||'').match(/([\d,]+)/); if(KEYS[k]&&mm&&!out[KEYS[k]]) out[KEYS[k]]=+mm[1].replace(/,/g,''); }); });
+  if(!out['קלוריות']){ var tm=String(m.title||m.name||'').match(/([\d,]{3,6})\s*קלוריות/); if(tm) out['קלוריות']=+tm[1].replace(/,/g,''); }
+  /* אין טבלת סיכום — מחברים את "ערכים ממוצעים ל..." של כל הארוחות */
+  if(!out['קלוריות']){ var sum={}, n=0; m.blocks.forEach(function(b){ b.lines.forEach(function(l){ if(!/^ערכי(ם ממוצעים| הארוחה)/.test(l)) return; n++; var re=/כ-?\s*([\d.,]+)\s*(קלוריות|גרם חלבון|גרם פחמימ\S*|גרם שומן)/g, mm; while((mm=re.exec(l))){ var k=/קלור/.test(mm[2])?'קלוריות':/חלבון/.test(mm[2])?'חלבון':/פחמ/.test(mm[2])?'פחמימות':'שומן'; sum[k]=(sum[k]||0)+(+mm[1].replace(/,/g,'')); } }); });
+    if(n) Object.keys(sum).forEach(function(k){ out[k]=Math.round(sum[k]); }); }
   return out; }
 var MEALS=['בוקר','צהריים','ביניים','ערב'], FMEAL=null;
 function mealByTime(t){ var h=parseInt(String(t||'').slice(0,2),10); if(isNaN(h)) h=new Date().getHours(); return h<11?'בוקר':h<16?'צהריים':h<19?'ביניים':'ערב'; }
