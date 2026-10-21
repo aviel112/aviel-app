@@ -1081,6 +1081,7 @@ renderMenu=function(){
     if(b.note) card.classList.add('mnote'); });
   document.querySelectorAll('#menuBox .plain').forEach(function(p){ if(p.textContent.trim()==='+'){ p.className='plus'; p.textContent='ועוד'; } });
   var pick=ls('aviel_pick_'+TODAY,{});
+  wireAteLog(M);
   document.querySelectorAll('#menuBox .meal').forEach(function(card){
     var meal=(card.querySelector('h3')||{}).textContent||'';
     card.querySelectorAll('.opt').forEach(function(o){
@@ -1307,6 +1308,14 @@ function renderExtras(el){ var x=document.getElementById('extras'); if(!x){ x=do
   x.innerHTML=whatsNewHtml()+recapHtml()+boardHtml();
   var nb=x.querySelector('#newsX'); if(nb) nb.onclick=function(){ lsSet('aviel_news_seen',WHATS_NEW.v); renderExtras(el); };
   if(!BOARD_TRIED&&typeof api==='function'){ BOARD_TRIED=true; api('board',{}).then(function(r){ BOARD=r; renderExtras(el); }).catch(function(){}); } }
+
+/* ===== "אכלתי" בתפריט רושם את ערכי הארוחה ביומן האוכל (כמו ב-MyFitnessPal, בלי להקליד) ===== */
+function mealVals(b){ var out=null; (b.lines||[]).forEach(function(l){ if(!/^(ערכים ממוצעים|ערכי הארוחה)/.test(l)) return; var o={}, re=/כ-?\s*([\d.,]+)\s*(קלוריות|גרם חלבון|גרם פחמימ\S*|גרם שומן)/g, mm; while((mm=re.exec(l))){ var n=+mm[1].replace(/,/g,''); if(/קלור/.test(mm[2])) o.k=n; else if(/חלבון/.test(mm[2])) o.p=n; else if(/פחמ/.test(mm[2])) o.c=n; else o.fat=n; } if(o.k) out=o; }); return out; }
+function wireAteLog(M){ if(!M||!M.blocks) return; var logged=ls('aviel_ate_logged_'+TODAY,{});
+  document.querySelectorAll('#menuBox .ate').forEach(function(btn){ var title=btn.dataset.meal, b=M.blocks.filter(function(x){ return x.title===title; })[0], vals=b&&mealVals(b); if(!vals) return;
+    btn.addEventListener('click',function(){ if(btn.getAttribute('aria-pressed')==='true') return; if(logged[title]) return; logged[title]=1; lsSet('aviel_ate_logged_'+TODAY,logged);
+      var ml=/בוקר/.test(title)?'בוקר':/צהר/.test(title)?'צהריים':/ערב|לילה/.test(title)?'ערב':'ביניים';
+      api('food',{f:title+' (מהתפריט)',g:0,k:vals.k,p:vals.p||0,c:vals.c||0,fat:vals.fat||0,m:ml}).then(function(r){ FDAY=r; toast('נרשם ביומן: '+vals.k+' קק״ל'); if(typeof renderFood==='function') renderFood(); }).catch(function(){ delete logged[title]; lsSet('aviel_ate_logged_'+TODAY,logged); }); },true); }); }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
