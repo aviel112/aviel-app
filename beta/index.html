@@ -135,6 +135,40 @@ nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
 .flist button small{color:var(--mute);font-weight:600;margin-right:6px}
 .fadd{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .fadd input{font-size:17px;padding:8px}
+.ftop{display:flex;align-items:center;gap:18px}
+.fringw{position:relative;width:118px;height:118px;flex:none}
+.fring{width:100%;height:100%}
+.fring circle{fill:none;stroke-width:9}
+.fring .rbg{stroke:var(--panel2)}
+.fring .rfg{stroke:var(--gold);stroke-linecap:round;transition:stroke-dasharray .5s ease}
+.fring .rfg.over{stroke:var(--bad)}
+.fringt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.fringt b{font-size:26px;line-height:1}
+.fringt small{font-size:12px;color:var(--mute);margin-top:3px}
+.feq{display:flex;flex-direction:column;gap:6px;min-width:0}
+.feq>div:not(.sub){display:flex;gap:8px;align-items:baseline}
+.feq b{font-size:18px}
+.fcopy{width:100%;margin-top:12px}
+.fmeal{border-bottom:1px solid var(--line);padding:10px 0}
+.fmeal:first-child{padding-top:0}
+.fmeal:last-child{border:0;padding-bottom:0}
+.fmh{display:flex;justify-content:space-between;align-items:baseline}
+.fmh b{font-size:15px}
+.fmh .num{font-size:13px;color:var(--mute)}
+.fmadd{background:none;border:0;padding:6px 0 0;min-height:0;color:var(--gold);font-weight:700;font-size:13.5px}
+.frec{display:flex;gap:6px;overflow-x:auto;padding:6px 0 4px;scrollbar-width:none}
+.frec button{flex:none;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:13.5px;font-weight:600;min-height:0;white-space:nowrap}
+.frec button small{color:var(--mute);margin-right:5px;font-weight:600}
+#fMeals{margin-top:4px}
+#fList:empty,#fUnits:empty,#fRecent:empty{display:none}
+.mcar{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:6px}
+.mcur{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;text-align:center;min-height:0;color:var(--text);font-size:15px;font-weight:600;display:flex;flex-direction:column;gap:3px}
+.mcur small{font-size:12px;color:var(--mute);font-weight:600}
+.mcur.picked{border-color:var(--good);background:rgba(46,133,81,.12)}
+.mcur.picked small{color:var(--good)}
+.mall{background:none;border:0;padding:6px 0 0;min-height:0;color:var(--mute);font-size:12.5px;text-decoration:underline}
+.opt.car ul{display:none}
+.opt.car.open ul{display:flex;margin-top:8px}
 .fitem{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--line);padding:8px 0;font-size:14px}
 .fitem:last-child{border:0}
 .fitem small{color:var(--mute)}
@@ -424,8 +458,10 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
       <div class="card fsearch">
         <span class="label">הוספה</span>
         <div class="qrow"><input id="fQ" type="search" placeholder="חיפוש: עוף, אורז, קוטג׳…" aria-label="חיפוש מאכל" style="font-size:16px;text-align:right;flex:1"><button type="button" class="ghost" id="fScan" aria-label="סריקת ברקוד" title="סריקת ברקוד"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M7 8v8M10 8v8M13 8v8M17 8v8"/></svg></button></div>
+        <div id="fRecent"></div>
         <div class="flist" id="fList"></div>
         <div class="chips" id="fUnits"></div>
+        <div class="chips" id="fMeals" role="group" aria-label="לאיזו ארוחה"></div>
         <form class="fadd" id="fAdd" hidden><input id="fG" inputmode="numeric" aria-label="גרם"><button type="submit" id="fBtn">הוספה</button></form>
         <div class="sub" id="fPick"></div>
         <div id="fLabel" class="label-form" hidden>
@@ -435,7 +471,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
           <input type="file" id="flIn" accept="image/*" capture="environment" hidden>
         </div>
       </div>
-      <div class="card"><span class="label">היום</span><div id="fItems"></div></div>
+      <div class="card"><div id="fItems"></div></div>
     </div>
     <div class="scan" id="scan" hidden><div class="bar2"><span>מכוונים את הברקוד למסגרת</span><button type="button" id="scanX">סגירה</button></div><div class="vw"><video id="scanV" playsinline muted></video><div class="scanbox"></div></div></div>
   </section>
@@ -730,15 +766,42 @@ var FDAY={items:[]}, FSEL=null;
 function targets(){ var m=P&&P.menu, out={}; if(!m||!m.blocks) return out;
   m.blocks.forEach(function(b){ b.lines.forEach(function(l){ var mm=l.match(/^(קלוריות|חלבון|פחמימות|שומן):\s*([\d,]+)(?:\s*[–-]\s*([\d,]+))?/); if(mm){ var a=+mm[2].replace(/,/g,''), z=mm[3]?+mm[3].replace(/,/g,''):a; out[mm[1]]=Math.round((a+z)/2); } }); });
   return out; }
+var MEALS=['בוקר','צהריים','ביניים','ערב'], FMEAL=null;
+function mealByTime(t){ var h=parseInt(String(t||'').slice(0,2),10); if(isNaN(h)) h=new Date().getHours(); return h<11?'בוקר':h<16?'צהריים':h<19?'ביניים':'ערב'; }
+function fMeal(){ return FMEAL||mealByTime(); }
+function ring(v,t){ var r=44, C=2*Math.PI*r, pc=t?Math.min(1,v/t):0, over=t&&v>t*1.05;
+  return '<svg class="fring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="'+r+'" class="rbg"/>'+(pc>0?'<circle cx="50" cy="50" r="'+r+'" class="rfg'+(over?' over':'')+'" stroke-dasharray="'+(C*pc).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 50 50)"/>':'')+'</svg>'; }
 function renderFood(){
   var it=FDAY.items||[], s={k:0,p:0,c:0,fat:0}; it.forEach(function(x){ s.k+=+x.k||0; s.p+=+x.p||0; s.c+=+x.c||0; s.fat+=+x.fat||0; });
   var T=targets(), bar=function(v,t){ if(!t) return ''; var pc=Math.min(100,Math.round(v/t*100)); return '<div class="bar"><i class="'+(v>t*1.05?'over':'')+'" style="width:'+pc+'%"></i></div>'; };
   var row=function(lbl,v,t,u){ return '<div><b class="num">'+Math.round(v)+'</b>'+(t?' / '+t:'')+' '+u+'<div class="sub">'+lbl+'</div>'+bar(v,t)+'</div>'; };
-  $('#fTot').innerHTML='<div class="row"><span class="label">היום</span><span class="sub">'+it.length+' רישומים</span></div><div style="margin-top:6px"><b class="num" style="font-size:26px">'+Math.round(s.k)+'</b>'+(T['קלוריות']?' <span class="sub">מתוך '+T['קלוריות']+' קק״ל · נשארו '+Math.max(0,T['קלוריות']-Math.round(s.k))+'</span>':' <span class="sub">קק״ל</span>')+bar(s.k,T['קלוריות'])+'</div>'+
-    '<div class="mac">'+row('חלבון',s.p,T['חלבון'],'ג׳')+row('פחמימה',s.c,T['פחמימות'],'ג׳')+row('שומן',s.fat,T['שומן'],'ג׳')+'</div>';
-  $('#fItems').innerHTML=it.length?it.map(function(x){ return '<div class="fitem"><span><b>'+esc(x.f)+'</b> <small>'+esc(x.g)+' ג׳ · '+esc(x.t||'')+'</small></span><span><span class="num">'+esc(x.k)+'</span> <small>קק״ל</small> <button class="ghost sm" data-del="'+x.row+'" data-f="'+esc(x.f)+'" aria-label="מחיקה"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></span></div>'; }).join(''):'<div class="sub" style="padding-top:6px">עוד לא נרשם כלום היום.</div>';
+  var tk=T['קלוריות'], left=tk?tk-Math.round(s.k):null;
+  $('#fTot').innerHTML='<div class="ftop"><div class="fringw">'+ring(s.k,tk)+'<div class="fringt"><b class="num">'+(tk?Math.abs(left):Math.round(s.k))+'</b><small>'+(tk?(left>=0?'נשארו':'מעל היעד'):'קק״ל')+'</small></div></div>'+
+    '<div class="feq"><div><span class="sub">יעד</span><b class="num">'+(tk||'–')+'</b></div><div><span class="sub">אכלת</span><b class="num">'+Math.round(s.k)+'</b></div><div class="sub">'+it.length+' רישומים היום</div></div></div>'+
+    '<div class="mac">'+row('חלבון',s.p,T['חלבון'],'ג׳')+row('פחמימה',s.c,T['פחמימות'],'ג׳')+row('שומן',s.fat,T['שומן'],'ג׳')+'</div>'+
+    (it.length?'':'<button type="button" class="ghost fcopy" id="fCopy">העתקת היומן של אתמול</button>');
+  var del='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+  $('#fItems').innerHTML=MEALS.map(function(ml){ var xs=it.filter(function(x){ return (x.m||mealByTime(x.t))===ml; }), k=xs.reduce(function(a,x){ return a+(+x.k||0); },0);
+    return '<div class="fmeal"><div class="fmh"><b>'+ml+'</b><span class="num">'+(xs.length?Math.round(k)+' קק״ל':'')+'</span></div>'+
+      xs.map(function(x){ return '<div class="fitem"><span><b>'+esc(x.f)+'</b> <small>'+esc(x.g)+' ג׳</small></span><span><span class="num">'+esc(x.k)+'</span> <small>קק״ל</small> <button class="ghost sm" data-del="'+x.row+'" data-f="'+esc(x.f)+'" aria-label="מחיקה">'+del+'</button></span></div>'; }).join('')+
+      '<button type="button" class="fmadd" data-meal="'+ml+'">+ הוספה ל'+ml+'</button></div>'; }).join('');
   document.querySelectorAll('#fItems [data-del]').forEach(function(b){ b.onclick=function(){ b.disabled=true; api('fooddel',{row:+b.dataset.del,f:b.dataset.f,d:FDAY.d}).then(function(r){ FDAY=r; renderFood(); }).catch(function(e){ toast(e.message,1); b.disabled=false; }); }; });
+  document.querySelectorAll('#fItems .fmadd').forEach(function(b){ b.onclick=function(){ FMEAL=b.dataset.meal; drawMealChips(); $('#fQ').scrollIntoView({block:'center',behavior:'smooth'}); $('#fQ').focus(); }; });
+  var cp=$('#fCopy'); if(cp) cp.onclick=copyYesterday;
+  drawMealChips(); drawRecent();
 }
+function drawMealChips(){ var w=$('#fMeals'); if(!w) return; var cur=fMeal(); w.innerHTML=MEALS.map(function(m){ return '<button type="button" class="chip" aria-pressed="'+(m===cur)+'" data-m="'+m+'">'+m+'</button>'; }).join('');
+  w.querySelectorAll('[data-m]').forEach(function(b){ b.onclick=function(){ FMEAL=b.dataset.m; drawMealChips(); }; }); }
+/* מאכלים אחרונים — לחיצה אחת, עם הכמות של הפעם הקודמת (כמו ב-MyFitnessPal) */
+function recentAdd(it,g){ if(!it) return; var r=ls('aviel_food_recent',[]).filter(function(x){ return x.name!==it.name; }); r.unshift({name:it.name,p:it.p,c:it.c,fat:it.fat,k100:it.k100||0,units:it.units||[],g:g,n:1}); lsSet('aviel_food_recent',r.slice(0,14)); }
+function drawRecent(){ var w=$('#fRecent'); if(!w) return; var r=ls('aviel_food_recent',[]); if(!r.length||$('#fQ').value.trim()){ w.innerHTML=''; return; }
+  w.innerHTML='<span class="label">אחרונים</span><div class="frec">'+r.map(function(x,i){ return '<button type="button" data-rc="'+i+'">'+esc(x.name)+'<small>'+x.g+' ג׳</small></button>'; }).join('')+'</div>';
+  w.querySelectorAll('[data-rc]').forEach(function(b){ b.onclick=function(){ var x=r[+b.dataset.rc]; pick({name:x.name,p:x.p,c:x.c,fat:x.fat,k100:x.k100,units:x.units,g:x.g}); w.innerHTML=''; }; }); }
+function copyYesterday(){ var b=$('#fCopy'), d=new Date(); d.setDate(d.getDate()-1); var ys=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  b.disabled=true; b.textContent='מעתיק…';
+  api('foodday',{d:ys}).then(function(r){ var xs=(r&&r.items)||[]; if(!xs.length){ toast('אתמול לא נרשם כלום',1); b.disabled=false; b.textContent='העתקת היומן של אתמול'; return; }
+    return xs.reduce(function(pr,x){ return pr.then(function(){ return api('food',{f:x.f,g:x.g,k:x.k,p:x.p,c:x.c,fat:x.fat,m:x.m||mealByTime(x.t)}); }); },Promise.resolve()).then(function(r2){ FDAY=r2; renderFood(); toast('הועתקו '+xs.length+' רישומים מאתמול'); }); })
+  .catch(function(e){ toast(e.message||'לא הצליח',1); b.disabled=false; b.textContent='העתקת היומן של אתמול'; }); }
 /* חיפוש: קודם המאגר המאושר של אביאל, ואז המאגר הלאומי של משרד הבריאות (data.gov.il, ערכים ל-100 ג׳) */
 var MOH='https://data.gov.il/api/3/action/datastore_search?resource_id=', MOH_FOODS='c3cb0630-0650-46c1-a068-82d575c094b2', MOH_UNITS='755d28c0-75f7-40e1-9c8c-ecdd106f9b2d', MOH_UNAMES='98fb46fe-e8de-4067-94d2-b0a8ea4269da';
 var UNAMES=null, FQT=null, FQN=0;
@@ -760,14 +823,14 @@ function drawList(local, nat, q){
 }
 function pick(it){ FSEL=it; $('#fAdd').hidden=false; $('#fG').value=it.g||100; $('#fList').innerHTML=''; $('#fQ').value=it.name; drawUnits(); updPick(); $('#fG').focus(); }
 function drawUnits(){ var it=FSEL; if(!it) return; var u=(it.units||[]); $('#fUnits').innerHTML=u.map(function(x,i){ return '<button type="button" class="chip" data-g="'+x[1]+'">'+esc(x[0])+' · '+x[1]+' ג׳</button>'; }).join(''); document.querySelectorAll('#fUnits .chip').forEach(function(c){ c.onclick=function(){ $('#fG').value=c.dataset.g; updPick(); }; }); }
-$('#fQ').addEventListener('input',function(){ $('#fLabel').hidden=true; var q=this.value.trim(), local=fmatch(q).slice(0,5); clearTimeout(FQT); if(q.length<2){ drawList(local,[],q); return; } drawList(local,null,q); var my=++FQN;
+$('#fQ').addEventListener('input',function(){ $('#fLabel').hidden=true; drawRecent(); var q=this.value.trim(), local=fmatch(q).slice(0,5); clearTimeout(FQT); if(q.length<2){ drawList(local,[],q); return; } drawList(local,null,q); var my=++FQN;
   FQT=setTimeout(function(){ fetch(MOH+MOH_FOODS+'&limit=25&fields=Code,smlmitzrach,shmmitzrach,protein,total_fat,carbohydrates,food_energy&q='+encodeURIComponent(q)).then(function(r){ return r.json(); }).then(function(j){ if(my!==FQN) return; drawList(local,(j.result&&j.result.records)||[],q); }).catch(function(){ if(my===FQN) drawList(local,[],q); }); },350); });
 function mac(f,g){ var r=g/100, p=f.p*r, c=f.c*r, fat=f.fat*r; return {p:Math.round(p*10)/10, c:Math.round(c*10)/10, fat:Math.round(fat*10)/10, k:Math.round(f.k100?f.k100*r:4*p+4*c+9*fat)}; }
 function updPick(){ if(!FSEL) return; var g=+$('#fG').value||0, m=mac(FSEL,g); $('#fPick').textContent=g?(g+' ג׳ '+FSEL.name+' = '+m.k+' קק״ל · '+m.p+' ג׳ חלבון · '+m.c+' ג׳ פחמימה · '+m.fat+' ג׳ שומן'):''; }
 $('#fG').addEventListener('input',updPick);
 $('#fAdd').addEventListener('submit',function(e){ e.preventDefault(); var g=Math.round(+$('#fG').value); if(!FSEL||!(g>0&&g<3000)){ toast('בוחרים מאכל וכמות בגרם',1); return; }
   var m=mac(FSEL,g); $('#fBtn').disabled=true;
-  api('food',{f:FSEL.name.slice(0,80),g:g,k:m.k,p:m.p,c:m.c,fat:m.fat}).then(function(r){ FDAY=r; renderFood(); toast('נוסף · '+m.k+' קק״ל'); FSEL=null; $('#fAdd').hidden=true; $('#fQ').value=''; $('#fPick').textContent=''; }).catch(function(er){ toast(er.message||'לא נשמר',1); }).then(function(){ $('#fBtn').disabled=false; }); });
+  var sel=FSEL; api('food',{f:FSEL.name.slice(0,80),g:g,k:m.k,p:m.p,c:m.c,fat:m.fat,m:fMeal()}).then(function(r){ FDAY=r; recentAdd(sel,g); renderFood(); toast('נוסף · '+m.k+' קק״ל'); FSEL=null; $('#fAdd').hidden=true; $('#fQ').value=''; $('#fPick').textContent=''; }).catch(function(er){ toast(er.message||'לא נשמר',1); }).then(function(){ $('#fBtn').disabled=false; }); });
 
 
 /* ----- מאגר המזון של אביאל (מוצרים סרוקים) + סריקת ברקוד + צילום תווית ----- */
@@ -975,8 +1038,9 @@ renderMenu=function(){
     card.querySelectorAll('.opt').forEach(function(o){
       var lab=(o.querySelector('b')||{}).textContent||'', key=meal+'|'+lab, lis=o.querySelectorAll('li');
       if(lis.length<2) return;
-      if(!o.querySelector('.swaphint')) o.insertAdjacentHTML('beforeend','<div class="swaphint">לוחצים על מה שאכלת. כל האפשרויות שוות בערך.</div>');
+      if(!o.querySelector('.swaphint')) o.insertAdjacentHTML('beforeend','<div class="swaphint">מחליפים עם החצים ולוחצים על מה שאכלת. כל האפשרויות שוות בערך.</div>');
       lis.forEach(function(li,i){ li.classList.toggle('picked',pick[key]===i); li.onclick=function(){ var p2=ls('aviel_pick_'+TODAY,{}); if(p2[key]===i) delete p2[key]; else p2[key]=i; lsSet('aviel_pick_'+TODAY,p2); renderMenu(); }; });
+      menuCarousel(o,key,lis,pick);
     });
   });
 };
@@ -1108,6 +1172,24 @@ function openSwap(i,e){ var box=document.getElementById('swb'+i); if(!box) retur
   box.hidden=false; draw(); }
 document.addEventListener('click',function(ev){ var b=ev.target.closest('.swapbtn'); if(b){ var days=(P.program.blocks||[]).filter(function(x){ return x.ex&&x.ex.length; }), d=applySwaps(days[DAY]); openSwap(+b.dataset.sw,d.ex[+b.dataset.sw]); return; }
   var u=ev.target.closest('[data-unsw]'); if(u){ var st=swapStore(), o=u.dataset.unsw; delete st.day[o]; delete st.perm[o]; swapSave(st.day,st.perm); toast('חזרנו לתרגיל המקורי'); var y=window.scrollY; renderTrain(); window.scrollTo(0,y); } });
+
+/* ===== תפריט: חץ בין האפשרויות, והאפשרויות שבוחרים הכי הרבה עולות ראשונות ===== */
+var MSEL={}, MOPEN={};
+function menuCarousel(o,key,lis,pick){
+  var learn=(ls('aviel_menu_learn',{})[key])||{}, txt=[].map.call(lis,function(li){ return li.textContent.replace(/^✓\s*/,''); });
+  var order=txt.map(function(x,i){ return i; }).sort(function(a,b){ return (learn[txt[b]]||0)-(learn[txt[a]]||0)||a-b; });
+  if(MSEL[key]==null||MSEL[key]>=order.length) MSEL[key]=pick[key]!=null?pick[key]:order[0];
+  var k=Math.max(0,order.indexOf(MSEL[key])), idx=order[k], on=pick[key]===idx, n=learn[txt[idx]]||0;
+  o.classList.add('car'); o.classList.toggle('open',!!MOPEN[key]); var old=o.querySelector('.mcar'); if(old) old.remove(); var oa=o.querySelector('.mall'); if(oa) oa.remove();
+  var hd=o.querySelector('b');
+  hd.insertAdjacentHTML('afterend','<div class="mcar"><button type="button" class="swarr" data-d="1" aria-label="האפשרות הבאה">'+IC_GO+'</button><button type="button" class="mcur'+(on?' picked':'')+'" aria-pressed="'+on+'">'+esc(txt[idx])+'<small>'+(on?'✓ זה מה שאכלתי':(k+1)+' מתוך '+order.length+(n?' · בחרת '+n+' פעמים':''))+'</small></button><button type="button" class="swarr prev" data-d="-1" aria-label="האפשרות הקודמת">'+IC_GO+'</button></div>');
+  o.querySelector('.swaphint').insertAdjacentHTML('beforebegin','<button type="button" class="mall">'+(o.classList.contains('open')?'הסתרת הרשימה':'כל '+order.length+' האפשרויות')+'</button>');
+  o.querySelectorAll('.mcar .swarr').forEach(function(b){ b.onclick=function(){ MSEL[key]=order[(k+(+b.dataset.d)+order.length)%order.length]; renderMenu(); }; });
+  o.querySelector('.mcur').onclick=function(){ var p2=ls('aviel_pick_'+TODAY,{}), L=ls('aviel_menu_learn',{});
+    if(p2[key]===idx) delete p2[key]; else { p2[key]=idx; L[key]=L[key]||{}; L[key][txt[idx]]=(L[key][txt[idx]]||0)+1; lsSet('aviel_menu_learn',L); }
+    lsSet('aviel_pick_'+TODAY,p2); renderMenu(); };
+  o.querySelector('.mall').onclick=function(){ MOPEN[key]=!MOPEN[key]; renderMenu(); };
+}
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
