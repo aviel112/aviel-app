@@ -383,6 +383,8 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .vplay{display:inline-flex;align-items:center;gap:6px;background:var(--cta);color:var(--cta-t);border:0;border-radius:999px;padding:8px 14px;font-weight:700;font-size:14px;min-height:0;margin-left:10px}
 .vplay svg{width:18px;height:18px}
 .nmrow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.exbtns{display:flex;gap:6px;flex:none}
+.swapbtn.tech{color:var(--mute);border-color:var(--line)}
 .swapbtn{display:inline-flex;align-items:center;gap:5px;background:transparent;color:var(--gold);border:1px solid var(--gold-d);border-radius:999px;padding:5px 10px;font-size:12.5px;font-weight:700;flex:none;min-height:0}
 .swapbtn svg{width:15px;height:15px}
 .swapped{font-size:12.5px;color:var(--mute)}
@@ -960,6 +962,7 @@ sugg=function(e,L){
   var add=rirMin!=null&&rirMin>=3?2:1, tr=R?Math.min(R[1],minR+add):minR+add;
   return {kg:top,reps:tr,why:'אותו משקל, הפעם '+tr+' חזרות'+(add>1?' כי נשאר לך כוח בפעם הקודמת':'')+(R?' (כשמגיעים ל-'+R[1]+' בכל הסטים עולים '+inc+' ק״ג)':'')};
 };
+var IC_CAM='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="12.5" r="3.5"/></svg>';
 var IC_SWAP='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>';
 var IC_UP='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
 var IC_PLAY='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>', IC_SRCH='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>', IC_CHECK='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
@@ -990,7 +993,7 @@ function renderTrain(){
   var heavyN=0, rirHelp=0;
   d.ex.forEach(function(e,i){
     var warm=/חימום/.test(e.mu), L=P.lifts&&P.lifts[e.ex];
-    h+='<div class="card ex">'+(e.mu?'<div class="mu">'+esc(e.mu)+'</div>':'')+'<div class="nmrow"><div class="nm">'+esc(e.ex)+'</div><button type="button" class="swapbtn" data-sw="'+i+'" aria-label="החלפת התרגיל בחלופה">'+IC_SWAP+'<span>חלופה</span></button></div>'+(e._orig?'<div class="swapped">במקום: '+esc(e._orig)+' · <button type="button" class="linkbtn" data-unsw="'+esc(e._orig)+'">חזרה למקורי</button></div>':'')+'<div class="swapbox" id="swb'+i+'" hidden></div>'+
+    h+='<div class="card ex">'+(e.mu?'<div class="mu">'+esc(e.mu)+'</div>':'')+'<div class="nmrow"><div class="nm">'+esc(e.ex)+'</div><span class="exbtns"><button type="button" class="swapbtn tech" data-tech="'+i+'" aria-label="שליחת סרטון טכניקה לאביאל">'+IC_CAM+'<span>טכניקה</span></button><button type="button" class="swapbtn" data-sw="'+i+'" aria-label="החלפת התרגיל בחלופה">'+IC_SWAP+'<span>חלופה</span></button></span></div>'+(e._orig?'<div class="swapped">במקום: '+esc(e._orig)+' · <button type="button" class="linkbtn" data-unsw="'+esc(e._orig)+'">חזרה למקורי</button></div>':'')+'<div class="swapbox" id="swb'+i+'" hidden></div>'+
       '<div class="spec">'+(e.s&&e.s!=='-'?'<span><i>סטים</i>'+esc(e.s)+'</span>':'')+(e.r?'<span><i>'+(/דק/.test(e.r)?'זמן':'חזרות')+'</i>'+ltr(esc(e.r))+'</span>':'')+(e.rest&&e.rest!=='-'?'<span><i>מנוחה</i>'+esc(e.rest)+(/דק/.test(e.rest)?'':' דק׳')+'</span>':'')+'</div>'+
       (e.note?'<div class="exnote">'+esc(e.note)+'</div>':'');
     if(!warm){
@@ -1253,6 +1256,18 @@ function wireInbox(el){ var x=el.querySelector('#inboxX'); if(x) x.onclick=funct
       VOICE=new Audio('data:'+(r.mime||'audio/mp4')+';base64,'+r.b64); VOICE.onended=function(){ p.innerHTML=IC_PLAY+'<span>שוב</span>'; }; VOICE.onerror=function(){ toast('הטלפון לא מצליח לנגן את ההקלטה',1); p.innerHTML=IC_PLAY+'<span>השמעה</span>'; };
       VOICE.play().then(function(){ p.innerHTML=IC_PAUSE+'<span>עצירה</span>'; }).catch(function(){ p.innerHTML=IC_PLAY+'<span>השמעה</span>'; }); })
     .catch(function(e){ p.disabled=false; toast(e.message||'לא נטען',1); p.innerHTML=IC_PLAY+'<span>השמעה</span>'; }); }; }
+
+/* ===== בדיקת טכניקה: סרטון קצר מכרטיס התרגיל → לאביאל, והוא עונה בהודעה קולית ===== */
+var TECH_IN=null, TECH_EX='';
+function techInput(){ if(TECH_IN) return TECH_IN; TECH_IN=document.createElement('input'); TECH_IN.type='file'; TECH_IN.accept='video/*'; TECH_IN.setAttribute('capture','environment'); TECH_IN.hidden=true; document.body.appendChild(TECH_IN);
+  TECH_IN.addEventListener('change',function(){ var f=TECH_IN.files&&TECH_IN.files[0]; TECH_IN.value=''; if(!f) return;
+    if(f.size>30e6){ toast('הסרטון גדול מדי. מספיקות 2–3 חזרות (עד 30MB)',1); return; }
+    toast('מעלה את הסרטון לאביאל… אפשר להמשיך באימון');
+    var fr=new FileReader(); fr.onload=function(){ fetch(API,{method:'POST',body:JSON.stringify({api:'techvid',t:T,p:{ex:TECH_EX,video:fr.result,mime:f.type}})}).then(function(r){ return r.json(); })
+      .then(function(j){ if(!j.ok) throw new Error(j.error||'לא נשלח'); toast('הסרטון אצל אביאל. תקבל/י ממנו תשובה קולית באפליקציה'); })
+      .catch(function(e){ toast(e.message||'הסרטון לא נשלח, נסו שוב עם וויפיי',1); }); }; fr.readAsDataURL(f); });
+  return TECH_IN; }
+document.addEventListener('click',function(ev){ var b=ev.target.closest('[data-tech]'); if(!b) return; var days=(P.program.blocks||[]).filter(function(x){ return x.ex&&x.ex.length; }), d=applySwaps(days[DAY]), e=d.ex[+b.dataset.tech]; TECH_EX=e?e.ex:''; techInput().click(); });
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
