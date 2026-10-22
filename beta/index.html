@@ -387,6 +387,12 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 @media (prefers-reduced-motion:reduce){.lvl,.hit{animation:none}}
 .news,.recap,.board{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--sh)}
 .news{border-color:var(--gold-d)}
+.news.supp p{margin:6px 0 8px;font-size:14px;line-height:1.5}
+.splist{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.sprow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;background:var(--panel2);border-radius:12px;padding:8px 10px}
+.sprow b{font-size:14px}
+.sprow small{grid-column:1;font-size:12.5px;color:var(--mute);line-height:1.4}
+.sprow .btn-link{grid-row:1/3;grid-column:2;border:1px solid var(--gold-d);color:var(--gold);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
 .news.blood p{margin:6px 0 8px;font-size:14px;line-height:1.55}
 .news.blood .kv{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .bflag{display:inline-block;font-size:12px;border-radius:999px;padding:2px 8px;background:var(--panel2);margin:2px 0}
@@ -1359,8 +1365,8 @@ var BOARD=null, BOARD_TRIED=false;
 function boardHtml(){ if(!BOARD||!BOARD.list||!BOARD.list.length) return ''; var me=BOARD.me||'';
   return '<div class="board"><div class="row"><b>אתגר הצעדים השבועי</b><small>ממוצע ליום</small></div>'+BOARD.list.slice(0,5).map(function(x,i){ return '<div class="brow'+(x.n===me?' me':'')+'"><span class="bn num">'+(i+1)+'</span><span class="bname">'+esc(x.n)+(x.n===me?' (את/ה)':'')+'</span><span class="num">'+x.avg.toLocaleString('he-IL')+'</span></div>'; }).join('')+(BOARD.rank&&BOARD.rank>5?'<div class="brow me"><span class="bn num">'+BOARD.rank+'</span><span class="bname">'+esc(me)+' (את/ה)</span><span class="num">'+(BOARD.mine||0).toLocaleString('he-IL')+'</span></div>':'')+'<div class="swaphint">מתעדכן כל שעה מהצעדים שכולם רושמים. כל מי שמסיים את השבוע עם 7 ימי רישום מקבל ממני כבוד.</div></div>'; }
 function renderExtras(el){ var x=document.getElementById('extras'); if(!x){ x=document.createElement('div'); x.id='extras'; el.parentNode.insertBefore(x,el.nextSibling); }
-  x.innerHTML=whatsNewHtml()+bloodHtml()+reportHtml()+recapHtml()+boardHtml();
-  wireBlood(x);
+  x.innerHTML=whatsNewHtml()+bloodHtml()+suppHtml()+reportHtml()+recapHtml()+boardHtml();
+  wireBlood(x); var sx=x.querySelector('#suppX'); if(sx) sx.onclick=function(){ lsSet('aviel_supp_seen',INBOX.supp.at); renderExtras(document.getElementById('todayCard')); };
   var nb=x.querySelector('#newsX'); if(nb) nb.onclick=function(){ lsSet('aviel_news_seen',WHATS_NEW.v); renderExtras(el); };
   if(!BOARD_TRIED&&typeof api==='function'){ BOARD_TRIED=true; api('board',{}).then(function(r){ BOARD=r; renderExtras(el); }).catch(function(){}); } }
 
@@ -1426,6 +1432,10 @@ function wireBlood(x){ var inp=x.querySelector('#bloodIn'); if(inp) inp.onchange
   var bx=x.querySelector('#bloodX'); if(bx) bx.onclick=function(){ lsSet('aviel_blood_seen',INBOX.blood.at); renderExtras(document.getElementById('todayCard')); };
   var bf=x.querySelector('#bloodForm'); if(bf) bf.onsubmit=function(e){ e.preventDefault(); var vals={}, n=0; BLOOD_M.forEach(function(m){ var v=bf.elements[m[0]].value.trim(); if(v){ vals[m[0]]=v; n++; } }); if(!n){ toast('ממלאים לפחות ערך אחד',1); return; }
     bf.querySelector('button').disabled=true; api('bloodvals',{vals:vals}).then(function(r){ INBOX=INBOX||{}; INBOX.blood={at:new Date().toISOString(),text:r.text,flags:r.flags}; BLOOD_OPEN=false; toast('הניתוח מוכן'); renderExtras(document.getElementById('todayCard')); }).catch(function(e){ bf.querySelector('button').disabled=false; toast(e.message||'לא נשלח',1); }); }; }
+
+/* ===== התוספים שלך: רשימה שאביאל שלח — איך לוקחים, קישור לכל אחד, והמדריך המלא ===== */
+function suppHtml(){ var sp=INBOX&&INBOX.supp; if(!sp||!sp.at||!sp.items||!sp.items.length) return ''; if(ls('aviel_supp_seen','')===sp.at) return '';
+  return '<div class="news supp"><div class="row"><b>התוספים שלך</b><button type="button" class="linkbtn" id="suppX">קראתי</button></div>'+(sp.note?'<p>'+esc(sp.note)+'</p>':'')+'<div class="splist">'+sp.items.map(function(x){ return '<div class="sprow"><b>'+esc(x.t)+'</b><small>'+esc(x.dose)+(x.when?' · '+esc(x.when):'')+'</small>'+(x.url?'<a class="btn-link" href="'+esc(x.url)+'" target="_blank" rel="noopener">לרכישה</a>':'')+'</div>'; }).join('')+'</div>'+(sp.guide?'<a class="vplay" href="'+esc(sp.guide)+'" target="_blank" rel="noopener" style="text-decoration:none;margin-top:10px">המדריך המלא לתוספים (PDF)</a>':'')+'<div class="swaphint">מידע כללי מאביאל, לא ייעוץ רפואי. תרופות או מצב רפואי — מתייעצים עם רופא.</div></div>'; }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
