@@ -396,6 +396,49 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .projgrid b{font-size:20px}
 .projgrid small{font-size:12px;color:var(--mute)}
 .pgood{margin:8px 0 0;font-size:14px;color:var(--good)}
+.trk{display:flex;flex-direction:column;gap:12px}
+.tgoal{background:var(--panel2);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.tgoal .row b{font-size:15.5px}
+.tgoal .tok{color:var(--good)}
+.tbar{position:relative;height:8px;border-radius:99px;background:var(--line);margin:6px 0 2px}
+.tbar i{position:absolute;inset-block:0;right:0;border-radius:99px;background:var(--gold);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.tbar.ok i{background:var(--good)}
+.tknob{position:absolute;top:50%;width:22px;height:22px;border-radius:50%;background:var(--panel);border:3px solid var(--gold);transform:translate(50%,-50%)}
+.tends .num{direction:ltr;unicode-bidi:isolate}
+.tends{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--mute)}
+.tends b{color:var(--gold);font-size:14px}
+.tnote{font-size:13px;color:var(--mute);line-height:1.5}
+.tmets{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.tmet{flex:1;min-width:72px;background:transparent;color:var(--mute);border:1px solid var(--line);border-radius:12px;padding:9px 10px;font-size:14px;min-height:42px}
+.tmet.on{background:rgba(212,172,91,.14);color:var(--gold);border-color:var(--gold-d)}
+.tml{display:flex;gap:6px;flex-wrap:wrap}
+.tml button{background:var(--panel2);color:var(--mute);border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:13px;font-weight:600}
+.tml button.on{color:var(--text);border-color:var(--gold-d)}
+.tseg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--panel2);border-radius:14px;padding:4px;gap:4px}
+.tseg button{background:transparent;color:var(--text);border-radius:10px;padding:9px 0;font-size:14.5px;min-height:40px}
+.tseg button.on{background:var(--gold);color:var(--ink)}
+.tstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tstats>div{background:var(--panel2);border-radius:14px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tstats small{font-size:12.5px;color:var(--mute)}
+.tstats b{font-size:21px;font-weight:800;direction:ltr;unicode-bidi:isolate}
+.tstats b.cur{color:var(--gold)}
+.tstats b.up{color:var(--good)}
+.tstats b.dn{color:var(--bad)}
+.tnav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tnav b{font-size:16px}
+.tarr{width:40px;height:40px;padding:0;border-radius:50%;background:var(--panel2);color:var(--text);display:flex;align-items:center;justify-content:center}
+.tarr svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.tarr[disabled]{opacity:.3;cursor:default}
+.tchart{position:relative;color:var(--gold)}
+.tchart svg{width:100%;height:auto;display:block;cursor:pointer}
+.tgrid line{stroke:var(--line);stroke-width:1}
+.tgrid text{fill:var(--mute);font-size:11px}
+.tline{fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
+.tpt{fill:var(--panel);stroke:currentColor;stroke-width:2}
+.tpt.tlast,.tpt.sel{fill:currentColor}
+.ttip{position:absolute;transform:translateX(-50%);background:var(--text);color:var(--ink);font-size:12.5px;font-weight:700;padding:4px 9px;border-radius:8px;white-space:nowrap;pointer-events:none;direction:rtl}
+.tempty{font-size:14px;color:var(--mute);text-align:center;padding:22px 0}
+@media (prefers-reduced-motion:reduce){.tbar i{transition:none}}
 .goalbox{display:flex;gap:6px;align-items:center}
 .goalbox input{width:96px;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
 .goalbox button{min-height:0;padding:6px 12px}
@@ -1498,7 +1541,7 @@ function drawProj(w){ var host=document.getElementById('chart'); if(!host) retur
   if(goal){ var diff=goal-last; if(Math.abs(diff)<0.3) h+='<p class="pgood">הגעת ליעד. עכשיו שומרים.</p>'; else if(slope&&diff/slope>0){ var wk=Math.ceil(diff/slope), d=new Date(); d.setDate(d.getDate()+wk*7); h+='<p class="pgood">בקצב הזה מגיעים ל-'+goal+' ק״ג בעוד כ-'+wk+' שבועות ('+d.getDate()+'/'+(d.getMonth()+1)+').</p>'; } else h+='<p class="sub" style="margin:6px 0 0">הכיוון כרגע לא לעבר היעד. שווה לדבר עם אביאל בצ׳ק-אין.</p>'; }
   el.innerHTML=h; wireGoal(el); }
 function wireGoal(el){ var b=el.querySelector('#goalSet'); if(b) b.onclick=function(){ var cur=ls('aviel_goal_kg',''), box=document.createElement('div'); box.className='goalbox'; box.innerHTML='<input type="number" inputmode="decimal" step="0.5" id="goalIn" placeholder="יעד בק״ג" value="'+(cur||'')+'"><button type="button" id="goalOk">שמירה</button>'; b.replaceWith(box);
-  box.querySelector('#goalOk').onclick=function(){ var v=+box.querySelector('#goalIn').value; if(v&&(v<30||v>250)){ toast('משקל לא תקין',1); return; } lsSet('aviel_goal_kg',v||0); drawProj((D&&D.weekly)||[]); }; }; }
+  box.querySelector('#goalOk').onclick=function(){ var v=+box.querySelector('#goalIn').value; if(v&&(v<30||v>250)){ toast('משקל לא תקין',1); return; } lsSet('aviel_goal_kg',v||0); drawProj((D&&D.weekly)||[]); try{ drawTrk(); }catch(e){} }; }; }
 
 /* ===== שבוע ראשון מודרך: משימה אחת קטנה ביום, 7 ימים מהכניסה הראשונה ===== */
 var FIRST_WEEK=[
@@ -1522,6 +1565,75 @@ function photoDueHtml(){ if(PHOTOS_L==null) return ''; if(ls('aviel_photo_snooze
 function askHtml(){ return '<div class="news ask"><div class="row"><b>שאלה לאביאל</b><small>מגיע ישר אליו</small></div><form id="askF" class="askf"><textarea id="askQ" rows="2" placeholder="למשל: אפשר להחליף את האורז בצהריים בפסטה?"></textarea><button type="submit">שליחה</button></form></div>'; }
 function wireAsk(x){ var f=x.querySelector('#askF'); if(!f) return; f.onsubmit=function(e){ e.preventDefault(); var q=x.querySelector('#askQ').value.trim(); if(q.length<3){ toast('כותבים שאלה',1); return; } var b=f.querySelector('button'); b.disabled=true;
   api('question',{q:q}).then(function(){ x.querySelector('#askQ').value=''; b.disabled=false; toast('נשלח לאביאל. התשובה תגיע אליך כאן או בוואטסאפ'); }).catch(function(er){ b.disabled=false; toast(er.message||'לא נשלח',1); }); }; }
+
+/* ===== מטרות והתקדמות: פס יעד, משקל/צעדים/היקפים, שבועי/חודשי/הכל, גרף חלק ===== */
+var MONF=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+var TRK={m:'kg',p:'m',o:0,ml:0};
+function trkYmd(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function trkDm(s){ var p=String(s).split('/'), now=new Date(), y=now.getFullYear(); if(+p[1]-1>now.getMonth()) y--; return y+'-'+('0'+p[1]).slice(-2)+'-'+('0'+p[0]).slice(-2); }
+function trkRows(){ var d=D||{}, map={};
+  if(d.hist&&d.hist.length) d.hist.forEach(function(r){ map[r[0]]={k:r[0],kg:r[1],st:r[2]}; });
+  else (d.spark||[]).forEach(function(x){ var k=trkDm(x.d); map[k]={k:k,kg:x.kg,st:null}; });
+  (d.week||[]).forEach(function(x){ var o=map[x.d]||(map[x.d]={k:x.d,kg:null,st:null}); if(x.kg!=null) o.kg=x.kg; if(x.steps!=null) o.st=x.steps; });
+  return Object.keys(map).sort().map(function(k){ return map[k]; }); }
+function trkSeries(){ var d=D||{};
+  if(TRK.m==='ms'){ var M=d.measures; if(!M||!M.rows) return []; var lb=MLABELS[TRK.ml]||'', i=(M.labels||[]).indexOf(lb); if(i<0) return [];
+    return M.rows.map(function(r){ return {k:trkDm(r.date),v:r.vals[i]===''?null:+r.vals[i]}; }).filter(function(x){ return x.v!=null&&!isNaN(x.v); }); }
+  var f=TRK.m==='st'?'st':'kg'; return trkRows().filter(function(r){ return r[f]!=null; }).map(function(r){ return {k:r.k,v:r[f]}; }); }
+function trkWindow(){ var now=new Date(); now.setHours(12,0,0,0);
+  if(TRK.p==='w'){ var e=new Date(now.getTime()-TRK.o*7*864e5), s=new Date(e.getTime()-6*864e5); return {s:trkYmd(s),e:trkYmd(e),t:s.getDate()+'/'+(s.getMonth()+1)+' – '+e.getDate()+'/'+(e.getMonth()+1)}; }
+  if(TRK.p==='m'){ var a=new Date(now.getFullYear(),now.getMonth()-TRK.o,1), b=new Date(a.getFullYear(),a.getMonth()+1,0); return {s:trkYmd(a),e:trkYmd(b),t:MONF[a.getMonth()]+' '+a.getFullYear()}; }
+  return {s:'0000',e:'9999',t:'מההתחלה ועד היום'}; }
+function trkFmt(v){ return TRK.m==='st'?Math.round(v).toLocaleString('he-IL'):String(Math.round(v*10)/10); }
+function trkSmooth(p){ if(p.length<3) return p.map(function(q,i){ return (i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1); }).join(' ');
+  var d='M'+p[0][0].toFixed(1)+' '+p[0][1].toFixed(1); for(var i=0;i<p.length-1;i++){ var a=p[i-1]||p[i], b=p[i], c=p[i+1], e=p[i+2]||c;
+    var c1x=b[0]+(c[0]-a[0])/6, c1y=b[1]+(c[1]-a[1])/6, c2x=c[0]-(e[0]-b[0])/6, c2y=c[1]-(e[1]-b[1])/6;
+    var lo=Math.min(b[1],c[1]), hi=Math.max(b[1],c[1]); c1y=Math.max(lo,Math.min(hi,c1y)); c2y=Math.max(lo,Math.min(hi,c2y));
+    d+=' C'+c1x.toFixed(1)+' '+c1y.toFixed(1)+' '+c2x.toFixed(1)+' '+c2y.toFixed(1)+' '+c[0].toFixed(1)+' '+c[1].toFixed(1); } return d; }
+function trkGoalHtml(){ var d=D||{}, rows=trkRows().filter(function(r){ return r.kg!=null; }), goal=+ls('aviel_goal_kg',0)||0;
+  var start=d.firstKg!=null?+d.firstKg:(rows[0]&&rows[0].kg), cur=rows.length?rows[rows.length-1].kg:(d.lastKg!=null?+d.lastKg:null), h='';
+  if(goal&&start!=null&&cur!=null&&Math.abs(start-goal)>=0.5){ var pc=Math.max(0,Math.min(100,Math.round((start-cur)/(start-goal)*100))), up=goal>start;
+    h+='<div class="tgoal"><div class="row"><b>'+(up?'עלייה ל-':'ירידה ל-')+goal+' ק״ג</b><button type="button" class="linkbtn" id="trkGoal">שינוי</button></div><div class="tbar"><i style="width:'+pc+'%"></i><span class="tknob" style="right:'+pc+'%"></span></div><div class="tends"><span class="num">'+start+' ק״ג</span><b class="num">'+pc+'%</b><span class="num">'+goal+' ק״ג</span></div><div class="tnote">'+(pc>=100?'הגעת ליעד. עכשיו שומרים.':'עברת '+Math.abs(Math.round((start-cur)*10)/10)+' ק״ג מתוך '+Math.abs(Math.round((start-goal)*10)/10)+'. נשארו '+Math.abs(Math.round((cur-goal)*10)/10)+'.')+'</div></div>'; }
+  else h+='<div class="tgoal"><div class="row"><b>היעד שלך</b><button type="button" class="linkbtn" id="trkGoal">הגדרת יעד משקל</button></div><div class="tnote">מגדירים יעד, ורואים כאן כמה אחוז מהדרך כבר עשית.</div></div>';
+  var now=new Date(), mk=trkYmd(now).slice(0,7), days=now.getDate(), n=rows.filter(function(r){ return r.k.slice(0,7)===mk; }).length, ap=Math.min(100,Math.round(n/days*100));
+  h+='<div class="tgoal"><div class="row"><b>שקילות החודש</b><b class="num tok">'+n+'/'+days+'</b></div><div class="tbar ok"><i style="width:'+ap+'%"></i></div><div class="tnote">'+(ap>=70?'התמדה מצוינת. ככה הממוצע אמין.':'5 שקילות בשבוע נותנות ממוצע אמין.')+'</div></div>';
+  return h; }
+function drawTrk(){ var host=document.getElementById('chart'); if(!host||!D) return; var card=host.closest('.card'), el=document.getElementById('trk');
+  if(!el){ el=document.createElement('div'); el.id='trk'; el.className='card trk'; card.parentNode.insertBefore(el,card); }
+  var hasM=MLABELS.length&&D.measures&&D.measures.rows&&D.measures.rows.length; if(TRK.m==='ms'&&!hasM) TRK.m='kg';
+  var mets=[['kg','משקל'],['st','צעדים']]; if(hasM) mets.push(['ms','היקפים']);
+  var W=trkWindow(), all=trkSeries(), pts=all.filter(function(x){ return x.k>=W.s&&x.k<=W.e; }), firstK=all.length?all[0].k:'';
+  var canBack=TRK.p!=='a'&&firstK&&firstK<W.s, canFwd=TRK.p!=='a'&&TRK.o>0;
+  var h='<div class="label">מטרות</div>'+trkGoalHtml()+
+    '<div class="tmets" role="tablist">'+mets.map(function(m){ return '<button type="button" role="tab" aria-selected="'+(TRK.m===m[0])+'" class="tmet'+(TRK.m===m[0]?' on':'')+'" data-tm="'+m[0]+'">'+m[1]+'</button>'; }).join('')+'</div>'+
+    (TRK.m==='ms'?'<div class="tml">'+MLABELS.map(function(l,i){ return '<button type="button" class="'+(TRK.ml===i?'on':'')+'" data-tml="'+i+'">'+esc(l)+'</button>'; }).join('')+'</div>':'')+
+    '<div class="tseg">'+[['w','שבועי'],['m','חודשי'],['a','הכל']].map(function(p){ return '<button type="button" class="'+(TRK.p===p[0]?'on':'')+'" data-tp="'+p[0]+'">'+p[1]+'</button>'; }).join('')+'</div>';
+  var unit=TRK.m==='st'?'צעדים':TRK.m==='ms'?'ס״מ':'ק״ג';
+  if(pts.length){ var vs=pts.map(function(x){ return x.v; }), last=vs[vs.length-1], avg=vs.reduce(function(a,b){ return a+b; },0)/vs.length, ch=last-vs[0];
+    var good=TRK.m==='st'?ch>0:((D.goal==='עלייה')?ch>0:ch<0), third=TRK.m==='st'?['שיא',trkFmt(Math.max.apply(null,vs)),'']:['שינוי',(ch>0?'+':ch<0?'−':'')+trkFmt(Math.abs(ch)),ch===0?'':good?'up':'dn'];
+    h+='<div class="tstats"><div><small>נוכחי</small><b class="num cur">'+trkFmt(last)+'</b></div><div><small>ממוצע</small><b class="num">'+trkFmt(avg)+'</b></div><div><small>'+third[0]+'</small><b class="num '+third[2]+'">'+third[1]+'</b></div></div>'; }
+  h+='<div class="tnav"><button type="button" class="tarr" data-tn="1" aria-label="תקופה קודמת"'+(canBack?'':' disabled')+'><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button><b>'+W.t+'</b><button type="button" class="tarr" data-tn="-1" aria-label="תקופה הבאה"'+(canFwd?'':' disabled')+'><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button></div>';
+  if(pts.length<2) h+='<div class="tempty">'+(pts.length?'נקודה אחת בתקופה הזו. עוד קצת נתונים והגרף יופיע.':'אין נתונים בתקופה הזו.')+'</div>';
+  else { var Wd=360,Hd=190,L=36,R=10,T=14,B=24, t0=TRK.p==='a'?pd(pts[0].k).getTime():pd(W.s).getTime(), t1=TRK.p==='a'?pd(pts[pts.length-1].k).getTime():pd(W.e).getTime(); if(t1<=t0) t1=t0+864e5;
+    var mn=Math.min.apply(null,vs), mx=Math.max.apply(null,vs), pad=(mx-mn)*0.15||(TRK.m==='st'?500:0.5); mn-=pad; mx+=pad;
+    var X=function(k){ return L+(Wd-L-R)*(pd(k).getTime()-t0)/(t1-t0); }, Y=function(v){ return T+(Hd-T-B)*(mx-v)/(mx-mn); };
+    var P=pts.map(function(x){ return [X(x.k),Y(x.v)]; }), line=trkSmooth(P), g='';
+    for(var i=0;i<4;i++){ var gv=mn+(mx-mn)*i/3; g+='<line x1="'+L+'" x2="'+(Wd-R)+'" y1="'+Y(gv).toFixed(1)+'" y2="'+Y(gv).toFixed(1)+'"/><text x="'+(L-6)+'" y="'+(Y(gv)+4).toFixed(1)+'" text-anchor="end">'+(TRK.m==='st'?Math.round(gv/1000*10)/10+'K':Math.round(gv))+'</text>'; }
+    var lp=P[P.length-1], fp=P[0];
+    h+='<div class="tchart"><svg viewBox="0 0 '+Wd+' '+Hd+'" role="img" aria-label="'+W.t+': מ-'+trkFmt(vs[0])+' ל-'+trkFmt(last)+' '+unit+'"><defs><linearGradient id="tgf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".32"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><g class="tgrid">'+g+'</g><path class="tarea" d="'+line+' L'+lp[0].toFixed(1)+' '+(Hd-B)+' L'+fp[0].toFixed(1)+' '+(Hd-B)+' Z" fill="url(#tgf)"/><path class="tline" d="'+line+'"/>'+P.map(function(p,i){ return '<circle class="tpt'+(i===P.length-1?' tlast':'')+'" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="'+(i===P.length-1?5:3)+'" data-ti="'+i+'"/>'; }).join('')+'</svg><div class="ttip" id="ttip" hidden></div></div>'; }
+  el.innerHTML=h; el.style.color='';
+  el.querySelectorAll('[data-tm]').forEach(function(b){ b.onclick=function(){ TRK.m=b.dataset.tm; TRK.o=0; drawTrk(); }; });
+  el.querySelectorAll('[data-tml]').forEach(function(b){ b.onclick=function(){ TRK.ml=+b.dataset.tml; drawTrk(); }; });
+  el.querySelectorAll('[data-tp]').forEach(function(b){ b.onclick=function(){ TRK.p=b.dataset.tp; TRK.o=0; drawTrk(); }; });
+  el.querySelectorAll('[data-tn]').forEach(function(b){ b.onclick=function(){ TRK.o=Math.max(0,TRK.o+(+b.dataset.tn)); drawTrk(); }; });
+  var svg=el.querySelector('.tchart svg'), tip=el.querySelector('#ttip');
+  if(svg) svg.addEventListener('click',function(ev){ var r=svg.getBoundingClientRect(), x=(ev.clientX-r.left)/r.width*360, best=0, bd=1e9; P.forEach(function(p,i){ var dd=Math.abs(p[0]-x); if(dd<bd){ bd=dd; best=i; } });
+    el.querySelectorAll('.tpt').forEach(function(c){ c.classList.toggle('sel',+c.dataset.ti===best); }); var dt=pd(pts[best].k);
+    tip.textContent=dt.getDate()+'/'+(dt.getMonth()+1)+' · '+trkFmt(pts[best].v)+' '+unit; tip.style.left=Math.max(12,Math.min(88,P[best][0]/360*100))+'%'; tip.style.top=Math.max(0,P[best][1]/190*100-22)+'%'; tip.hidden=false; });
+  var gb=el.querySelector('#trkGoal'); if(gb) gb.onclick=function(){ var cur=ls('aviel_goal_kg',''), box=document.createElement('div'); box.className='goalbox'; box.innerHTML='<input type="number" inputmode="decimal" step="0.5" id="trkGoalIn" placeholder="יעד בק״ג" aria-label="יעד משקל בק״ג" value="'+(cur||'')+'"><button type="button" id="trkGoalOk">שמירה</button>'; gb.closest('.tgoal').appendChild(box); gb.remove(); box.querySelector('input').focus();
+    box.querySelector('#trkGoalOk').onclick=function(){ var v=+box.querySelector('input').value; if(v&&(v<30||v>250)){ toast('משקל לא תקין',1); return; } lsSet('aviel_goal_kg',v||0); drawTrk(); try{ drawProj((D&&D.weekly)||[]); }catch(e){} }; }; }
+var _drawChartT=drawChart; drawChart=function(){ _drawChartT.apply(this,arguments); try{ drawTrk(); }catch(e){} };
+var _drawMeasT=drawMeasures; drawMeasures=function(){ _drawMeasT.apply(this,arguments); try{ drawTrk(); }catch(e){} };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
