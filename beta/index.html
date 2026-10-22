@@ -380,6 +380,14 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .rgrid>div{background:var(--panel2);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
 .rgrid b{font-size:20px}
 .rgrid small{font-size:12px;color:var(--mute)}
+.goals{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.goal .row{font-size:14px}
+.goal .row b{font-size:14px}
+.goal.ok .row span{color:var(--good)}
+.goal.ok .tdbar i{background:var(--good)}
+.grow{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--good);margin-top:6px}
+.grow svg{width:16px;height:16px;flex:none}
+.grow b{font-weight:800}
 .rbest{margin-top:10px;font-size:14px;color:var(--good)}
 .brow{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px}
 .brow:last-of-type{border:0}
@@ -1033,6 +1041,7 @@ function renderTrain(){
       var wk=sg?sg.kg:(ps.length?Math.max.apply(null,ps.map(function(x){ return x.kg; })):0);
       if(wk>=30&&incFor(e,wk)>=2.5&&heavyN<2&&!today.length){ heavyN++; h+='<div class="exnote">סטי חימום לפני (לא נרשמים): <bdi dir="ltr">'+r25(wk*0.5)+'×10</bdi> · <bdi dir="ltr">'+r25(wk*0.7)+'×5</bdi> · <bdi dir="ltr">'+r25(wk*0.85)+'×2</bdi></div>'; }
       else if(ps.length) h+='<div class="last">בפעם הקודמת: '+ps.map(function(x){ return '<bdi dir="ltr">'+x.kg+'×'+x.reps+'</bdi>'; }).join(' · ')+'</div>';
+      var gr=growthLine(L); if(gr) h+=gr;
       else h+='<div class="exnote">פעם ראשונה בתרגיל: בוחרים משקל שאפשר לעשות איתו את כל החזרות בטכניקה נקייה.</div>';
       h+='<div class="sets"><div class="sh"><span>סט</span><span>ק״ג</span><span>חזרות</span><span>RIR</span><span></span></div>';
       for(var k=0;k<Math.max(n,today.length);k++){
@@ -1301,14 +1310,17 @@ var WHATS_NEW={v:'2026-10-22',t:'מה חדש באפליקציה',l:['חלופה 
 function whatsNewHtml(){ if(ls('aviel_news_seen','')===WHATS_NEW.v) return ''; return '<div class="news"><div class="row"><b>'+esc(WHATS_NEW.t)+'</b><button type="button" class="linkbtn" id="newsX">הבנתי</button></div><ul>'+WHATS_NEW.l.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul></div>'; }
 /* ===== השבוע שלך: סיכום קצר מהנתונים שכבר יש בטלפון ===== */
 function weekKeys(){ var ws=weekStart(), out=[]; for(var i=0;i<7;i++){ var d=new Date(ws.getTime()+i*864e5); var k=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); if(k>TODAY) break; out.push(k); } return out; }
-function recapHtml(){ var d=D||{}, wk=d.week||[], keys=weekKeys(), ws=weekStart().getTime();
+function recapHtml(){ var d=D||{}, wk=d.week||[], keys=weekKeys(), ws=weekStart().getTime(), p=P&&P.program, days=p&&p.blocks?p.blocks.filter(function(b){ return b.ex&&b.ex.length; }).length:0;
   var weighs=wk.filter(function(x){ return x.kg!=null&&new Date(x.d+'T12:00:00').getTime()>=ws; }).length;
   var trains=Object.keys(doneMap()).length, hb=ls('aviel_habits',{}), hdays=keys.filter(function(k){ return hb[k]&&Object.keys(hb[k]).length>=HABITS.length; }).length;
+  var fdays=keys.filter(function(k){ return (ls('aviel_ate_'+k,[])||[]).length||Object.keys(ls('aviel_ate_logged_'+k,{})).length||(k===TODAY&&typeof FDAY!=='undefined'&&FDAY&&FDAY.d===TODAY&&(FDAY.items||[]).length); }).length;
   var best=null; Object.keys((P&&P.lifts)||{}).forEach(function(ex){ (P.lifts[ex].hist||[]).forEach(function(h){ if(h.d>=keys[0]&&h.kg>=P.lifts[ex].best&&(!best||h.kg>best.kg)) best={ex:ex,kg:h.kg}; }); });
   var steps=wk.filter(function(x){ return x.steps!=null&&new Date(x.d+'T12:00:00').getTime()>=ws; }).map(function(x){ return x.steps; }), sAvg=steps.length?Math.round(steps.reduce(function(a,b){ return a+b; },0)/steps.length):null;
-  if(!weighs&&!trains&&!hdays&&!best&&sAvg==null) return '';
-  var it=[['שקילות',weighs+' מתוך '+keys.length],['אימונים',String(trains)],['ימי הרגלים מלאים',String(hdays)]]; if(sAvg!=null) it.push(['צעדים ביום',sAvg.toLocaleString('he-IL')]);
-  return '<div class="recap"><div class="row"><b>השבוע שלך</b><small>מיום ראשון</small></div><div class="rgrid">'+it.map(function(x){ return '<div><b class="num">'+x[1]+'</b><small>'+x[0]+'</small></div>'; }).join('')+'</div>'+(best?'<div class="rbest">שיא חדש השבוע: <b>'+esc(best.ex)+'</b> · '+best.kg+' ק״ג</div>':'')+'</div>'; }
+  var goals=[{t:'שקילות',n:weighs,g:7},{t:'ימי תפריט או יומן',n:fdays,g:7},{t:'ימי הרגלים מלאים',n:hdays,g:7}]; if(days) goals.unshift({t:'אימונים',n:trains,g:days});
+  if(!days&&!weighs&&!fdays&&!hdays) return '';
+  var done=goals.filter(function(g){ return g.n>=g.g; }).length, left=7-keys.length;
+  return '<div class="recap"><div class="row"><b>היעדים של השבוע</b><small>'+(left>0?'עוד '+left+' ימים':'היום האחרון')+'</small></div><div class="goals">'+goals.map(function(g){ var pc=Math.min(100,Math.round(g.n/g.g*100)), ok=g.n>=g.g; return '<div class="goal'+(ok?' ok':'')+'"><div class="row"><span>'+g.t+'</span><b class="num">'+g.n+'/'+g.g+'</b></div><div class="tdbar"><i style="width:'+pc+'%"></i></div></div>'; }).join('')+'</div>'+
+    (done===goals.length?'<div class="rbest">סגרת את כל היעדים של השבוע. ככה נראית התמדה.</div>':best?'<div class="rbest">שיא חדש השבוע: <b>'+esc(best.ex)+'</b> · '+best.kg+' ק״ג</div>':'')+(sAvg!=null?'<div class="swaphint">צעדים: '+sAvg.toLocaleString('he-IL')+' ליום בממוצע</div>':'')+'</div>'; }
 /* ===== אתגר צעדים שבועי: מי הולך הכי הרבה (שמות פרטיים בלבד) ===== */
 var BOARD=null, BOARD_TRIED=false;
 function boardHtml(){ if(!BOARD||!BOARD.list||!BOARD.list.length) return ''; var me=BOARD.me||'';
@@ -1325,6 +1337,15 @@ function wireAteLog(M){ if(!M||!M.blocks) return; var logged=ls('aviel_ate_logge
     btn.addEventListener('click',function(){ if(btn.getAttribute('aria-pressed')==='true') return; if(logged[title]) return; logged[title]=1; lsSet('aviel_ate_logged_'+TODAY,logged);
       var ml=/בוקר/.test(title)?'בוקר':/צהר/.test(title)?'צהריים':/ערב|לילה/.test(title)?'ערב':'ביניים';
       api('food',{f:title+' (מהתפריט)',g:0,k:vals.k,p:vals.p||0,c:vals.c||0,fat:vals.fat||0,m:ml}).then(function(r){ FDAY=r; toast('נרשם ביומן: '+vals.k+' קק״ל'); if(typeof renderFood==='function') renderFood(); }).catch(function(){ delete logged[title]; lsSet('aviel_ate_logged_'+TODAY,logged); }); },true); }); }
+
+/* ===== השוואה לעצמה: כמה עלית בתרגיל מאז ההתחלה / לפני 4 שבועות ===== */
+function growthLine(L){ if(!L||!L.hist||L.hist.length<2) return ''; var h=L.hist.filter(function(x){ return x.d&&x.d<TODAY; }); if(!h.length) return '';
+  var lastD=h[h.length-1].d, now=Math.max.apply(null,h.filter(function(x){ return x.d===lastD; }).map(function(x){ return x.kg; }));
+  var cut=new Date(); cut.setDate(cut.getDate()-28); var ck=cut.getFullYear()+'-'+('0'+(cut.getMonth()+1)).slice(-2)+'-'+('0'+cut.getDate()).slice(-2);
+  var old=h.filter(function(x){ return x.d<=ck; }), base=old.length?old[old.length-1]:(L.first&&L.first.d&&L.first.d<lastD?L.first:null); if(!base) return '';
+  var baseKg=old.length?Math.max.apply(null,old.filter(function(x){ return x.d===base.d; }).map(function(x){ return x.kg; })):base.kg, diff=Math.round((now-baseKg)*100)/100; if(diff<=0) return '';
+  var pc=baseKg>0?Math.round(diff/baseKg*100):0;
+  return '<div class="grow">'+IC_UP+'<span>'+(old.length?'לפני 4 שבועות':'בהתחלה ('+base.d.slice(8,10)+'/'+base.d.slice(5,7)+')')+' הרמת <bdi dir="ltr">'+baseKg+'</bdi>, היום <bdi dir="ltr">'+now+'</bdi> ק״ג <b>+'+diff+(pc?' ('+pc+'%)':'')+'</b></span></div>'; }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
