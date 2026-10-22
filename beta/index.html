@@ -387,6 +387,14 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 @media (prefers-reduced-motion:reduce){.lvl,.hit{animation:none}}
 .news,.recap,.board{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--sh)}
 .news{border-color:var(--gold-d)}
+.news.monthly p{margin:6px 0 4px;font-size:14px}
+.moform{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.moform label{display:flex;flex-direction:column;gap:4px;font-size:13.5px;font-weight:600}
+.moform textarea{width:100%;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
+.shoplist{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow:auto;margin-top:6px}
+.shopit{display:flex;align-items:center;gap:10px;background:var(--panel2);border-radius:10px;padding:8px 10px;font-size:14.5px}
+.shopit input{width:20px;height:20px;flex:none}
+.shopit input:checked+span{text-decoration:line-through;color:var(--mute)}
 .news.supp p{margin:6px 0 8px;font-size:14px;line-height:1.5}
 .splist{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .sprow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;background:var(--panel2);border-radius:12px;padding:8px 10px}
@@ -1137,7 +1145,7 @@ renderMenu=function(){
     if(b.note) card.classList.add('mnote'); });
   document.querySelectorAll('#menuBox .plain').forEach(function(p){ if(p.textContent.trim()==='+'){ p.className='plus'; p.textContent='ועוד'; } });
   var pick=ls('aviel_pick_'+TODAY,{});
-  wireAteLog(M); renderEatOut(M);
+  wireAteLog(M); renderEatOut(M); renderShopBtn(M);
   document.querySelectorAll('#menuBox .meal').forEach(function(card){
     var meal=(card.querySelector('h3')||{}).textContent||'';
     card.querySelectorAll('.opt').forEach(function(o){
@@ -1365,7 +1373,8 @@ var BOARD=null, BOARD_TRIED=false;
 function boardHtml(){ if(!BOARD||!BOARD.list||!BOARD.list.length) return ''; var me=BOARD.me||'';
   return '<div class="board"><div class="row"><b>אתגר הצעדים השבועי</b><small>ממוצע ליום</small></div>'+BOARD.list.slice(0,5).map(function(x,i){ return '<div class="brow'+(x.n===me?' me':'')+'"><span class="bn num">'+(i+1)+'</span><span class="bname">'+esc(x.n)+(x.n===me?' (את/ה)':'')+'</span><span class="num">'+x.avg.toLocaleString('he-IL')+'</span></div>'; }).join('')+(BOARD.rank&&BOARD.rank>5?'<div class="brow me"><span class="bn num">'+BOARD.rank+'</span><span class="bname">'+esc(me)+' (את/ה)</span><span class="num">'+(BOARD.mine||0).toLocaleString('he-IL')+'</span></div>':'')+'<div class="swaphint">מתעדכן כל שעה מהצעדים שכולם רושמים. כל מי שמסיים את השבוע עם 7 ימי רישום מקבל ממני כבוד.</div></div>'; }
 function renderExtras(el){ var x=document.getElementById('extras'); if(!x){ x=document.createElement('div'); x.id='extras'; el.parentNode.insertBefore(x,el.nextSibling); }
-  x.innerHTML=whatsNewHtml()+bloodHtml()+suppHtml()+reportHtml()+recapHtml()+boardHtml();
+  x.innerHTML=whatsNewHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+reportHtml()+recapHtml()+boardHtml();
+  wireMonthly(x);
   wireBlood(x); var sx=x.querySelector('#suppX'); if(sx) sx.onclick=function(){ lsSet('aviel_supp_seen',INBOX.supp.at); renderExtras(document.getElementById('todayCard')); };
   var nb=x.querySelector('#newsX'); if(nb) nb.onclick=function(){ lsSet('aviel_news_seen',WHATS_NEW.v); renderExtras(el); };
   if(!BOARD_TRIED&&typeof api==='function'){ BOARD_TRIED=true; api('board',{}).then(function(r){ BOARD=r; renderExtras(el); }).catch(function(){}); } }
@@ -1436,6 +1445,33 @@ function wireBlood(x){ var inp=x.querySelector('#bloodIn'); if(inp) inp.onchange
 /* ===== התוספים שלך: רשימה שאביאל שלח — איך לוקחים, קישור לכל אחד, והמדריך המלא ===== */
 function suppHtml(){ var sp=INBOX&&INBOX.supp; if(!sp||!sp.at||!sp.items||!sp.items.length) return ''; if(ls('aviel_supp_seen','')===sp.at) return '';
   return '<div class="news supp"><div class="row"><b>התוספים שלך</b><button type="button" class="linkbtn" id="suppX">קראתי</button></div>'+(sp.note?'<p>'+esc(sp.note)+'</p>':'')+'<div class="splist">'+sp.items.map(function(x){ return '<div class="sprow"><b>'+esc(x.t)+'</b><small>'+esc(x.dose)+(x.when?' · '+esc(x.when):'')+'</small>'+(x.url?'<a class="btn-link" href="'+esc(x.url)+'" target="_blank" rel="noopener">לרכישה</a>':'')+'</div>'; }).join('')+'</div>'+(sp.guide?'<a class="vplay" href="'+esc(sp.guide)+'" target="_blank" rel="noopener" style="text-decoration:none;margin-top:10px">המדריך המלא לתוספים (PDF)</a>':'')+'<div class="swaphint">מידע כללי מאביאל, לא ייעוץ רפואי. תרופות או מצב רפואי — מתייעצים עם רופא.</div></div>'; }
+
+/* ===== שאלון חודשי קצר לפני הפגישה (5 שאלות) ===== */
+var MONTHLY_Q=['מה היה הכי קשה החודש?','מה הכי עבד לך?','מה היית רוצה לשנות בתפריט?','איך האנרגיה והשינה (1–10)?','מה המטרה שלך לחודש הבא?'], MONTHLY_OPEN=false;
+function monthlyHtml(){ if(!INBOX||!INBOX.monthlyDue) return ''; if(ls('aviel_monthly_done','')===TODAY.slice(0,7)) return '';
+  return '<div class="news monthly"><div class="row"><b>שאלון חודשי לפני הפגישה</b><small>2 דקות</small></div><p>5 שאלות קצרות, ואביאל מגיע לפגישה מוכן בדיוק למה שחשוב לך.</p>'+(MONTHLY_OPEN?'<form id="moForm" class="moform">'+MONTHLY_Q.map(function(q,i){ return '<label><span>'+esc(q)+'</span><textarea name="q'+i+'" rows="2"></textarea></label>'; }).join('')+'<button type="submit">שליחה לאביאל</button></form>':'<button type="button" class="vplay" id="moOpen" style="margin-top:6px">למילוי</button>')+'</div>'; }
+function wireMonthly(x){ var o=x.querySelector('#moOpen'); if(o) o.onclick=function(){ MONTHLY_OPEN=true; renderExtras(document.getElementById('todayCard')); };
+  var f=x.querySelector('#moForm'); if(f) f.onsubmit=function(e){ e.preventDefault(); var a=MONTHLY_Q.map(function(q,i){ return f.elements['q'+i].value.trim(); }); if(!a.some(Boolean)){ toast('עונים לפחות על שאלה אחת',1); return; }
+    f.querySelector('button').disabled=true; api('monthly',{answers:a}).then(function(){ lsSet('aviel_monthly_done',TODAY.slice(0,7)); INBOX.monthlyDue=false; MONTHLY_OPEN=false; toast('נשלח לאביאל, תודה'); renderExtras(document.getElementById('todayCard')); }).catch(function(er){ f.querySelector('button').disabled=false; toast(er.message||'לא נשלח',1); }); };
+  var cy=x.querySelector('#cnYes'), cn=x.querySelector('#cnNo'); var ans=function(ok){ api('consent',{ok:ok}).then(function(){ INBOX.consentAsk=''; toast(ok?'תודה! אביאל יעדכן לפני שמפרסם':'בסדר גמור, לא מפרסמים'); renderExtras(document.getElementById('todayCard')); }).catch(function(er){ toast(er.message||'לא נשלח',1); }); };
+  if(cy) cy.onclick=function(){ ans(true); }; if(cn) cn.onclick=function(){ ans(false); }; }
+/* ===== בקשת אישור לפרסום לפני/אחרי ===== */
+function consentHtml(){ if(!INBOX||!INBOX.consentAsk) return ''; return '<div class="news"><div class="row"><b>שאלה קטנה מאביאל</b></div><p>ההתקדמות שלך מדהימה. מאשר/ת לשתף תמונת לפני ואחרי? אפשר גם בלי פנים, ואביאל מראה לך לפני שמפרסם.</p><div class="kv" style="display:flex;gap:10px"><button type="button" class="vplay" id="cnYes">מאשר/ת</button><button type="button" class="linkbtn" id="cnNo">מעדיף/ה שלא</button></div></div>'; }
+/* ===== רשימת קניות לשבוע מהתפריט (לפי מה שבחרת, או האפשרות הראשונה) ===== */
+function renderShopBtn(M){ var box=document.getElementById('menuBox'); if(!box||document.getElementById('shopCard')||!M||!M.blocks) return; var el=document.createElement('div'); el.id='shopCard'; el.className='card'; el.innerHTML='<div class="row"><h3 style="margin:0;font-size:16px">רשימת קניות לשבוע</h3></div><p class="sub" style="margin:6px 0 10px">לפי האפשרויות שבחרת בתפריט (או הראשונה בכל ארוחה), כפול 7 ימים.</p><button type="button" id="shopBtn">יצירת רשימה</button>'; box.appendChild(el); el.querySelector('#shopBtn').onclick=function(){ openShop(M); }; }
+function shopItems(M){ var pick=ls('aviel_pick_'+TODAY,{}), learn=ls('aviel_menu_learn',{}), raw=[];
+  M.blocks.forEach(function(b){ if(!b.title) return; (b.lines||[]).forEach(function(l){ if(/^(ערכ|קלוריות|חלבון|פחמימות|שומן)/.test(l)) return; var k=l.indexOf(': ');
+    if(k>0&&k<40){ var lab=l.slice(0,k), opts=l.slice(k+2).split(' / '), key=b.title+'|'+lab, idx=pick[key]; if(idx==null){ var L=learn[key]||{}, best=0; idx=0; opts.forEach(function(o,i){ if((L[o]||0)>best){ best=L[o]; idx=i; } }); } raw.push(opts[idx]||opts[0]); }
+    else if(/^\d/.test(l)) raw.push(l); }); });
+  var agg={}, order=[]; raw.forEach(function(s){ s=String(s).replace(/\([^)]*\)/g,' ').replace(/\s+/g,' ').trim().split(' או ')[0].trim(); var m=s.match(/^(\d+(?:[.,]\d+)?)\s*(גרם|ג׳|יח׳|יח'|יחידות|כפות|כפיות|כף|כפית|פרוסות|פרוסה|כוסות|כוס)?\s*(.+)$/);
+    var q=m?parseFloat(m[1].replace(',','.')):1, u=m&&m[2]?m[2].replace('ג׳','גרם').replace("יח'",'יח׳'):'', n=(m?m[3]:s).replace(/^(של|מ)\s+/,'').trim(); var key=u+'|'+n; if(!agg[key]){ agg[key]={q:0,u:u,n:n}; order.push(key); } agg[key].q+=q*7; });
+  return order.map(function(k){ var a=agg[k], q=a.u==='גרם'&&a.q>=1000?(Math.round(a.q/100)/10)+' ק״ג':(Math.round(a.q*10)/10)+(a.u?' '+a.u:''); return {t:a.n, q:q}; }); }
+function openShop(M){ var it=shopItems(M), done=ls('aviel_shop_done',{}), s=document.createElement('div'); s.className='sheet'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true');
+  var txt=it.map(function(x){ return '• '+x.q+' '+x.t; }).join(String.fromCharCode(10));
+  s.innerHTML='<div class="sheet-in"><h2>רשימת קניות לשבוע</h2>'+(it.length?'<div class="shoplist">'+it.map(function(x,i){ return '<label class="shopit"><input type="checkbox" data-sh="'+esc(x.t)+'"'+(done[x.t]?' checked':'')+'><span><b>'+esc(x.q)+'</b> '+esc(x.t)+'</span></label>'; }).join('')+'</div><p class="sub" style="margin:8px 0">כמויות משוערות לשבוע. ירקות ופירות לפי מה שאוהבים.</p><button type="button" id="shCopy" class="ghost">העתקת הרשימה</button>':'<p class="sub">לא מצאתי כמויות בתפריט.</p>')+'<button type="button" id="shClose">סגירה</button></div>';
+  document.body.appendChild(s); var close=function(){ s.remove(); }; s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('#shClose').onclick=close;
+  s.querySelectorAll('[data-sh]').forEach(function(c){ c.onchange=function(){ var d=ls('aviel_shop_done',{}); if(c.checked) d[c.dataset.sh]=1; else delete d[c.dataset.sh]; lsSet('aviel_shop_done',d); }; });
+  var cp=s.querySelector('#shCopy'); if(cp) cp.onclick=function(){ try{ navigator.clipboard.writeText('רשימת קניות לשבוע'+String.fromCharCode(10)+txt).then(function(){ toast('הועתק'); }).catch(function(){ toast('לא הצלחתי להעתיק',1); }); }catch(e){ toast('לא הצלחתי להעתיק',1); } }; }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
