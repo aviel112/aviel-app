@@ -372,6 +372,8 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 @media (prefers-reduced-motion:reduce){.lvl,.hit{animation:none}}
 .news,.recap,.board{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--sh)}
 .news{border-color:var(--gold-d)}
+.news.report{display:block;text-decoration:none;color:inherit}
+.news.report p{margin:6px 0 0;font-size:14px;color:var(--mute)}
 .news .row b,.recap .row b,.board .row b{font-size:15px}
 .news ul{margin:8px 0 0;padding-right:18px;font-size:14px;line-height:1.55}
 .news li{margin-bottom:4px}
@@ -1326,7 +1328,7 @@ var BOARD=null, BOARD_TRIED=false;
 function boardHtml(){ if(!BOARD||!BOARD.list||!BOARD.list.length) return ''; var me=BOARD.me||'';
   return '<div class="board"><div class="row"><b>אתגר הצעדים השבועי</b><small>ממוצע ליום</small></div>'+BOARD.list.slice(0,5).map(function(x,i){ return '<div class="brow'+(x.n===me?' me':'')+'"><span class="bn num">'+(i+1)+'</span><span class="bname">'+esc(x.n)+(x.n===me?' (את/ה)':'')+'</span><span class="num">'+x.avg.toLocaleString('he-IL')+'</span></div>'; }).join('')+(BOARD.rank&&BOARD.rank>5?'<div class="brow me"><span class="bn num">'+BOARD.rank+'</span><span class="bname">'+esc(me)+' (את/ה)</span><span class="num">'+(BOARD.mine||0).toLocaleString('he-IL')+'</span></div>':'')+'<div class="swaphint">מתעדכן כל שעה מהצעדים שכולם רושמים. כל מי שמסיים את השבוע עם 7 ימי רישום מקבל ממני כבוד.</div></div>'; }
 function renderExtras(el){ var x=document.getElementById('extras'); if(!x){ x=document.createElement('div'); x.id='extras'; el.parentNode.insertBefore(x,el.nextSibling); }
-  x.innerHTML=whatsNewHtml()+recapHtml()+boardHtml();
+  x.innerHTML=whatsNewHtml()+reportHtml()+recapHtml()+boardHtml();
   var nb=x.querySelector('#newsX'); if(nb) nb.onclick=function(){ lsSet('aviel_news_seen',WHATS_NEW.v); renderExtras(el); };
   if(!BOARD_TRIED&&typeof api==='function'){ BOARD_TRIED=true; api('board',{}).then(function(r){ BOARD=r; renderExtras(el); }).catch(function(){}); } }
 
@@ -1346,6 +1348,11 @@ function growthLine(L){ if(!L||!L.hist||L.hist.length<2) return ''; var h=L.hist
   var baseKg=old.length?Math.max.apply(null,old.filter(function(x){ return x.d===base.d; }).map(function(x){ return x.kg; })):base.kg, diff=Math.round((now-baseKg)*100)/100; if(diff<=0) return '';
   var pc=baseKg>0?Math.round(diff/baseKg*100):0;
   return '<div class="grow">'+IC_UP+'<span>'+(old.length?'לפני 4 שבועות':'בהתחלה ('+base.d.slice(8,10)+'/'+base.d.slice(5,7)+')')+' הרמת <bdi dir="ltr">'+baseKg+'</bdi>, היום <bdi dir="ltr">'+now+'</bdi> ק״ג <b>+'+diff+(pc?' ('+pc+'%)':'')+'</b></span></div>'; }
+
+/* ===== הדוח החודשי: קישור מופיע בבית כשאביאל מכין אותו (עד 45 יום) ===== */
+var REPORT=null;
+function reportHtml(){ var rp=REPORT||(INBOX&&INBOX.report); if(!rp||!rp.at) return ''; var age=(Date.now()-Date.parse(rp.at))/864e5; if(isNaN(age)||age>45) return '';
+  return '<a class="news report" href="report.html?t='+encodeURIComponent(T)+'" target="_blank" rel="noopener"><div class="row"><b>הדוח החודשי שלך מוכן</b><small>'+esc(rp.m||'')+'</small></div><p>משקל, היקפים, שיאי כוח, התמדה, וכמה מילים ממני. פותחים ומתגאים.</p></a>'; }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
