@@ -1375,7 +1375,7 @@ var REPORT=null;
 function reportHtml(){ var rp=REPORT||(INBOX&&INBOX.report); if(!rp||!rp.at) return ''; var age=(Date.now()-Date.parse(rp.at))/864e5; if(isNaN(age)||age>45) return '';
   return '<a class="news report" href="report.html?t='+encodeURIComponent(T)+'" target="_blank" rel="noopener"><div class="row"><b>הדוח החודשי שלך מוכן</b><small>'+esc(rp.m||'')+'</small></div><p>משקל, היקפים, שיאי כוח, התמדה, וכמה מילים ממני. פותחים ומתגאים.</p></a>'; }
 
-/* ===== אוכלת בחוץ היום? מנות מרשתות שמתאימות לערכי הארוחה שלה (מהמדריך של אביאל) ===== */
+/* ===== אוכלים בחוץ היום? מנות מרשתות שמתאימות לערכי הארוחה שלה (מהמדריך של אביאל) ===== */
 var EATOUT=null, EO={chain:'',meal:''};
 function eoTargets(M){ var out=[]; (M&&M.blocks||[]).forEach(function(b){ if(!b.title) return; var v=mealVals(b); if(v) out.push({t:b.title,v:v}); });
   if(!out.length){ var T=targets(); if(T['קלוריות']) out.push({t:'ארוחה עיקרית',v:{k:Math.round(T['קלוריות']*0.33),p:Math.round((T['חלבון']||T['קלוריות']*0.1)*0.33)}}); }
@@ -1384,7 +1384,7 @@ function renderEatOut(M){ var box=document.getElementById('menuBox'); if(!box||d
   var el=document.createElement('div'); el.id='eatout'; el.className='card eo'; box.appendChild(el); drawEatOut(tg); }
 function drawEatOut(tg){ var el=document.getElementById('eatout'); if(!el) return; if(!EO.meal) EO.meal=tg[0].t;
   var cur=tg.filter(function(x){ return x.t===EO.meal; })[0]||tg[0];
-  var h='<div class="row"><h3>אוכלת בחוץ היום?</h3><span class="sub">מנות שמתאימות לערכי הארוחה</span></div>'+
+  var h='<div class="row"><h3>אוכלים בחוץ היום?</h3><span class="sub">מנות שמתאימות לערכי הארוחה</span></div>'+
     '<div class="chips">'+tg.map(function(x){ return '<button type="button" class="chip" data-eom="'+esc(x.t)+'" aria-pressed="'+(x.t===cur.t)+'">'+esc(x.t.replace(/\s*\(.*\)$/,''))+'</button>'; }).join('')+'</div>';
   if(!EATOUT){ h+='<div class="sub" style="margin-top:8px">טוען את המדריך…</div>'; el.innerHTML=h; fetch('../data/eating-out.json').then(function(r){ return r.json(); }).then(function(d){ EATOUT=d; drawEatOut(tg); }).catch(function(){ el.innerHTML=h+'<div class="sub">המדריך לא נטען כרגע.</div>'; }); wireEo(el,tg); return; }
   var chains=[]; EATOUT.forEach(function(x){ if(chains.indexOf(x[0])<0) chains.push(x[0]); }); if(!EO.chain) EO.chain=chains[0];
