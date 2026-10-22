@@ -387,6 +387,14 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 @media (prefers-reduced-motion:reduce){.lvl,.hit{animation:none}}
 .news,.recap,.board{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--sh)}
 .news{border-color:var(--gold-d)}
+.projgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.projgrid>div{background:var(--panel2);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.projgrid b{font-size:20px}
+.projgrid small{font-size:12px;color:var(--mute)}
+.pgood{margin:8px 0 0;font-size:14px;color:var(--good)}
+.goalbox{display:flex;gap:6px;align-items:center}
+.goalbox input{width:96px;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
+.goalbox button{min-height:0;padding:6px 12px}
 .news.monthly p{margin:6px 0 4px;font-size:14px}
 .moform{display:flex;flex-direction:column;gap:10px;margin-top:10px}
 .moform label{display:flex;flex-direction:column;gap:4px;font-size:13.5px;font-weight:600}
@@ -1472,6 +1480,20 @@ function openShop(M){ var it=shopItems(M), done=ls('aviel_shop_done',{}), s=docu
   document.body.appendChild(s); var close=function(){ s.remove(); }; s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('#shClose').onclick=close;
   s.querySelectorAll('[data-sh]').forEach(function(c){ c.onchange=function(){ var d=ls('aviel_shop_done',{}); if(c.checked) d[c.dataset.sh]=1; else delete d[c.dataset.sh]; lsSet('aviel_shop_done',d); }; });
   var cp=s.querySelector('#shCopy'); if(cp) cp.onclick=function(){ try{ navigator.clipboard.writeText('רשימת קניות לשבוע'+String.fromCharCode(10)+txt).then(function(){ toast('הועתק'); }).catch(function(){ toast('לא הצלחתי להעתיק',1); }); }catch(e){ toast('לא הצלחתי להעתיק',1); } }; }
+
+/* ===== תחזית משקל: לפי הקצב של 4 השבועות האחרונים, ויעד אישי ===== */
+var _drawChartP=drawChart; drawChart=function(data){ _drawChartP.apply(this,arguments); try{ drawProj(data||((D&&D.weekly)||[])); }catch(e){} };
+function drawProj(w){ var host=document.getElementById('chart'); if(!host) return; var card=host.closest('.card'); var el=document.getElementById('proj'); if(!el){ el=document.createElement('div'); el.id='proj'; el.className='card proj'; card.parentNode.insertBefore(el,card.nextSibling); }
+  w=(w||[]).filter(function(x){ return x!=null&&!isNaN(x); }); var goal=+ls('aviel_goal_kg',0)||0;
+  var h='<div class="row"><span class="label">לאן זה הולך</span><button type="button" class="linkbtn" id="goalSet">'+(goal?'יעד: '+goal+' ק״ג':'הגדרת יעד משקל')+'</button></div>';
+  if(w.length<3){ el.innerHTML=h+'<p class="sub" style="margin:6px 0 0">אחרי 3 שבועות של שקילות תופיע כאן תחזית לפי הקצב שלך.</p>'; wireGoal(el); return; }
+  var y=w.slice(-4), n=y.length, xs=y.map(function(_,i){ return i; }), mx=(n-1)/2, my=y.reduce(function(a,b){ return a+b; },0)/n, num=0, den=0; xs.forEach(function(x,i){ num+=(x-mx)*(y[i]-my); den+=(x-mx)*(x-mx); });
+  var slope=den?num/den:0, last=y[n-1], in4=Math.round((last+slope*4)*10)/10, sp=Math.round(slope*100)/100;
+  h+='<div class="projgrid"><div><b class="num">'+(sp>0?'+':'')+sp+'</b><small>ק״ג בשבוע</small></div><div><b class="num">'+in4+'</b><small>בעוד 4 שבועות</small></div></div>';
+  if(goal){ var diff=goal-last; if(Math.abs(diff)<0.3) h+='<p class="pgood">הגעת ליעד. עכשיו שומרים.</p>'; else if(slope&&diff/slope>0){ var wk=Math.ceil(diff/slope), d=new Date(); d.setDate(d.getDate()+wk*7); h+='<p class="pgood">בקצב הזה מגיעים ל-'+goal+' ק״ג בעוד כ-'+wk+' שבועות ('+d.getDate()+'/'+(d.getMonth()+1)+').</p>'; } else h+='<p class="sub" style="margin:6px 0 0">הכיוון כרגע לא לעבר היעד. שווה לדבר עם אביאל בצ׳ק-אין.</p>'; }
+  el.innerHTML=h; wireGoal(el); }
+function wireGoal(el){ var b=el.querySelector('#goalSet'); if(b) b.onclick=function(){ var cur=ls('aviel_goal_kg',''), box=document.createElement('div'); box.className='goalbox'; box.innerHTML='<input type="number" inputmode="decimal" step="0.5" id="goalIn" placeholder="יעד בק״ג" value="'+(cur||'')+'"><button type="button" id="goalOk">שמירה</button>'; b.replaceWith(box);
+  box.querySelector('#goalOk').onclick=function(){ var v=+box.querySelector('#goalIn').value; if(v&&(v<30||v>250)){ toast('משקל לא תקין',1); return; } lsSet('aviel_goal_kg',v||0); drawProj((D&&D.weekly)||[]); }; }; }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
