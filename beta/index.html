@@ -172,6 +172,9 @@ nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
 .mall{background:none;border:0;padding:6px 0 0;min-height:0;color:var(--mute);font-size:12.5px;text-decoration:underline}
 .opt.car ul{display:none}
 .opt.car.open ul{display:flex;margin-top:8px}
+.mealshot{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.mealshot label{flex:none;border:1px solid var(--gold-d);color:var(--gold);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.mealshot .sub{font-size:12.5px}
 .fitem{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--line);padding:8px 0;font-size:14px}
 .fitem:last-child{border:0}
 .fitem small{color:var(--mute)}
@@ -506,6 +509,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
         <div class="qrow"><input id="fQ" type="search" placeholder="חיפוש: עוף, אורז, קוטג׳…" aria-label="חיפוש מאכל" style="font-size:16px;text-align:right;flex:1"><button type="button" class="ghost" id="fScan" aria-label="סריקת ברקוד" title="סריקת ברקוד"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M7 8v8M10 8v8M13 8v8M17 8v8"/></svg></button></div>
         <div id="fRecent"></div>
         <div class="flist" id="fList"></div>
+        <div class="mealshot"><label class="ghost sm" for="msIn">צילום ארוחה לאביאל</label><input type="file" id="msIn" accept="image/*" capture="environment" hidden><span class="sub">צלחת לפני שאוכלים. אביאל רואה ועונה בקולית: ממשיכים ככה, או מה לשנות.</span></div>
         <div class="chips" id="fUnits"></div>
         <div class="chips" id="fMeals" role="group" aria-label="לאיזו ארוחה"></div>
         <form class="fadd" id="fAdd" hidden><input id="fG" inputmode="numeric" aria-label="גרם"><button type="submit" id="fBtn">הוספה</button></form>
@@ -937,6 +941,10 @@ function renderPhotos(L){ var box=$('#phBox'); if(!L||!L.length){ box.innerHTML=
   var f=L[0], l=L[L.length-1], d=function(x){ return x.d.slice(8,10)+'/'+x.d.slice(5,7); };
   box.innerHTML=(L.length>1?'<div class="cmp"><figure><img src="'+f.data+'" alt="תמונה ראשונה"><figcaption>התחלה · '+d(f)+'</figcaption></figure><figure><img src="'+l.data+'" alt="תמונה אחרונה"><figcaption>עכשיו · '+d(l)+'</figcaption></figure></div>':'')+
     '<div class="photos">'+L.slice().reverse().map(function(x){ return '<figure><img src="'+x.data+'" alt=""><figcaption>'+d(x)+'</figcaption></figure>'; }).join('')+'</div>'; }
+$('#msIn').addEventListener('change',function(){ var file=this.files&&this.files[0]; this.value=''; if(!file) return; toast('שולח את התמונה לאביאל…');
+  shrink(file,1280,.8).then(function(img){ return fetch(API,{method:'POST',body:JSON.stringify({api:'mealphoto',t:T,p:{photo:img,meal:fMeal()}})}).then(function(r){ return r.json(); }); })
+  .then(function(j){ if(!j.ok) throw new Error(j.error||'לא נשלח'); toast('התמונה אצל אביאל. תקבל/י ממנו תשובה באפליקציה'); })
+  .catch(function(e){ toast(e.message||'התמונה לא נשלחה, נסו שוב',1); }); });
 $('#phIn').addEventListener('change',function(){ var file=this.files&&this.files[0]; if(!file) return; toast('מעלה את התמונה…');
   Promise.all([shrink(file,1280,.82),shrink(file,320,.7)]).then(function(x){
     return fetch(API,{method:'POST',body:JSON.stringify({api:'photo',t:T,p:{full:x[0],thumb:x[1]}})}).then(function(r){ return r.json(); }).then(function(j){ if(!j.ok) throw new Error(j.error); renderPhotos(j.r); toast('התמונה נשמרה ✓'); });
