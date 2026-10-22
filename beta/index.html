@@ -164,6 +164,18 @@ nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
 .frec button small{color:var(--mute);margin-right:5px;font-weight:600}
 #fMeals{margin-top:4px}
 #fList:empty,#fUnits:empty,#fRecent:empty{display:none}
+.fpr{font-size:14px;line-height:1.5;margin:4px 0 10px;color:var(--gold)}
+.fpr b{color:var(--text)}
+.eo h3{margin:0;font-size:16px}
+.eo .chips{margin-top:8px}
+.eorow{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.eorow:last-of-type{border:0}
+.eon{min-width:0}
+.eon b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eon small,.eov small{color:var(--mute);font-size:12px;display:block}
+.eov{text-align:left;direction:ltr}
+.eov b{font-size:15px}
+.eov.over b{color:var(--bad)}
 .mcar{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:6px}
 .mcur{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;text-align:center;min-height:0;color:var(--text);font-size:15px;font-weight:600;display:flex;flex-direction:column;gap:3px}
 .mcur small{font-size:12px;color:var(--mute);font-weight:600}
@@ -1109,7 +1121,7 @@ renderMenu=function(){
     if(b.note) card.classList.add('mnote'); });
   document.querySelectorAll('#menuBox .plain').forEach(function(p){ if(p.textContent.trim()==='+'){ p.className='plus'; p.textContent='ועוד'; } });
   var pick=ls('aviel_pick_'+TODAY,{});
-  wireAteLog(M);
+  wireAteLog(M); renderEatOut(M);
   document.querySelectorAll('#menuBox .meal').forEach(function(card){
     var meal=(card.querySelector('h3')||{}).textContent||'';
     card.querySelectorAll('.opt').forEach(function(o){
@@ -1184,7 +1196,8 @@ function showFinish(day,sets,vol,prs,rdy){
   s.innerHTML='<div class="sheet-in fin"><div class="label" id="fnT">אימון '+day+' הושלם</div><div class="fbig num">'+Math.round(vol).toLocaleString('he-IL')+'<small> ק״ג</small></div>'+
     (like?'<div class="flike">הרמת היום בערך כמו <b>'+esc(like)+'</b></div>':'')+
     '<div class="fstats"><div><b class="num">'+sets+'</b><span>סטים</span></div><div><b class="num">'+prs+'</b><span>שיאים חדשים</span></div><div><b class="num">'+rdy+'</b><span>מוכנים להעלאה</span></div></div>'+
-    '<button type="button" class="ghost fshare">שיתוף לסטורי</button><button type="button" class="fclose">סגירה</button></div>';
+    (prs>0?'<div class="fpr">שיא חדש. שווה סטורי: לשתף ולתייג את <b>@avielife1</b>, ואני משתף בחזרה.</div>':'')+
+    '<button type="button" class="'+(prs>0?'fshare':'ghost fshare')+'">שיתוף לסטורי</button><button type="button" class="fclose">סגירה</button></div>';
   var close=function(){ s.remove(); document.removeEventListener('keydown',onk); }, onk=function(e){ if(e.key==='Escape') close(); };
   s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('.fclose').onclick=close; s.querySelector('.fshare').onclick=function(){ shareStory(this,{day:day,sets:sets,vol:vol,prs:prs,like:like}); }; document.addEventListener('keydown',onk);
   document.body.appendChild(s); s.querySelector('.fclose').focus();
@@ -1361,6 +1374,30 @@ function growthLine(L){ if(!L||!L.hist||L.hist.length<2) return ''; var h=L.hist
 var REPORT=null;
 function reportHtml(){ var rp=REPORT||(INBOX&&INBOX.report); if(!rp||!rp.at) return ''; var age=(Date.now()-Date.parse(rp.at))/864e5; if(isNaN(age)||age>45) return '';
   return '<a class="news report" href="report.html?t='+encodeURIComponent(T)+'" target="_blank" rel="noopener"><div class="row"><b>הדוח החודשי שלך מוכן</b><small>'+esc(rp.m||'')+'</small></div><p>משקל, היקפים, שיאי כוח, התמדה, וכמה מילים ממני. פותחים ומתגאים.</p></a>'; }
+
+/* ===== אוכלת בחוץ היום? מנות מרשתות שמתאימות לערכי הארוחה שלה (מהמדריך של אביאל) ===== */
+var EATOUT=null, EO={chain:'',meal:''};
+function eoTargets(M){ var out=[]; (M&&M.blocks||[]).forEach(function(b){ if(!b.title) return; var v=mealVals(b); if(v) out.push({t:b.title,v:v}); });
+  if(!out.length){ var T=targets(); if(T['קלוריות']) out.push({t:'ארוחה עיקרית',v:{k:Math.round(T['קלוריות']*0.33),p:Math.round((T['חלבון']||T['קלוריות']*0.1)*0.33)}}); }
+  return out; }
+function renderEatOut(M){ var box=document.getElementById('menuBox'); if(!box||document.getElementById('eatout')) return; var tg=eoTargets(M); if(!tg.length) return;
+  var el=document.createElement('div'); el.id='eatout'; el.className='card eo'; box.appendChild(el); drawEatOut(tg); }
+function drawEatOut(tg){ var el=document.getElementById('eatout'); if(!el) return; if(!EO.meal) EO.meal=tg[0].t;
+  var cur=tg.filter(function(x){ return x.t===EO.meal; })[0]||tg[0];
+  var h='<div class="row"><h3>אוכלת בחוץ היום?</h3><span class="sub">מנות שמתאימות לערכי הארוחה</span></div>'+
+    '<div class="chips">'+tg.map(function(x){ return '<button type="button" class="chip" data-eom="'+esc(x.t)+'" aria-pressed="'+(x.t===cur.t)+'">'+esc(x.t.replace(/\s*\(.*\)$/,''))+'</button>'; }).join('')+'</div>';
+  if(!EATOUT){ h+='<div class="sub" style="margin-top:8px">טוען את המדריך…</div>'; el.innerHTML=h; fetch('../data/eating-out.json').then(function(r){ return r.json(); }).then(function(d){ EATOUT=d; drawEatOut(tg); }).catch(function(){ el.innerHTML=h+'<div class="sub">המדריך לא נטען כרגע.</div>'; }); wireEo(el,tg); return; }
+  var chains=[]; EATOUT.forEach(function(x){ if(chains.indexOf(x[0])<0) chains.push(x[0]); }); if(!EO.chain) EO.chain=chains[0];
+  h+='<div class="chips" style="margin-top:6px">'+chains.map(function(c){ return '<button type="button" class="chip" data-eoc="'+esc(c)+'" aria-pressed="'+(c===EO.chain)+'">'+esc(c)+'</button>'; }).join('')+'</div>';
+  var tk=cur.v.k, tp=cur.v.p||0;
+  var list=EATOUT.filter(function(x){ return x[0]===EO.chain&&x[4]>0; }).map(function(x){ var dk=Math.abs(x[4]-tk)/tk, dp=tp?Math.max(0,(tp-x[5])/tp):0; return {x:x,sc:dk+dp*0.8}; }).sort(function(a,b){ return a.sc-b.sc; }).slice(0,6);
+  h+='<div class="sub" style="margin:8px 0 4px">היעד לארוחה: כ-'+tk+' קק״ל'+(tp?' ו-'+tp+' גרם חלבון':'')+'. הכי קרוב קודם:</div>'+list.map(function(o,i){ var x=o.x, over=x[4]>tk*1.15; return '<div class="eorow"><div class="eon"><b>'+esc(x[2])+'</b><small>'+esc(x[1])+(x[3]?' · '+esc(x[3]):'')+'</small></div><div class="eov'+(over?' over':'')+'"><b class="num">'+x[4]+'</b><small>קק״ל · '+x[5]+' חלבון</small></div><button type="button" class="ghost sm" data-eoeat="'+i+'">אכלתי</button></div>'; }).join('')+
+    '<div class="swaphint">מנה שחורגת ביותר מ-15% מסומנת באדום. תמיד עדיף חלבון גבוה ורוטב בצד.</div>';
+  el.innerHTML=h; wireEo(el,tg,list,cur); }
+function wireEo(el,tg,list,cur){ el.querySelectorAll('[data-eom]').forEach(function(b){ b.onclick=function(){ EO.meal=b.dataset.eom; drawEatOut(tg); }; });
+  el.querySelectorAll('[data-eoc]').forEach(function(b){ b.onclick=function(){ EO.chain=b.dataset.eoc; drawEatOut(tg); }; });
+  el.querySelectorAll('[data-eoeat]').forEach(function(b){ b.onclick=function(){ var o=list&&list[+b.dataset.eoeat], x=o&&o.x; if(!x) return; b.disabled=true; var ml=/בוקר/.test(cur.t)?'בוקר':/צהר/.test(cur.t)?'צהריים':/ערב/.test(cur.t)?'ערב':'ביניים';
+    api('food',{f:x[2]+' ('+x[0]+')',g:0,k:x[4],p:x[5],c:x[6],fat:x[7],m:ml}).then(function(r){ FDAY=r; toast('נרשם ביומן: '+x[4]+' קק״ל'); if(typeof renderFood==='function') renderFood(); }).catch(function(e){ b.disabled=false; toast(e.message||'לא נרשם',1); }); }; }); }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
