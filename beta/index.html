@@ -387,6 +387,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 @media (prefers-reduced-motion:reduce){.lvl,.hit{animation:none}}
 .news,.recap,.board{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--sh)}
 .news{border-color:var(--gold-d)}
+.news.fw p{margin:6px 0 10px;font-size:14.5px;line-height:1.55}
 .projgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .projgrid>div{background:var(--panel2);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
 .projgrid b{font-size:20px}
@@ -1381,7 +1382,7 @@ var BOARD=null, BOARD_TRIED=false;
 function boardHtml(){ if(!BOARD||!BOARD.list||!BOARD.list.length) return ''; var me=BOARD.me||'';
   return '<div class="board"><div class="row"><b>אתגר הצעדים השבועי</b><small>ממוצע ליום</small></div>'+BOARD.list.slice(0,5).map(function(x,i){ return '<div class="brow'+(x.n===me?' me':'')+'"><span class="bn num">'+(i+1)+'</span><span class="bname">'+esc(x.n)+(x.n===me?' (את/ה)':'')+'</span><span class="num">'+x.avg.toLocaleString('he-IL')+'</span></div>'; }).join('')+(BOARD.rank&&BOARD.rank>5?'<div class="brow me"><span class="bn num">'+BOARD.rank+'</span><span class="bname">'+esc(me)+' (את/ה)</span><span class="num">'+(BOARD.mine||0).toLocaleString('he-IL')+'</span></div>':'')+'<div class="swaphint">מתעדכן כל שעה מהצעדים שכולם רושמים. כל מי שמסיים את השבוע עם 7 ימי רישום מקבל ממני כבוד.</div></div>'; }
 function renderExtras(el){ var x=document.getElementById('extras'); if(!x){ x=document.createElement('div'); x.id='extras'; el.parentNode.insertBefore(x,el.nextSibling); }
-  x.innerHTML=whatsNewHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+reportHtml()+recapHtml()+boardHtml();
+  x.innerHTML=firstWeekHtml()+whatsNewHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+reportHtml()+recapHtml()+boardHtml();
   wireMonthly(x);
   wireBlood(x); var sx=x.querySelector('#suppX'); if(sx) sx.onclick=function(){ lsSet('aviel_supp_seen',INBOX.supp.at); renderExtras(document.getElementById('todayCard')); };
   var nb=x.querySelector('#newsX'); if(nb) nb.onclick=function(){ lsSet('aviel_news_seen',WHATS_NEW.v); renderExtras(el); };
@@ -1494,6 +1495,19 @@ function drawProj(w){ var host=document.getElementById('chart'); if(!host) retur
   el.innerHTML=h; wireGoal(el); }
 function wireGoal(el){ var b=el.querySelector('#goalSet'); if(b) b.onclick=function(){ var cur=ls('aviel_goal_kg',''), box=document.createElement('div'); box.className='goalbox'; box.innerHTML='<input type="number" inputmode="decimal" step="0.5" id="goalIn" placeholder="יעד בק״ג" value="'+(cur||'')+'"><button type="button" id="goalOk">שמירה</button>'; b.replaceWith(box);
   box.querySelector('#goalOk').onclick=function(){ var v=+box.querySelector('#goalIn').value; if(v&&(v<30||v>250)){ toast('משקל לא תקין',1); return; } lsSet('aviel_goal_kg',v||0); drawProj((D&&D.weekly)||[]); }; }; }
+
+/* ===== שבוע ראשון מודרך: משימה אחת קטנה ביום, 7 ימים מהכניסה הראשונה ===== */
+var FIRST_WEEK=[
+ ['היום רק דבר אחד: להישקל','בבוקר, אחרי שירותים ולפני אוכל ושתייה. 10 שניות. זה כל מה שצריך היום.'],
+ ['מסמנים ארוחה אחת מהתפריט','בלשונית התפריט, לוחצים "אכלתי" על ארוחה אחת. לא צריך מושלם, רק להתחיל.'],
+ ['אימון ראשון באפליקציה','בלשונית האימון רושמים משקל וחזרות בכל סט. האפליקציה תגיד לך מתי לעלות.'],
+ ['הרגלים יומיים','מסמנים בבית את ההרגלים: מים, שינה, חלבון, צעדים. כל סימון בונה רצף.'],
+ ['צעדים','רושמים בערב את הצעדים של היום. רואים את עצמך באתגר השבועי.'],
+ ['שואלים את אביאל','משהו לא ברור בתפריט או בתרגיל? "טכניקה" בכרטיס התרגיל שולחת לי סרטון, ואני עונה בקול.'],
+ ['צ׳ק-אין ראשון','בסוף השבוע ממלאים צ׳ק-אין קצר. ככה אני מכוון אותך לשבוע הבא. סיימת שבוע ראשון, כל הכבוד.']];
+function firstWeekHtml(){ if(!D||D.weekNo==null||D.weekNo>1||D.lastKg!=null&&D.firstKg!=null&&(D.week||[]).length&&D.weekNo>0) { if(!D||D.weekNo==null||D.weekNo>1) return ''; } var f=ls('aviel_first_day',''); if(!f){ f=TODAY; lsSet('aviel_first_day',f); }
+  var n=Math.round((new Date(TODAY+'T12:00:00')-new Date(f+'T12:00:00'))/864e5); if(n<0||n>6) return ''; if(ls('aviel_fw_seen','')===TODAY) return '';
+  var it=FIRST_WEEK[n]; return '<div class="news fw"><div class="row"><b>שבוע ראשון · יום '+(n+1)+' מתוך 7</b><button type="button" class="linkbtn" onclick="lsSet(\'aviel_fw_seen\',TODAY); renderExtras(document.getElementById(\'todayCard\'));">בוצע</button></div><p><b>'+esc(it[0])+'.</b> '+esc(it[1])+'</p><div class="tdbar"><i style="width:'+Math.round((n+1)/7*100)+'%"></i></div></div>'; }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
