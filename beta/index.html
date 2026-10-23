@@ -1719,7 +1719,7 @@ var _drawChartS=drawChart; drawChart=function(){ _drawChartS.apply(this,argument
 
 /* ===== יעד צעדים יומי (אביאל קובע מהדשבורד): פס היום + 7 ימים ===== */
 function stepsGoalHtml(){ var g=+(D&&D.stepsGoal)||0; if(!g) return ''; var wk=(D.week||[]), t=wk.length?wk[wk.length-1]:null, n=t&&t.steps!=null?t.steps:0, pc=Math.min(100,Math.round(n/g*100)), hit=wk.filter(function(x){ return x.steps!=null&&x.steps>=g; }).length;
-  return '<div class="row"><span class="label">יעד צעדים · '+g.toLocaleString('he-IL')+'</span><b class="num'+(pc>=100?' tok':'')+'">'+(pc>=100?'הושג':pc+'%')+'</b></div><div class="tbar'+(pc>=100?' ok':'')+'"><i style="width:'+pc+'%"></i></div>'+
+  return '<div class="row"><span class="label">'+(D.stepsAuto?'יעד צעדים אישי':'יעד צעדים')+' · '+g.toLocaleString('he-IL')+'</span><b class="num'+(pc>=100?' tok':'')+'">'+(pc>=100?'הושג':pc+'%')+'</b></div><div class="tbar'+(pc>=100?' ok':'')+'"><i style="width:'+pc+'%"></i></div>'+
     '<div class="sgdays">'+wk.map(function(x){ var ok=x.steps!=null&&x.steps>=g, part=x.steps!=null&&!ok; return '<i class="'+(ok?'ok':part?'part':'')+'" title="'+x.d+'"></i>'; }).join('')+'<span>'+hit+'/7 ימים ביעד</span></div>'+
     (pc<100?'<div class="tnote">'+(n?'עוד '+(g-n).toLocaleString('he-IL')+' צעדים להיום.':'מעדכנים את הצעדים בסוף היום.')+'</div>':''); }
 function homeSteps(){ var f=document.getElementById('sForm'); if(!f) return; var el=document.getElementById('sgoal'), h=stepsGoalHtml();
