@@ -1744,6 +1744,17 @@ function checkLevelUp(){ var L=D&&D.levelUp; if(!L||!L.to) return; var key='avie
   document.body.appendChild(s); var close=function(){ s.remove(); }; s.querySelector('#lvlOk').onclick=close; s.addEventListener('click',function(e){ if(e.target===s) close(); }); }
 var _homeStepsL=homeSteps; homeSteps=function(){ _homeStepsL.apply(this,arguments); var el=document.getElementById('sgoal'); if(el&&D&&D.levelUp&&D.levelUp.to===+D.stepsGoal){ var lb=el.querySelector('.label'); if(lb&&!lb.querySelector('.lvltag')) lb.insertAdjacentHTML('beforeend',' <span class="lvltag">רמה חדשה</span>'); } };
 var _drawChartL=drawChart; drawChart=function(){ _drawChartL.apply(this,arguments); try{ checkLevelUp(); }catch(e){} };
+
+/* ===== שקילה וצעדים גם בלי קליטה (מכון במרתף): נשמר בטלפון ונשלח כשיש חיבור, באותו יום ===== */
+var OQ_KEY='aviel_offq', _apiO=api;
+function oqFlush(){ var q=ls(OQ_KEY,[]); if(!q.length||!navigator.onLine) return; var today=trkYmd(new Date()), keep=q.filter(function(x){ return x.d===today; }), lost=q.length-keep.length; lsSet(OQ_KEY,[]);
+  if(lost) toast('שקילה מיום קודם לא נשלחה. כדאי לעדכן את אביאל.',1);
+  keep.reduce(function(p,x){ return p.then(function(){ return _apiO(x.a,x.p).then(function(r){ D=r; }); }); },Promise.resolve()).then(function(){ if(keep.length){ render(); toast('נשלח מהטלפון · '+keep.length+' עדכונים'); } }).catch(function(){ lsSet(OQ_KEY,keep.concat(ls(OQ_KEY,[]))); }); }
+api=function(a,p){ return _apiO(a,p).catch(function(e){ if((a==='weigh'||a==='steps')&&/אין חיבור/.test(e&&e.message||'')&&D){
+    var q=ls(OQ_KEY,[]).filter(function(x){ return x.a!==a; }); q.push({a:a,p:p,d:trkYmd(new Date())}); lsSet(OQ_KEY,q);
+    var wk=D.week||[], t=wk[wk.length-1]; if(t){ if(a==='weigh') t.kg=p.kg; else t.steps=p.n; }
+    setTimeout(function(){ toast('אין קליטה. נשמר בטלפון ויישלח לבד כשיחזור חיבור.'); },60); return D; } throw e; }); };
+window.addEventListener('online',oqFlush); setTimeout(oqFlush,4000);
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
