@@ -467,6 +467,8 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .sgdays i.part{background:var(--gold-d);opacity:.55}
 .sgdays i.ok{background:var(--good)}
 .sgdays span{margin-inline-start:6px}
+.lvlup{width:120px;height:120px;margin:0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--soft,rgba(212,172,91,.14));border:3px solid var(--good);color:var(--good);font-size:34px;font-weight:800;direction:ltr}
+.lvltag{display:inline-block;margin-inline-start:4px;padding:1px 8px;border-radius:99px;background:var(--good);color:var(--ink);font-size:11px;font-weight:800;letter-spacing:0}
 .kdelta{display:block;font-size:11.5px;font-weight:700;color:var(--mute);margin:-2px 0 2px}
 .kdelta.up{color:var(--good)}
 .kdelta.dn{color:var(--bad)}
@@ -1734,6 +1736,14 @@ function homeWeekDelta(){ var k=document.getElementById('kAvg'); if(!k) return; 
   if(!el){ el=document.createElement('small'); el.id='kAvgD'; el.className='kdelta'; k.parentNode.insertBefore(el,k.nextSibling); }
   el.className='kdelta num'+(good===null?'':good?' up':' dn'); el.textContent=(df>0?'+':df<0?'−':'')+Math.abs(df)+' בשבוע'; }
 var _drawChartWD=drawChart; drawChart=function(){ _drawChartWD.apply(this,arguments); try{ homeWeekDelta(); }catch(e){} };
+
+/* ===== עליית רמה בצעדים: 5 מתוך 7 ימים ביעד → היעד עולה ב-500 (השרת מחשב) ===== */
+function checkLevelUp(){ var L=D&&D.levelUp; if(!L||!L.to) return; var key='aviel_lvl_'+L.wk+'_'+L.to; if(ls(key,0)) return; lsSet(key,1);
+  var s=document.createElement('div'); s.className='msov'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true'); s.setAttribute('aria-label','עלית רמה');
+  s.innerHTML='<div class="msbox"><div class="lvlup num">+500</div><h2>עלית רמה</h2><p>עמדת ביעד הצעדים 5 ימים ומעלה בשבוע שעבר. הגוף כבר רגיל לזה, אז מעלים מדרגה.</p><div class="msnums"><div><b class="num">'+(+L.from).toLocaleString('he-IL')+'</b><small>היעד הקודם</small></div><div><b class="num">'+(+L.to).toLocaleString('he-IL')+'</b><small>היעד החדש</small></div></div><button type="button" id="lvlOk">יאללה</button></div>';
+  document.body.appendChild(s); var close=function(){ s.remove(); }; s.querySelector('#lvlOk').onclick=close; s.addEventListener('click',function(e){ if(e.target===s) close(); }); }
+var _homeStepsL=homeSteps; homeSteps=function(){ _homeStepsL.apply(this,arguments); var el=document.getElementById('sgoal'); if(el&&D&&D.levelUp&&D.levelUp.to===+D.stepsGoal){ var lb=el.querySelector('.label'); if(lb&&!lb.querySelector('.lvltag')) lb.insertAdjacentHTML('beforeend',' <span class="lvltag">רמה חדשה</span>'); } };
+var _drawChartL=drawChart; drawChart=function(){ _drawChartL.apply(this,arguments); try{ checkLevelUp(); }catch(e){} };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
