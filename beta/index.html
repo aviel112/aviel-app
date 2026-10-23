@@ -456,6 +456,10 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .msbox button{width:100%;min-height:46px}
 @keyframes msin{from{opacity:0;transform:translateY(16px) scale(.97)}}
 @media (prefers-reduced-motion:reduce){.msbox{animation:none}}
+.wstreak{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin-top:10px;padding:9px 12px;border-radius:12px;background:var(--soft,rgba(212,172,91,.12));color:var(--text);font-size:14px}
+.wstreak b{font-size:20px;font-weight:800;color:var(--gold)}
+.wstreak small{flex-basis:100%;color:var(--mute);font-size:12.5px}
+.toast{width:max-content;max-width:min(360px,calc(100% - 32px));text-align:center;line-height:1.45}
 .goalbox{display:flex;gap:6px;align-items:center}
 .goalbox input{width:96px;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
 .goalbox button{min-height:0;padding:6px 12px}
@@ -1684,6 +1688,23 @@ function storyImg(m,g){ return (document.fonts&&document.fonts.ready?document.fo
   x.fillStyle='#9d9aa6'; x.font='600 40px "Assistant",Arial'; x.fillText('בליווי אישי של אביאל עמירה',540,1760);
   return new Promise(function(res){ c.toBlob(res,'image/png'); }); }); }
 var _drawChartG=drawChart; drawChart=function(){ _drawChartG.apply(this,arguments); try{ homeGoal(); checkMilestone(); }catch(e){} };
+
+/* ===== רצף שקילות בבית + משוב חכם אחרי שקילה ===== */
+function weighStreak(){ var set={}; trkRows().forEach(function(r){ if(r.kg!=null) set[r.k]=1; }); var d=new Date(), n=0;
+  if(!set[trkYmd(d)]) d.setDate(d.getDate()-1); // היום עוד לא נשקל: הרצף נספר עד אתמול
+  while(set[trkYmd(d)]){ n++; d.setDate(d.getDate()-1); }
+  var best=+ls('aviel_streak_best',0)||0; if(n>best){ best=n; lsSet('aviel_streak_best',n); } return {n:n,best:best,today:!!set[trkYmd(new Date())]}; }
+function homeStreak(){ var w=document.getElementById('weekNote'); if(!w) return; var s=weighStreak(), el=document.getElementById('wstreak');
+  if(!el){ el=document.createElement('div'); el.id='wstreak'; el.className='wstreak'; w.parentNode.insertBefore(el,w.nextSibling); }
+  if(s.n<2){ el.hidden=true; return; } el.hidden=false;
+  el.innerHTML='<b class="num">'+s.n+'</b><span>ימי שקילה ברצף'+(s.n>=s.best&&s.n>=3?' · שיא אישי':s.best>s.n?' · השיא שלך '+s.best:'')+'</span>'+(s.today?'':'<small>נשקלים היום כדי לא לשבור</small>'); }
+var _toastW=toast; toast=function(t,bad){ var m=!bad&&/^נשמר · ([\d.]+) ק״ג$/.exec(t||'');
+  if(m){ try{ var v=+m[1], today=trkYmd(new Date()), prev=trkRows().filter(function(r){ return r.kg!=null&&r.k<today; }).slice(-7).map(function(r){ return r.kg; });
+    if(prev.length>=3){ var avg=prev.reduce(function(a,b){ return a+b; },0)/prev.length, df=Math.round((v-avg)*10)/10, loss=(D&&D.goal)!=='עלייה';
+      t='נשמר · '+v+' ק״ג. '+(Math.abs(df)<0.2?'בדיוק על הממוצע של השבוע.':((df<0)===loss?(df<0?'מתחת':'מעל')+' לממוצע השבוע ב-'+Math.abs(df)+'. ממשיכים ככה.':'עלייה יומית זה בעיקר מים ומלח. הממוצע הוא מה שקובע.')); }
+    var s=weighStreak(); if(s.n>=3) t+=' רצף '+s.n+' ימים.'; }catch(e){} }
+  _toastW(t,bad); if(m){ clearTimeout(window._t); window._t=setTimeout(function(){ var el=document.getElementById('toast'); if(el) el.hidden=true; },4200); } };
+var _drawChartS=drawChart; drawChart=function(){ _drawChartS.apply(this,arguments); try{ homeStreak(); }catch(e){} };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
