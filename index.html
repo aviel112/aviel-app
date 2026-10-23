@@ -459,6 +459,17 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .wstreak{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin-top:10px;padding:9px 12px;border-radius:12px;background:var(--soft,rgba(212,172,91,.12));color:var(--text);font-size:14px}
 .wstreak b{font-size:20px;font-weight:800;color:var(--gold)}
 .wstreak small{flex-basis:100%;color:var(--mute);font-size:12.5px}
+.sgoal{display:flex;flex-direction:column;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.sgoal .row b{color:var(--gold);font-size:15px}
+.sgoal .row b.tok{color:var(--good)}
+.sgdays{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--mute)}
+.sgdays i{width:16px;height:16px;border-radius:5px;background:var(--line)}
+.sgdays i.part{background:var(--gold-d);opacity:.55}
+.sgdays i.ok{background:var(--good)}
+.sgdays span{margin-inline-start:6px}
+.kdelta{display:block;font-size:11.5px;font-weight:700;color:var(--mute);margin:-2px 0 2px}
+.kdelta.up{color:var(--good)}
+.kdelta.dn{color:var(--bad)}
 .toast{width:max-content;max-width:min(360px,calc(100% - 32px));text-align:center;line-height:1.45}
 .goalbox{display:flex;gap:6px;align-items:center}
 .goalbox input{width:96px;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
@@ -1705,6 +1716,24 @@ var _toastW=toast; toast=function(t,bad){ var m=!bad&&/^נשמר · ([\d.]+) ק�
     var s=weighStreak(); if(s.n>=3) t+=' רצף '+s.n+' ימים.'; }catch(e){} }
   _toastW(t,bad); if(m){ clearTimeout(window._t); window._t=setTimeout(function(){ var el=document.getElementById('toast'); if(el) el.hidden=true; },4200); } };
 var _drawChartS=drawChart; drawChart=function(){ _drawChartS.apply(this,arguments); try{ homeStreak(); }catch(e){} };
+
+/* ===== יעד צעדים יומי (אביאל קובע מהדשבורד): פס היום + 7 ימים ===== */
+function stepsGoalHtml(){ var g=+(D&&D.stepsGoal)||0; if(!g) return ''; var wk=(D.week||[]), t=wk.length?wk[wk.length-1]:null, n=t&&t.steps!=null?t.steps:0, pc=Math.min(100,Math.round(n/g*100)), hit=wk.filter(function(x){ return x.steps!=null&&x.steps>=g; }).length;
+  return '<div class="row"><span class="label">יעד צעדים · '+g.toLocaleString('he-IL')+'</span><b class="num'+(pc>=100?' tok':'')+'">'+(pc>=100?'הושג':pc+'%')+'</b></div><div class="tbar'+(pc>=100?' ok':'')+'"><i style="width:'+pc+'%"></i></div>'+
+    '<div class="sgdays">'+wk.map(function(x){ var ok=x.steps!=null&&x.steps>=g, part=x.steps!=null&&!ok; return '<i class="'+(ok?'ok':part?'part':'')+'" title="'+x.d+'"></i>'; }).join('')+'<span>'+hit+'/7 ימים ביעד</span></div>'+
+    (pc<100?'<div class="tnote">'+(n?'עוד '+(g-n).toLocaleString('he-IL')+' צעדים להיום.':'מעדכנים את הצעדים בסוף היום.')+'</div>':''); }
+function homeSteps(){ var f=document.getElementById('sForm'); if(!f) return; var el=document.getElementById('sgoal'), h=stepsGoalHtml();
+  if(!h){ if(el) el.remove(); return; } if(!el){ el=document.createElement('div'); el.id='sgoal'; el.className='sgoal'; f.parentNode.insertBefore(el,f.nextSibling); } el.innerHTML=h; }
+var _toastS=toast; toast=function(t,bad){ var m=!bad&&/^נשמר · ([\d,]+) צעדים$/.exec(t||''), g=+(D&&D.stepsGoal)||0;
+  if(m&&g){ var n=+m[1].replace(/,/g,''); t+=n>=g?'. היעד היומי הושג.':'. עוד '+(g-n).toLocaleString('he-IL')+' ליעד.'; } _toastS(t,bad); };
+var _drawChartSG=drawChart; drawChart=function(){ _drawChartSG.apply(this,arguments); try{ homeSteps(); }catch(e){} };
+
+/* ===== שינוי מול השבוע הקודם, מתחת לממוצע האחרון בבית ===== */
+function homeWeekDelta(){ var k=document.getElementById('kAvg'); if(!k) return; var w=((D&&D.weekly)||[]).filter(function(x){ return x!=null&&!isNaN(x); }), el=document.getElementById('kAvgD');
+  if(w.length<2){ if(el) el.remove(); return; } var df=Math.round((w[w.length-1]-w[w.length-2])*10)/10, loss=(D.goal)!=='עלייה', good=df===0?null:(df<0)===loss;
+  if(!el){ el=document.createElement('small'); el.id='kAvgD'; el.className='kdelta'; k.parentNode.insertBefore(el,k.nextSibling); }
+  el.className='kdelta num'+(good===null?'':good?' up':' dn'); el.textContent=(df>0?'+':df<0?'−':'')+Math.abs(df)+' בשבוע'; }
+var _drawChartWD=drawChart; drawChart=function(){ _drawChartWD.apply(this,arguments); try{ homeWeekDelta(); }catch(e){} };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
