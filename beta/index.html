@@ -439,6 +439,23 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .ttip{position:absolute;transform:translateX(-50%);background:var(--text);color:var(--ink);font-size:12.5px;font-weight:700;padding:4px 9px;border-radius:8px;white-space:nowrap;pointer-events:none;direction:rtl}
 .tempty{font-size:14px;color:var(--mute);text-align:center;padding:22px 0}
 @media (prefers-reduced-motion:reduce){.tbar i{transition:none}}
+.hgoal{display:flex;flex-direction:column;gap:6px;width:100%;text-align:right;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:18px;padding:14px 16px;font-weight:400;font-size:15px;box-shadow:var(--sh)}
+.hgoal .row b{color:var(--gold);font-size:18px}
+.hgoal .tbar{margin:2px 0}
+.msov{position:fixed;inset:0;z-index:30;background:rgba(8,8,10,.72);display:flex;align-items:center;justify-content:center;padding:24px max(16px,env(safe-area-inset-left,0px))}
+.msbox{width:min(380px,100%);background:var(--panel);border:1px solid var(--gold-d);border-radius:24px;padding:26px 22px 18px;text-align:center;display:flex;flex-direction:column;gap:10px;animation:msin .45s cubic-bezier(.2,.8,.2,1)}
+.msbox h2{font-family:var(--f-display);font-size:28px;margin:6px 0 0;text-wrap:balance}
+.msbox p{margin:0;color:var(--mute);font-size:15px;line-height:1.55}
+.msring{--p:50;width:148px;height:148px;margin:0 auto;border-radius:50%;background:conic-gradient(var(--gold) calc(var(--p)*1%),var(--line) 0);display:flex;align-items:center;justify-content:center;position:relative}
+.msring:before{content:"";position:absolute;inset:12px;border-radius:50%;background:var(--panel)}
+.msring b{position:relative;font-size:38px;font-weight:800;direction:ltr}
+.msnums{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0}
+.msnums>div{background:var(--panel2);border-radius:14px;padding:10px;display:flex;flex-direction:column}
+.msnums b{font-size:22px}
+.msnums small{color:var(--mute);font-size:12.5px}
+.msbox button{width:100%;min-height:46px}
+@keyframes msin{from{opacity:0;transform:translateY(16px) scale(.97)}}
+@media (prefers-reduced-motion:reduce){.msbox{animation:none}}
 .goalbox{display:flex;gap:6px;align-items:center}
 .goalbox input{width:96px;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
 .goalbox button{min-height:0;padding:6px 12px}
@@ -1634,6 +1651,39 @@ function drawTrk(){ var host=document.getElementById('chart'); if(!host||!D) ret
     box.querySelector('#trkGoalOk').onclick=function(){ var v=+box.querySelector('input').value; if(v&&(v<30||v>250)){ toast('משקל לא תקין',1); return; } lsSet('aviel_goal_kg',v||0); drawTrk(); try{ drawProj((D&&D.weekly)||[]); }catch(e){} }; }; }
 var _drawChartT=drawChart; drawChart=function(){ _drawChartT.apply(this,arguments); try{ drawTrk(); }catch(e){} };
 var _drawMeasT=drawMeasures; drawMeasures=function(){ _drawMeasT.apply(this,arguments); try{ drawTrk(); }catch(e){} };
+
+/* ===== יעד בבית + רגעי שיא (25/50/75/100%) עם תמונת סטורי לשיתוף ===== */
+function goalStat(){ var d=D||{}, goal=+ls('aviel_goal_kg',0)||0; if(!goal) return null; var rows=trkRows().filter(function(r){ return r.kg!=null; });
+  var start=d.firstKg!=null?+d.firstKg:(rows[0]&&rows[0].kg), cur=rows.length?rows[rows.length-1].kg:(d.lastKg!=null?+d.lastKg:null);
+  if(start==null||cur==null||Math.abs(start-goal)<0.5) return null;
+  return {goal:goal,start:start,cur:cur,pc:Math.max(0,Math.min(100,Math.round((start-cur)/(start-goal)*100))),done:Math.abs(Math.round((start-cur)*10)/10),left:Math.abs(Math.round((cur-goal)*10)/10),up:goal>start}; }
+function homeGoal(){ var k=document.querySelector('section[data-view="home"] .kpis'); if(!k) return; var el=document.getElementById('hgoal');
+  if(!el){ el=document.createElement('button'); el.type='button'; el.id='hgoal'; el.className='hgoal'; k.parentNode.insertBefore(el,k.nextSibling); el.onclick=function(){ show('prog'); setTimeout(function(){ var t=document.getElementById('trk'); if(t) t.scrollIntoView({block:'start'}); },60); }; }
+  var g=goalStat();
+  el.innerHTML=g?'<div class="row"><span class="label">הדרך ליעד · '+g.goal+' ק״ג</span><b class="num">'+g.pc+'%</b></div><div class="tbar"><i style="width:'+g.pc+'%"></i></div><div class="tnote">'+(g.pc>=100?'הגעת ליעד.':'נשארו '+g.left+' ק״ג')+'</div>'
+    :'<div class="row"><span class="label">היעד שלך</span><span class="linkbtn">הגדרה</span></div><div class="tnote">מגדירים יעד משקל, ורואים כאן כמה מהדרך כבר עשית.</div>'; }
+var MS=[[25,'רבע מהדרך מאחוריך','ההתחלה היא החלק הכי קשה, ואותו כבר עשית.'],[50,'חצי מהדרך','מכאן זה כבר לא ניסיון. זה הרגל.'],[75,'שלושה רבעים','הקו הסופי כבר נראה באופק.'],[100,'הגעת ליעד','עכשיו לומדים לשמור, וזה החלק שמשנה הכל.']];
+function checkMilestone(){ var g=goalStat(); if(!g) return; var key='aviel_ms_'+g.goal, seen=+ls(key,-1);
+  if(seen<0){ lsSet(key,Math.floor(g.pc/25)*25); return; } // יעד חדש: לא חוגגים אחורה
+  var hit=MS.filter(function(m){ return g.pc>=m[0]&&m[0]>seen; }).pop(); if(!hit) return; lsSet(key,hit[0]); showMilestone(hit,g); }
+function showMilestone(m,g){ var s=document.createElement('div'); s.className='msov'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true'); s.setAttribute('aria-label',m[1]);
+  s.innerHTML='<div class="msbox"><div class="msring" style="--p:'+m[0]+'"><b class="num">'+m[0]+'%</b></div><h2>'+m[1]+'</h2><p>'+m[2]+'</p><div class="msnums"><div><b class="num">'+g.done+'</b><small>ק״ג '+(g.up?'עלית':'ירדת')+'</small></div><div><b class="num">'+g.cur+'</b><small>ק״ג היום</small></div></div><button type="button" id="msShare">תמונה לסטורי</button><button type="button" class="ghost" id="msX">סגירה</button></div>';
+  document.body.appendChild(s); var close=function(){ s.remove(); }; s.querySelector('#msX').onclick=close; s.addEventListener('click',function(e){ if(e.target===s) close(); });
+  s.querySelector('#msShare').onclick=function(){ storyImg(m,g).then(function(blob){ var f=null; try{ f=new File([blob],'aviel-'+m[0]+'.png',{type:'image/png'}); }catch(e){}
+    if(f&&navigator.canShare&&navigator.canShare({files:[f]})) navigator.share({files:[f]}).catch(function(){});
+    else { var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='aviel-'+m[0]+'.png'; document.body.appendChild(a); a.click(); a.remove(); toast('התמונה נשמרה'); } }); }; }
+function storyImg(m,g){ return (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(function(){ var c=document.createElement('canvas'); c.width=1080; c.height=1920; var x=c.getContext('2d');
+  x.fillStyle='#0d0d0f'; x.fillRect(0,0,1080,1920); x.direction='rtl'; x.textAlign='center';
+  x.fillStyle='#d4ac5b'; x.font='700 40px "Assistant",Arial'; x.fillText('AVIEL · ליווי אישי',540,200);
+  x.lineWidth=34; x.strokeStyle='#2c2c34'; x.beginPath(); x.arc(540,720,300,0,Math.PI*2); x.stroke();
+  x.strokeStyle='#d4ac5b'; x.lineCap='round'; x.beginPath(); x.arc(540,720,300,-Math.PI/2,-Math.PI/2+Math.PI*2*m[0]/100); x.stroke();
+  x.fillStyle='#f2efe8'; x.font='800 170px "Assistant",Arial'; x.fillText(m[0]+'%',540,780);
+  x.font='700 92px "Frank Ruhl Libre","Secular One",serif'; x.fillText(m[1],540,1210);
+  x.fillStyle='#9d9aa6'; x.font='600 46px "Assistant",Arial'; x.fillText('מהדרך ל-'+g.goal+' ק״ג',540,1290);
+  x.fillStyle='#d4ac5b'; x.font='800 120px "Assistant",Arial'; x.fillText((g.up?'+':'−')+g.done+' ק״ג',540,1500);
+  x.fillStyle='#9d9aa6'; x.font='600 40px "Assistant",Arial'; x.fillText('בליווי אישי של אביאל עמירה',540,1760);
+  return new Promise(function(res){ c.toBlob(res,'image/png'); }); }); }
+var _drawChartG=drawChart; drawChart=function(){ _drawChartG.apply(this,arguments); try{ homeGoal(); checkMilestone(); }catch(e){} };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
