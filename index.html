@@ -1767,7 +1767,7 @@ window.addEventListener('online',oqFlush); setTimeout(oqFlush,4000);
 /* ===== החלפות באותן קלוריות (מהשרת, לפי התפריט האחרון) בתחתית לשונית התפריט ===== */
 function renderMenuSwaps(){ var box=document.getElementById('menuBox'), S=(P&&P.menuSwaps)||[]; if(!box) return; var old=document.getElementById('mswaps'); if(old) old.remove(); if(!S.length||!P.menu||!P.menu.blocks||!P.menu.blocks.length) return;
   var open=ls('aviel_swaps_open',0);
-  box.insertAdjacentHTML('beforeend','<div class="card" id="mswaps"><details'+(open?' open':'')+'><summary><span class="label">החלפות באותן קלוריות</span><span class="sub">'+S.length+' מאכלים</span></summary><p class="sub" style="margin:8px 0 10px">אותה קבוצת מזון, אותן קלוריות בערך. מחליפים לפי מה שיש ובא.</p><div class="swl">'+S.map(function(r){ return '<div class="swr"><b>'+esc(r[0])+'</b><span>'+esc(String(r[1]).split(' · ').join('</span><span>'))+'</span></div>'; }).join('')+'</div></details></div>');
+  box.insertAdjacentHTML('beforeend','<div class="card" id="mswaps"><details'+(open?' open':'')+'><summary><span class="label">החלפות באותן קלוריות</span><span class="sub">'+S.length+' מאכלים</span></summary><p class="sub" style="margin:8px 0 10px">אותה קבוצת מזון, אותן קלוריות בערך. מחליפים לפי מה שיש ובא.</p><div class="swl">'+S.map(function(r){ return '<div class="swr"><b>'+esc(r[0])+'</b>'+String(r[1]).split(' · ').map(function(x){ return '<span>'+esc(x)+'</span>'; }).join('')+'</div>'; }).join('')+'</div></details></div>');
   var d=box.querySelector('#mswaps details'); if(d) d.ontoggle=function(){ lsSet('aviel_swaps_open',d.open?1:0); }; }
 var _renderMenuSw=renderMenu; renderMenu=function(){ _renderMenuSw.apply(this,arguments); try{ renderMenuSwaps(); }catch(e){} };
 </script>
