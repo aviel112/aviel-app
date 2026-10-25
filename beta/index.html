@@ -590,6 +590,13 @@ nav.tabs button svg{width:24px;height:24px}
 .mac .bar{margin-top:6px}
 .tdh{font-size:24px}
 input,select,textarea{font-size:16px}
+.exthumb{flex:none;width:58px;height:58px;border-radius:12px;overflow:hidden;border:1px solid var(--line);padding:0;background:#fff;margin-inline-end:10px;min-height:0}
+.exthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.exanim{position:relative;aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:#fff;margin:6px 0 10px;border:1px solid var(--line)}
+.exanim img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.exanim img:nth-child(2){animation:exflip 1.6s steps(1) infinite}
+@keyframes exflip{0%{opacity:0}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.exanim img:nth-child(2){animation:none;opacity:0}}
 @media (prefers-contrast:more){:root{--mute:var(--text)}.card,.news{border-width:2px}}
 
 </style><script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script><script>(function(){var t='light';try{t=localStorage.getItem('aviel_theme')||'light';}catch(e){}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#f7f3ec':'#0d0d0f';})();</script></head>
@@ -1816,6 +1823,23 @@ var _renderMenuSw=renderMenu; renderMenu=function(){ _renderMenuSw.apply(this,ar
 
 /* כשהתוכנית (כולל סוג המעקב והיעדים) נטענת: מסתירים/מציגים תפריט ומרעננים את היומן עם היעד */
 (function(){ if(typeof renderMenu!=='function') return; var _rmMode=renderMenu; renderMenu=function(){ var r=_rmMode.apply(this,arguments); try{ applyMode(); if(typeof FDAY!=='undefined'&&FDAY&&typeof renderFood==='function') renderFood(); }catch(e){} return r; }; })();
+
+/* ===== תמונות תרגילים: מאגר free-exercise-db (נחלת הכלל) ממופה לשמות בעברית. בלי טקסט באנגלית — רק תמונה ושם ===== */
+var EXIMG=null, EXIMG_TRIED=false;
+function exNorm(s){ return String(s||'').replace(/[()\[\]'"׳״.,:–—-]/g,' ').replace(/\s+/g,' ').trim(); }
+function exImgFor(n){ if(!EXIMG) return null; var m=EXIMG.map, k=String(n||'').trim(); if(m[k]) return m[k];
+  if(!EXIMG._n){ EXIMG._n={}; Object.keys(m).forEach(function(x){ EXIMG._n[exNorm(x)]=m[x]; }); }
+  var nk=exNorm(k); if(EXIMG._n[nk]) return EXIMG._n[nk];
+  /* שם שמתחיל בשם מוכר: הארוך ביותר שמתאים. אחרת, שם קצר שמוכר כהתחלה של שמות ארוכים: הקצר מביניהם (התרגיל הבסיסי) */
+  var best=null, bl=0; Object.keys(EXIMG._n).forEach(function(x){ if(x.length>bl&&x.length>=3&&(nk===x||nk.indexOf(x+' ')===0)){ best=EXIMG._n[x]; bl=x.length; } }); if(best) return best;
+  var sl=1e9; Object.keys(EXIMG._n).forEach(function(x){ if(nk.length>=5&&x.indexOf(nk+' ')===0&&x.length<sl){ best=EXIMG._n[x]; sl=x.length; } }); return best; }
+function openExImg(name,id){ var s=document.createElement('div'); s.className='sheet'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true');
+  s.innerHTML='<div class="sheet-in exsheet"><h2>'+esc(name)+'</h2><div class="exanim"><img alt="תחילת התנועה" src="'+EXIMG.base+id+'/0.jpg"><img alt="סוף התנועה" src="'+EXIMG.base+id+'/1.jpg"></div><div class="sub">התמונות מתחלפות: תחילת התנועה וסוף התנועה. לא בטוח/ה בטכניקה? מצלמים סרטון קצר ושולחים לאביאל בכפתור "טכניקה".</div><button type="button">סגירה</button></div>';
+  var close=function(){ s.remove(); }; s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('button').onclick=close; document.body.appendChild(s); s.querySelector('button').focus(); }
+function addExImgs(){ if(!EXIMG){ if(!EXIMG_TRIED){ EXIMG_TRIED=true; fetch('../data/exercise-images.json').then(function(r){ return r.json(); }).then(function(j){ EXIMG=j; addExImgs(); }).catch(function(){}); } return; }
+  document.querySelectorAll('#progBox .card.ex .nmrow').forEach(function(row){ if(row.querySelector('.exthumb')) return; var nm=row.querySelector('.nm'); if(!nm) return; var id=exImgFor(nm.textContent); if(!id) return;
+    var b=document.createElement('button'); b.type='button'; b.className='exthumb'; b.setAttribute('aria-label','איך עושים: '+nm.textContent); b.innerHTML='<img loading="lazy" alt="" src="'+EXIMG.base+id+'/0.jpg">'; b.onclick=function(){ openExImg(nm.textContent,id); }; row.insertBefore(b,row.firstChild); }); }
+(function(){ if(typeof renderTrain!=='function') return; var _rtImg=renderTrain; renderTrain=function(){ var r=_rtImg.apply(this,arguments); try{ addExImgs(); }catch(e){} return r; }; })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
