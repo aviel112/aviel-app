@@ -90,6 +90,8 @@ h2{font-size:15px;margin:0 0 10px;font-weight:700}
 .swp button{font-size:12.5px;padding:4px 8px}
 .vol .row{display:flex;justify-content:space-between;font-size:13.5px;padding:3px 0}
 .vol .lo{color:var(--warn)}.vol .hi{color:var(--bad)}
+button.send{width:100%;margin-top:12px;padding:10px;background:var(--ok-l);border-color:#b5dcc6;color:var(--ok)}
+button.send:hover{background:#d8eee2}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;z-index:60;max-width:90vw}
 .toast.err{background:var(--bad)}
 .empty{padding:30px;text-align:center;color:var(--mute)}
@@ -186,7 +188,10 @@ function render(){
   if(!S.client){ app.innerHTML=h+'<main><div class="card empty">בוחרים מתאמן למעלה ומתחילים לבנות.</div></main>'; wireTop(); return; }
   h+='<main>'+(S.tab==='menu'?menuMain():progMain())+'</main>';
   app.innerHTML=h; wireTop(); if(S.tab==='menu') wireMenu(); else wireProg(); }
-function wireTop(){ var cs=$('#cSel'); if(cs) cs.onchange=function(){ pickClient(cs.value); }; document.querySelectorAll('[data-tab]').forEach(function(b){ b.onclick=function(){ S.tab=b.dataset.tab; history.replaceState(null,'','?tab='+S.tab+(S.client?'&c='+encodeURIComponent(S.client):'')); if(S.tab==='prog'&&!S.P) loadProgCtx(); render(); }; }); }
+function wireSend(){ document.querySelectorAll('[data-send]').forEach(function(btn){ btn.onclick=function(){ var w=window.open('','_blank'), t=btn.textContent; btn.disabled=true; btn.textContent='מכין PDF…';
+  call('dashboardPlanPdf',S.client,btn.dataset.send).then(function(r){ btn.disabled=false; btn.textContent=t; if(r.wa){ if(w) w.location=r.wa; else location.href=r.wa; toast('נפתח וואטסאפ עם הודעה מוכנה'); } else { if(w) w.close(); toast('אין טלפון בלוח. הקישור: '+r.url,1); } })
+  .catch(function(e){ if(w) w.close(); btn.disabled=false; btn.textContent=t; toast(e.message,1); }); }; }); }
+function wireTop(){ wireSend(); var cs=$('#cSel'); if(cs) cs.onchange=function(){ pickClient(cs.value); }; document.querySelectorAll('[data-tab]').forEach(function(b){ b.onclick=function(){ S.tab=b.dataset.tab; history.replaceState(null,'','?tab='+S.tab+(S.client?'&c='+encodeURIComponent(S.client):'')); if(S.tab==='prog'&&!S.P) loadProgCtx(); render(); }; }); }
 
 function menuMain(){ var M=S.M; if(!M) return '<div class="card empty">טוען…</div><div></div>';
   var sug=S.msug||{}, store=S.mstore||[], own=store.filter(function(x){ return x.kind==='מתאמן'&&x.name===S.client; })[0], tpl=store.filter(function(x){ return x.kind==='תבנית'; }), oth=store.filter(function(x){ return x.kind==='מתאמן'&&x.name!==S.client; });
@@ -210,7 +215,7 @@ function menuMain(){ var M=S.M; if(!M) return '<div class="card empty">טוען�
   h+='<aside class="side"><div class="card pad tot"><h2>סה״כ ליום</h2><div><span class="big num">'+k.toLocaleString()+'</span> <span class="of">/ <input type="number" id="mT" value="'+T+'" step="50" style="width:78px;padding:3px 6px"> קק״ל יעד</span></div><div class="rng num">טווח לפי הבחירות: '+Math.round(t.lo[0])+'–'+Math.round(t.hi[0])+'</div><div class="track" style="margin-top:8px"><i style="width:'+pc+'%;background:'+(pc>108?'var(--bad)':pc<92?'var(--warn)':'var(--ok)')+'"></i></div>'+
     [['חלבון','p',1,4],['פחמימה','c',2,4],['שומן','f',3,9]].map(function(x){ var g=mid(x[2]), share=k?Math.round(g*x[3]/k*100):0; return '<div class="row"><span>'+x[0]+'</span><div class="track"><i style="width:'+share+'%;background:var(--'+x[1]+')"></i></div><span class="num">'+g+' ג׳ · '+share+'%</span></div>'; }).join('')+'</div>'+
     (unm?'<div class="card pad" style="border-color:#f0c88a;background:var(--warn-l)"><b>'+unm+' מאכלים לבחירה</b><div class="muted">מסומנים בצהוב. מקלידים בשדה ובוחרים מהרשימה.</div></div>':'')+
-    '<div class="card pad"><button class="p" id="mCreate" style="width:100%;padding:11px">צור תפריט בתיקייה</button><div class="bar" style="margin:10px 0 0"><input id="mTpl" placeholder="שם לתבנית" style="flex:1"><button id="mTplSave">שמירה כתבנית</button></div><div class="muted" id="mLast"></div></div>'+
+    '<div class="card pad"><button class="p" id="mCreate" style="width:100%;padding:11px">צור תפריט בתיקייה</button><div class="bar" style="margin:10px 0 0"><input id="mTpl" placeholder="שם לתבנית" style="flex:1"><button id="mTplSave">שמירה כתבנית</button></div><div class="muted" id="mLast"></div><button class="send" data-send="menu">שליחה למתאמן בוואטסאפ (PDF)</button><div class="muted">שולח את התפריט האחרון שבתיקייה</div></div>'+
     '<div class="card pad"><h2>מאכל חדש למאגר שלי</h2><div class="muted" style="margin-bottom:6px">ערכים ל-100 גרם</div><input id="nfN" placeholder="שם" style="width:100%;margin-bottom:6px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"><input id="nfK" type="number" placeholder="קק״ל"><input id="nfP" type="number" placeholder="חלבון"><input id="nfC" type="number" placeholder="פחמ׳"><input id="nfF" type="number" placeholder="שומן"></div><button id="nfSave" style="width:100%;margin-top:8px">שמירה במאגר</button></div></aside>';
   return h; }
 
@@ -261,7 +266,7 @@ function progMain(){ var P=S.P; if(!P) return '<div class="card empty">טוען�
   h+='<div class="bar"><button id="pAddDay">+ אימון</button></div><div class="card pad"><h2>הערות אישיות (בראש התוכנית)</h2><textarea id="pNotes" rows="2" style="width:100%" placeholder="למשל: להתחיל קל בשבוע הראשון">'+esc(P.notes||'')+'</textarea></div></div>';
   var vol={}; P.days.forEach(function(d){ d.exercises.forEach(function(e){ var g=muOf(e)||'אחר'; vol[g]=(vol[g]||0)+(parseInt(e.s,10)||0); }); }); var vk=Object.keys(vol).sort(function(a,b){ return vol[b]-vol[a]; });
   h+='<aside class="side"><div class="card pad vol"><h2>סטים בשבוע לפי שריר</h2>'+(vk.length?vk.map(function(g){ var n=vol[g], big=/חזה|גב|ארבע ראשי|המסטרינג|ישבן|כתפיים/.test(g); return '<div class="row"><span>'+esc(g)+'</span><b class="num '+(big&&n<8?'lo':n>22?'hi':'')+'">'+n+'</b></div>'; }).join('')+'<div class="muted" style="margin-top:6px">כתום: פחות מ-8 לשריר גדול · אדום: מעל 22</div>':'<div class="muted">עוד אין תרגילים</div>')+'</div>'+
-    '<div class="card pad"><button class="p" id="pCreate" style="width:100%;padding:11px">צור תוכנית בתיקייה</button><div class="bar" style="margin:10px 0 0"><input id="pTpl" placeholder="שם לתבנית" style="flex:1"><button id="pTplSave">שמירה כתבנית</button></div><button class="g" id="pNoProg" style="width:100%;margin-top:6px">המתאמן/ת בלי תוכנית אימון</button><div class="muted" id="pLast"></div></div></aside>';
+    '<div class="card pad"><button class="p" id="pCreate" style="width:100%;padding:11px">צור תוכנית בתיקייה</button><div class="bar" style="margin:10px 0 0"><input id="pTpl" placeholder="שם לתבנית" style="flex:1"><button id="pTplSave">שמירה כתבנית</button></div><button class="g" id="pNoProg" style="width:100%;margin-top:6px">המתאמן/ת בלי תוכנית אימון</button><div class="muted" id="pLast"></div><button class="send" data-send="program">שליחה למתאמן בוואטסאפ (PDF)</button><div class="muted">שולח את התוכנית האחרונה שבתיקייה</div></div></aside>';
   return h; }
 var SWAP=null;
 function swapHtml(e,key){ var g=muOf(e); var c=S.ex.filter(function(x){ return x[0]===g&&x[2]!==e.n; }).sort(function(a,b){ return (b[6]==='a')-(a[6]==='a'); }).slice(0,12); return '<div class="swp">'+(c.length?c.map(function(x,i){ return '<button data-swto="'+key+'|'+i+'">'+(x[6]==='a'?'★ ':'')+esc(x[2])+'</button>'; }).join(''):'<span class="muted">אין חלופות במאגר לקבוצה הזו</span>')+'</div>'; }
