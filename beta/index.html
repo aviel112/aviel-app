@@ -575,6 +575,23 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 @keyframes shf{from{background:rgba(20,15,8,0)}}
 @keyframes shu{from{transform:translateY(24px);opacity:.4}}
 @media (prefers-reduced-motion:reduce){.sheet,.sheet-in{animation:none}button{transition:none}}
+/* ===== שכבת נגישות וצבעים נקיים (25.10.26) ===== */
+:root[data-theme="light"]{--ink:#eef0f3;--panel:#ffffff;--panel2:#f4f6f8;--line:#dde2e8;--text:#14161a;--mute:#525a64;--gold:#82601f;--gold-d:#c9a560;--soft:#f5eddc;--cta:#14161a;--cta-t:#ffffff;--sh:0 1px 2px rgba(20,24,30,.05),0 12px 30px -18px rgba(20,24,30,.22)}
+html{zoom:var(--zoom,1)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:8px}
+.sub{font-size:14px;line-height:1.5}
+nav.tabs button{font-size:13px}
+nav.tabs button svg{width:24px;height:24px}
+.thbtn{width:42px;height:42px}
+.txtbtn span{font-weight:800;font-size:16px;line-height:1;display:flex;align-items:baseline;gap:1px}
+.txtbtn small{font-size:11px}
+.bigtxt .txtbtn{background:var(--soft);border-color:var(--gold-d)}
+.mac{grid-template-columns:repeat(3,1fr);gap:12px;font-size:14px}
+.mac .bar{margin-top:6px}
+.tdh{font-size:24px}
+input,select,textarea{font-size:16px}
+@media (prefers-contrast:more){:root{--mute:var(--text)}.card,.news{border-width:2px}}
+
 </style><script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script><script>(function(){var t='light';try{t=localStorage.getItem('aviel_theme')||'light';}catch(e){}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#f7f3ec':'#0d0d0f';})();</script></head>
 <body>
 <div class="app">
@@ -980,7 +997,7 @@ function renderFood(){
   var row=function(lbl,v,t,u){ return '<div><b class="num">'+Math.round(v)+'</b>'+(t?' / '+t:'')+' '+u+'<div class="sub">'+lbl+'</div>'+bar(v,t)+'</div>'; };
   var tk=T['קלוריות'], left=tk?tk-Math.round(s.k):null;
   $('#fTot').innerHTML='<div class="row fnav"><button type="button" class="swarr" data-fn="-1" aria-label="יום קודם">'+IC_GO+'</button><b>'+vlab+'</b><button type="button" class="swarr prev" data-fn="1" aria-label="יום הבא"'+(past?'':' disabled')+'>'+IC_GO+'</button></div><div class="ftop"><div class="fringw">'+ring(s.k,tk)+'<div class="fringt"><b class="num">'+(tk?Math.abs(left):Math.round(s.k))+'</b><small>'+(tk?(left>=0?'נשארו':'מעל היעד'):'קק״ל')+'</small></div></div>'+
-    '<div class="feq"><div><span class="sub">יעד</span><b class="num">'+(tk||'–')+'</b></div><div><span class="sub">אכלת</span><b class="num">'+Math.round(s.k)+'</b></div><div class="sub">'+it.length+' רישומים היום</div></div></div>'+
+    '<div class="feq"><div><span class="sub">יעד</span><b class="num">'+(tk||'עוד לא')+'</b></div><div><span class="sub">אכלת</span><b class="num">'+Math.round(s.k)+'</b></div><div class="sub">'+it.length+' רישומים היום</div></div></div>'+
     '<div class="mac">'+row('חלבון',s.p,T['חלבון'],'ג׳')+row('פחמימה',s.c,T['פחמימות'],'ג׳')+row('שומן',s.fat,T['שומן'],'ג׳')+'</div>'+
     (it.length||past?'':'<button type="button" class="ghost fcopy" id="fCopy">העתקת היומן של אתמול</button>');
   document.querySelectorAll('#fTot [data-fn]').forEach(function(b){ b.onclick=function(){ foodNav(+b.dataset.fn); }; });
@@ -1477,13 +1494,21 @@ function recapHtml(){ var d=D||{}, wk=d.week||[], keys=weekKeys(), ws=weekStart(
 var BOARD=null, BOARD_TRIED=false;
 function boardHtml(){ if(!BOARD||!BOARD.list||!BOARD.list.length) return ''; var me=BOARD.me||'';
   return '<div class="board"><div class="row"><b>אתגר הצעדים השבועי</b><small>ממוצע ליום</small></div>'+BOARD.list.slice(0,5).map(function(x,i){ return '<div class="brow'+(x.n===me?' me':'')+'"><span class="bn num">'+(i+1)+'</span><span class="bname">'+esc(x.n)+(x.n===me?' (את/ה)':'')+'</span><span class="num">'+x.avg.toLocaleString('he-IL')+'</span></div>'; }).join('')+(BOARD.rank&&BOARD.rank>5?'<div class="brow me"><span class="bn num">'+BOARD.rank+'</span><span class="bname">'+esc(me)+' (את/ה)</span><span class="num">'+(BOARD.mine||0).toLocaleString('he-IL')+'</span></div>':'')+'<div class="swaphint">מתעדכן כל שעה מהצעדים שכולם רושמים. כל מי שמסיים את השבוע עם 7 ימי רישום מקבל ממני כבוד.</div></div>'; }
-function renderExtras(el){ var x=document.getElementById('extras'); if(!x){ x=document.createElement('div'); x.id='extras'; el.parentNode.insertBefore(x,el.nextSibling); }
-  x.innerHTML=firstWeekHtml()+whatsNewHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+photoDueHtml()+reportHtml()+recapHtml()+boardHtml()+guidesHtml()+askHtml();
-  wireAsk(x);
+function renderExtras(el){ var x=document.getElementById('extras'), wf=document.getElementById('wForm'), wc=wf&&wf.closest('.card'), at=wc||el;
+  if(!x){ x=document.createElement('div'); x.id='extras'; } if(x.previousSibling!==at) at.parentNode.insertBefore(x,at.nextSibling);
+  var x2=document.getElementById('extras2'); if(!x2){ x2=document.createElement('div'); x2.id='extras2'; } if(x2.parentNode!==at.parentNode||x2.nextSibling) at.parentNode.appendChild(x2);
+  /* למעלה: רק מה שדורש פעולה עכשיו. השקילה מעליהם. למטה: שבועי, אתגר, מדריכים ושאלה */
+  x.innerHTML=firstWeekHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+photoDueHtml()+reportHtml();
+  x2.innerHTML=recapHtml()+boardHtml()+guidesHtml()+askHtml();
+  wireAsk(x2);
   wireMonthly(x);
   wireBlood(x); var sx=x.querySelector('#suppX'); if(sx) sx.onclick=function(){ lsSet('aviel_supp_seen',INBOX.supp.at); renderExtras(document.getElementById('todayCard')); };
-  var nb=x.querySelector('#newsX'); if(nb) nb.onclick=function(){ lsSet('aviel_news_seen',WHATS_NEW.v); renderExtras(el); };
   if(!BOARD_TRIED&&typeof api==='function'){ BOARD_TRIED=true; api('board',{}).then(function(r){ BOARD=r; renderExtras(el); }).catch(function(){}); } }
+
+/* ===== נגישות: גודל טקסט (רגיל / גדול / גדול מאוד), נשמר במכשיר ===== */
+var A11Y_SIZES=[1,1.12,1.25];
+function a11yApply(){ var i=+ls('aviel_textsize',0)||0; document.documentElement.style.setProperty('--zoom',A11Y_SIZES[i]); document.documentElement.classList.toggle('bigtxt',i>0); var b=document.getElementById('txtBtn'); if(b){ b.setAttribute('aria-label','גודל טקסט: '+['רגיל','גדול','גדול מאוד'][i]+'. לחיצה מגדילה'); b.dataset.s=i; } }
+(function(){ var top=document.querySelector('.topr'); if(top&&!document.getElementById('txtBtn')){ var b=document.createElement('button'); b.type='button'; b.className='thbtn txtbtn'; b.id='txtBtn'; b.innerHTML='<span aria-hidden="true">א<small>א</small></span>'; b.onclick=function(){ var i=((+ls('aviel_textsize',0)||0)+1)%A11Y_SIZES.length; lsSet('aviel_textsize',i); a11yApply(); toast(['טקסט רגיל','טקסט גדול','טקסט גדול מאוד'][i]); }; top.insertBefore(b,top.firstChild); } a11yApply(); })();
 
 /* ===== "אכלתי" בתפריט רושם את ערכי הארוחה ביומן האוכל (כמו ב-MyFitnessPal, בלי להקליד) ===== */
 function mealVals(b){ var out=null; (b.lines||[]).forEach(function(l){ if(!/^(ערכים ממוצעים|ערכי הארוחה)/.test(l)) return; var o={}, re=/כ-?\s*([\d.,]+)\s*(קלוריות|גרם חלבון|גרם פחמימ\S*|גרם שומן)/g, mm; while((mm=re.exec(l))){ var n=+mm[1].replace(/,/g,''); if(/קלור/.test(mm[2])) o.k=n; else if(/חלבון/.test(mm[2])) o.p=n; else if(/פחמ/.test(mm[2])) o.c=n; else o.fat=n; } if(o.k) out=o; }); return out; }
