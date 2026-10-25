@@ -468,6 +468,14 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .sgdays i.ok{background:var(--good)}
 .sgdays span{margin-inline-start:6px}
 .lvlup{width:120px;height:120px;margin:0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--soft,rgba(212,172,91,.14));border:3px solid var(--good);color:var(--good);font-size:34px;font-weight:800;direction:ltr}
+#mswaps summary{list-style:none;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+#mswaps summary::-webkit-details-marker{display:none}
+#mswaps summary .sub{font-size:12.5px}
+.swl{display:flex;flex-direction:column;gap:8px}
+.swr{background:var(--panel2);border-radius:12px;padding:9px 12px;font-size:14px;display:flex;flex-direction:column;gap:3px}
+.swr b{font-size:14.5px}
+.swr span{color:var(--mute);padding-inline-start:10px;position:relative}
+.swr span:before{content:"↔";position:absolute;right:0;color:var(--gold)}
 .lvltag{display:inline-block;margin-inline-start:4px;padding:1px 8px;border-radius:99px;background:var(--good);color:var(--ink);font-size:11px;font-weight:800;letter-spacing:0}
 .kdelta{display:block;font-size:11.5px;font-weight:700;color:var(--mute);margin:-2px 0 2px}
 .kdelta.up{color:var(--good)}
@@ -1755,6 +1763,13 @@ api=function(a,p){ return _apiO(a,p).catch(function(e){ if((a==='weigh'||a==='st
     var wk=D.week||[], t=wk[wk.length-1]; if(t){ if(a==='weigh') t.kg=p.kg; else t.steps=p.n; }
     setTimeout(function(){ toast('אין קליטה. נשמר בטלפון ויישלח לבד כשיחזור חיבור.'); },60); return D; } throw e; }); };
 window.addEventListener('online',oqFlush); setTimeout(oqFlush,4000);
+
+/* ===== החלפות באותן קלוריות (מהשרת, לפי התפריט האחרון) בתחתית לשונית התפריט ===== */
+function renderMenuSwaps(){ var box=document.getElementById('menuBox'), S=(P&&P.menuSwaps)||[]; if(!box) return; var old=document.getElementById('mswaps'); if(old) old.remove(); if(!S.length||!P.menu||!P.menu.blocks||!P.menu.blocks.length) return;
+  var open=ls('aviel_swaps_open',0);
+  box.insertAdjacentHTML('beforeend','<div class="card" id="mswaps"><details'+(open?' open':'')+'><summary><span class="label">החלפות באותן קלוריות</span><span class="sub">'+S.length+' מאכלים</span></summary><p class="sub" style="margin:8px 0 10px">אותה קבוצת מזון, אותן קלוריות בערך. מחליפים לפי מה שיש ובא.</p><div class="swl">'+S.map(function(r){ return '<div class="swr"><b>'+esc(r[0])+'</b><span>'+esc(String(r[1]).split(' · ').join('</span><span>'))+'</span></div>'; }).join('')+'</div></details></div>');
+  var d=box.querySelector('#mswaps details'); if(d) d.ontoggle=function(){ lsSet('aviel_swaps_open',d.open?1:0); }; }
+var _renderMenuSw=renderMenu; renderMenu=function(){ _renderMenuSw.apply(this,arguments); try{ renderMenuSwaps(); }catch(e){} };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
