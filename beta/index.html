@@ -1813,6 +1813,9 @@ function renderMenuSwaps(){ var box=document.getElementById('menuBox'), S=(P&&P.
     api('food',{f:a.t+' (החלפה)',g:0,k:a.k,p:a.p,c:a.c,fat:a.f,m:''}).then(function(r){ FDAY=r; toast('נרשם ביומן: '+a.t+' · '+a.k+' קק״ל'); b.disabled=false; if(typeof renderFood==='function') renderFood(); if(typeof renderTodayCard==='function') renderTodayCard(); }).catch(function(e){ b.disabled=false; toast(e.message||'לא נרשם',1); }); }; });
   if(S.some(function(r){ return r[2]&&r[2].length; })){ var hint=box.querySelector('#mswaps p.sub'); if(hint) hint.textContent='אותה קבוצת מזון, אותן קלוריות בערך. לחיצה על חלופה רושמת אותה ביומן של היום.'; } }
 var _renderMenuSw=renderMenu; renderMenu=function(){ _renderMenuSw.apply(this,arguments); try{ renderMenuSwaps(); }catch(e){} };
+
+/* כשהתוכנית (כולל סוג המעקב והיעדים) נטענת: מסתירים/מציגים תפריט ומרעננים את היומן עם היעד */
+(function(){ if(typeof renderMenu!=='function') return; var _rmMode=renderMenu; renderMenu=function(){ var r=_rmMode.apply(this,arguments); try{ applyMode(); if(typeof FDAY!=='undefined'&&FDAY&&typeof renderFood==='function') renderFood(); }catch(e){} return r; }; })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
