@@ -92,6 +92,14 @@ h2{font-size:15px;margin:0 0 10px;font-weight:700}
 .vol .lo{color:var(--warn)}.vol .hi{color:var(--bad)}
 button.send{width:100%;margin-top:12px;padding:10px;background:var(--ok-l);border-color:#b5dcc6;color:var(--ok)}
 button.send:hover{background:#d8eee2}
+.guide{grid-column:1/-1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.guide ol{list-style:none;margin:0;padding:0;display:flex;gap:6px;flex-wrap:wrap}
+.guide li{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mute);background:var(--line2);border-radius:99px;padding:4px 10px 4px 12px}
+.guide li i{font-style:normal;font-weight:800;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:#fff;font-size:12px}
+.guide li.ok{color:var(--ok);background:var(--ok-l)}.guide li.ok i{background:var(--ok);color:#fff}
+.guide li.now{color:#fff;background:var(--acc)}.guide li.now i{color:var(--acc)}
+.guide .do{font-size:16px;font-weight:700}
+.guide .do small{display:block;font-weight:400;color:var(--mute);font-size:13.5px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;z-index:60;max-width:90vw}
 .toast.err{background:var(--bad)}
 .empty{padding:30px;text-align:center;color:var(--mute)}
@@ -116,6 +124,7 @@ var DATA='../data/';
 var Q=new URLSearchParams(location.search);
 var K=Q.get('k')||lsg('coach_k','');
 if(Q.get('k')) lss('coach_k',Q.get('k'));
+var DONE={};
 var S={tab:Q.get('tab')==='prog'?'prog':'menu', client:Q.get('c')||lsg('coach_c',''), clients:[], foods:[], coach:[], moh:[], ex:[], msug:null, psug:null, M:null, P:null, by:'k', mstore:null, pstore:null, busy:false};
 function lsg(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lss(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
@@ -185,17 +194,32 @@ function render(){
   var h='<header><span class="brand">AVIEL · בונה</span><select id="cSel" aria-label="מתאמן"><option value="">בחירת מתאמן…</option>'+cl.map(function(c){ return '<option'+(c.name===S.client?' selected':'')+'>'+esc(c.name)+'</option>'; }).join('')+'</select>'+
     '<div class="tabs" role="tablist"><button class="'+(S.tab==='menu'?'on':'')+'" data-tab="menu">תפריט</button><button class="'+(S.tab==='prog'?'on':'')+'" data-tab="prog">תוכנית אימון</button></div><span class="sp"></span>'+
     '<a href="https://script.google.com/macros/s/AKfycbxUQUfU14Yhmx8RbzJo5hdy9gwASM2F3YfzTXnXRl4/dev?page=m">דשבורד נייד</a><a href="https://script.google.com/macros/s/AKfycbxUQUfU14Yhmx8RbzJo5hdy9gwASM2F3YfzTXnXRl4/dev?page=dashboard">דשבורד מלא</a></header>';
-  if(!S.client){ app.innerHTML=h+'<main><div class="card empty">בוחרים מתאמן למעלה ומתחילים לבנות.</div></main>'; wireTop(); return; }
+  if(!S.client){ app.innerHTML=h+'<main><div class="card empty" style="grid-column:1/-1;font-size:17px"><b style="display:block;font-size:20px;color:var(--ink);margin-bottom:6px">שלב ראשון: בוחרים מתאמן</b>בתיבה למעלה, ליד AVIEL, בוחרים את השם. אחר כך הדף יגיד בדיוק מה לעשות.</div></main>'; wireTop(); return; }
   h+='<main>'+(S.tab==='menu'?menuMain():progMain())+'</main>';
   app.innerHTML=h; wireTop(); if(S.tab==='menu') wireMenu(); else wireProg(); }
 function wireSend(){ document.querySelectorAll('[data-send]').forEach(function(btn){ btn.onclick=function(){ var w=window.open('','_blank'), t=btn.textContent; btn.disabled=true; btn.textContent='מכין PDF…';
-  call('dashboardPlanPdf',S.client,btn.dataset.send).then(function(r){ btn.disabled=false; btn.textContent=t; if(r.wa){ if(w) w.location=r.wa; else location.href=r.wa; toast('נפתח וואטסאפ עם הודעה מוכנה'); } else { if(w) w.close(); toast('אין טלפון בלוח. הקישור: '+r.url,1); } })
+  call('dashboardPlanPdf',S.client,btn.dataset.send).then(function(r){ btn.disabled=false; btn.textContent=t; if(r.wa){ if(w) w.location=r.wa; else location.href=r.wa; DONE['sent_'+btn.dataset.send]=S.client; render(); toast('נפתח וואטסאפ עם הודעה מוכנה'); } else { if(w) w.close(); toast('אין טלפון בלוח. הקישור: '+r.url,1); } })
   .catch(function(e){ if(w) w.close(); btn.disabled=false; btn.textContent=t; toast(e.message,1); }); }; }); }
 function wireTop(){ wireSend(); var cs=$('#cSel'); if(cs) cs.onchange=function(){ pickClient(cs.value); }; document.querySelectorAll('[data-tab]').forEach(function(b){ b.onclick=function(){ S.tab=b.dataset.tab; history.replaceState(null,'','?tab='+S.tab+(S.client?'&c='+encodeURIComponent(S.client):'')); if(S.tab==='prog'&&!S.P) loadProgCtx(); render(); }; }); }
 
+function guide(steps){ var cur=-1; steps.forEach(function(x,i){ if(cur<0&&!x[1]) cur=i; });
+  var h='<div class="guide"><ol>'+steps.map(function(x,i){ return '<li class="'+(x[1]?'ok':i===cur?'now':'')+'"><i>'+(x[1]?'✓':i+1)+'</i>'+x[0]+'</li>'; }).join('')+'</ol>';
+  h+=cur<0?'<div class="do">הכל מוכן ונשלח<small>אפשר לבחור מתאמן אחר למעלה</small></div>':'<div class="do">עכשיו: '+steps[cur][0]+'<small>'+steps[cur][2]+'</small></div>';
+  return h+'</div>'; }
+function menuGuide(){ var M=S.M, has=0, unm=0; M.meals.forEach(function(ml){ ml.rows.forEach(function(r){ r.opts.forEach(function(o){ if(o.t||o.food||o.raw) has++; if(o.unm) unm++; }); }); }); var t=totals(M), k=(t.lo[0]+t.hi[0])/2, near=M.T&&has&&Math.abs(k-M.T)/M.T<=0.08, made=DONE.menu===S.client;
+  return guide([['ממלאים תפריט',has>0,'לוחצים "העלאת קובץ תפריט", או "טעינת תפריט קיים", או מקלידים מאכלים בכל ארוחה'],
+    ['מתקנים צהובים',has>0&&!unm,'כל שורה צהובה: לוחצים על אחת ההצעות מתחתיה, או מקלידים שם ובוחרים מהרשימה'],
+    ['בודקים סה״כ',near||made,'הסה״כ בצד צריך להיות קרוב ליעד. משנים גרמים עד שהפס ירוק'],
+    ['יוצרים מסמך',made,'לוחצים "צור תפריט בתיקייה" בצד'],
+    ['שולחים',DONE.sent_menu===S.client,'לוחצים על הכפתור הירוק "שליחה למתאמן בוואטסאפ", ובוואטסאפ לוחצים שלח']]); }
+function progGuide(){ var P=S.P, n=0; P.days.forEach(function(d){ n+=d.exercises.length; }); var made=DONE.prog===S.client;
+  return guide([['ממלאים תוכנית',n>0,'לוחצים "העלאת קובץ תוכנית", או "טעינת תוכנית קיימת", או מקלידים תרגיל בשדה "+ הוספת תרגיל"'],
+    ['בודקים',n>=4||made,'עוברים על הסטים והחזרות. בצד רואים כמה סטים יש לכל שריר'],
+    ['יוצרים מסמך',made,'לוחצים "צור תוכנית בתיקייה" בצד'],
+    ['שולחים',DONE.sent_program===S.client,'לוחצים על הכפתור הירוק "שליחה למתאמן בוואטסאפ", ובוואטסאפ לוחצים שלח']]); }
 function menuMain(){ var M=S.M; if(!M) return '<div class="card empty">טוען…</div><div></div>';
   var sug=S.msug||{}, store=S.mstore||[], own=store.filter(function(x){ return x.kind==='מתאמן'&&x.name===S.client; })[0], tpl=store.filter(function(x){ return x.kind==='תבנית'; }), oth=store.filter(function(x){ return x.kind==='מתאמן'&&x.name!==S.client; });
-  var h='<div><div class="bar"><label class="upl">העלאת קובץ תפריט<input type="file" id="mFile" accept=".doc,.docx,.pdf,.txt,image/*"></label>'+
+  var h=menuGuide()+'<div><div class="bar"><label class="upl">העלאת קובץ תפריט<input type="file" id="mFile" accept=".doc,.docx,.pdf,.txt,image/*"></label>'+
     '<select id="mLoad"><option value="">טעינת תפריט קיים…</option>'+(own?'<option value="מתאמן|'+esc(own.name)+'">האחרון שלו/ה ('+own.T+' · '+esc(own.d)+')</option>':'')+(tpl.length?'<optgroup label="תבניות">'+tpl.map(function(x){ return '<option value="תבנית|'+esc(x.name)+'">'+esc(x.name)+' ('+x.T+')</option>'; }).join('')+'</optgroup>':'')+(oth.length?'<optgroup label="ממתאמן אחר">'+oth.map(function(x){ return '<option value="מתאמן|'+esc(x.name)+'">'+esc(x.name)+' ('+x.T+')</option>'; }).join('')+'</optgroup>':'')+'</select>'+
     '<button class="g" id="mNew">תפריט ריק</button><span class="sp" style="flex:1"></span><span class="muted">חלופה לפי</span><select id="mBy"><option value="k"'+(S.by==='k'?' selected':'')+'>קלוריות</option><option value="p"'+(S.by==='p'?' selected':'')+'>חלבון</option></select></div>';
   if(sug.intakeText||sug.T) h+='<div class="muted" style="margin:-4px 0 10px">'+(sug.T?'לפי הטופס: '+sug.T+' קלוריות (שמירה ≈ '+sug.tdee+')':'')+(sug.intakeText?' · '+esc(sug.intakeText):'')+'</div>';
@@ -246,14 +270,14 @@ function wireMenu(){ var M=S.M; if(!M) return;
   $('#mCreate').onclick=function(){ var b=this, u=0, empty=0; M.meals.forEach(function(ml){ ml.rows.forEach(function(r){ r.opts.forEach(function(o){ if(o.unm) u++; }); if(!r.opts.length) empty++; }); });
     if(u&&!window.confirm(u+' מאכלים עדיין בלי ערכים (צהוב). ליצור בכל זאת?')) return; b.disabled=true; b.textContent='יוצר מסמך…';
     var E={T:M.T, free:M.free||0, meals:M.meals.map(function(ml){ return {title:ml.title, note:ml.note||'', rows:ml.rows.filter(function(r){ return r.opts.length; }).map(function(r){ return {label:r.label||'', alt:!!r.alt, opts:r.opts.filter(function(o){ return o.t||o.food||o.raw; }).map(function(o){ return o.per?{t:o.t, food:o.food, g:o.g, per:o.per, m:o.m}:{t:o.t||((o.g?o.g+' גרם ':'')+(o.raw||'')), m:o.m||[0,0,0]}; })}; })}; }).filter(function(ml){ return ml.rows.length; })};
-    call('dashboardMenuCreate',S.client,Math.round(+M.T||1700),{edited:E,notes:M.notes||''}).then(function(r){ b.disabled=false; b.textContent='צור תפריט בתיקייה'; $('#mLast').innerHTML='נוצר: <a href="'+esc(r.url)+'" target="_blank">'+esc(r.name)+'</a>'; window.open(r.url,'_blank'); toast('התפריט נוצר בתיקייה'); }).catch(function(e){ b.disabled=false; b.textContent='צור תפריט בתיקייה'; toast(e.message,1); }); };
+    call('dashboardMenuCreate',S.client,Math.round(+M.T||1700),{edited:E,notes:M.notes||''}).then(function(r){ b.disabled=false; b.textContent='צור תפריט בתיקייה'; DONE.menu=S.client; render(); $('#mLast').innerHTML='נוצר: <a href="'+esc(r.url)+'" target="_blank">'+esc(r.name)+'</a>'; window.open(r.url,'_blank'); toast('התפריט נוצר בתיקייה'); }).catch(function(e){ b.disabled=false; b.textContent='צור תפריט בתיקייה'; toast(e.message,1); }); };
   $('#mTplSave').onclick=function(){ var n=$('#mTpl').value.trim(); if(!n){ toast('כותבים שם לתבנית',1); return; } call('dashboardMenuTplSave',n,M).then(function(r){ S.mstore=r; toast('נשמר כתבנית'); }).catch(function(e){ toast(e.message,1); }); };
   $('#nfSave').onclick=function(){ var n=$('#nfN').value.trim(), p=+$('#nfP').value, c=+$('#nfC').value, f=+$('#nfF').value, k=+$('#nfK').value; if(!n||isNaN(p)||isNaN(c)||isNaN(f)||$('#nfP').value===''){ toast('ממלאים שם, חלבון, פחמימה ושומן',1); return; } call('dashboardCoachFoodSave',{name:n,p:p,c:c,f:f,k:k||0}).then(function(r){ S.coach=r||S.coach; FOODS_CACHE=null; toast('נשמר: '+n); $('#nfN').value=''; ['nfK','nfP','nfC','nfF'].forEach(function(id){ $('#'+id).value=''; }); }).catch(function(e){ toast(e.message,1); }); };
 }
 
 function progMain(){ var P=S.P; if(!P) return '<div class="card empty">טוען…</div><div></div>';
   var store=S.pstore||[], own=store.filter(function(x){ return x.kind==='מתאמן'&&x.name===S.client; })[0], tpl=store.filter(function(x){ return x.kind==='תבנית'; }), oth=store.filter(function(x){ return x.kind==='מתאמן'&&x.name!==S.client; }), sug=S.psug||{};
-  var h='<div><div class="bar"><label class="upl">העלאת קובץ תוכנית<input type="file" id="pFile" accept=".doc,.docx,.pdf,.txt,image/*"></label>'+
+  var h=progGuide()+'<div><div class="bar"><label class="upl">העלאת קובץ תוכנית<input type="file" id="pFile" accept=".doc,.docx,.pdf,.txt,image/*"></label>'+
     '<select id="pLoad"><option value="">טעינת תוכנית קיימת…</option>'+(own?'<option value="מתאמן|'+esc(own.name)+'">האחרונה שלו/ה ('+own.n+' אימונים · '+esc(own.d)+')</option>':'')+(tpl.length?'<optgroup label="תבניות">'+tpl.map(function(x){ return '<option value="תבנית|'+esc(x.name)+'">'+esc(x.name)+' ('+x.n+')</option>'; }).join('')+'</optgroup>':'')+(oth.length?'<optgroup label="ממתאמן אחר">'+oth.map(function(x){ return '<option value="מתאמן|'+esc(x.name)+'">'+esc(x.name)+' ('+x.n+')</option>'; }).join('')+'</optgroup>':'')+'</select><button class="g" id="pNew">תוכנית ריקה</button></div>';
   if(sug.exp||sug.injText) h+='<div class="muted" style="margin:-4px 0 10px">מהטופס: '+(sug.exp?'ניסיון '+esc(sug.exp):'')+(sug.freq?' · '+esc(sug.freq):'')+(sug.injText?' · פציעות: '+esc(sug.injText):'')+'</div>';
   P.days.forEach(function(d,di){
@@ -291,7 +315,7 @@ function wireProg(){ var P=S.P; if(!P) return; var upd=function(){ saveDraft(); 
   $('#pCreate').onclick=function(){ var b=this, days=P.days.filter(function(d){ return d.exercises.length; }); if(!days.length){ toast('אין תרגילים בתוכנית',1); return; } var n=days.length, s=S.psug||{}, lv=(s.levels||[]).filter(function(l){ return l[0]===s.lvl&&l[1].indexOf(n)>=0; })[0]||(s.levels||[]).filter(function(l){ return l[1].indexOf(n)>=0; })[0];
     var lvl=lv?lv[0]:(s.lvl||'בינוני'), nn=lv?n:((s.levels||[]).filter(function(l){ return l[0]===lvl; })[0]||[0,[3]])[1][0];
     b.disabled=true; b.textContent='יוצר מסמך…';
-    call('dashboardProgramCreate',S.client,{gender:s.gender||'male',lvl:lvl,n:nn,inj:[],notes:P.notes||'',edited:{days:days.map(function(d){ return {lbl:d.lbl,dur:pMin(d),exercises:d.exercises.map(function(e){ return {n:e.n,mu:muOf(e),s:e.s,r:e.r,rest:e.rest,inc:e.inc,note:e.note}; })}; })}}).then(function(r){ b.disabled=false; b.textContent='צור תוכנית בתיקייה'; $('#pLast').innerHTML='נוצרה: <a href="'+esc(r.url)+'" target="_blank">'+esc(r.name)+'</a>'; window.open(r.url,'_blank'); toast('התוכנית נוצרה בתיקייה'); }).catch(function(e){ b.disabled=false; b.textContent='צור תוכנית בתיקייה'; toast(e.message,1); }); };
+    call('dashboardProgramCreate',S.client,{gender:s.gender||'male',lvl:lvl,n:nn,inj:[],notes:P.notes||'',edited:{days:days.map(function(d){ return {lbl:d.lbl,dur:pMin(d),exercises:d.exercises.map(function(e){ return {n:e.n,mu:muOf(e),s:e.s,r:e.r,rest:e.rest,inc:e.inc,note:e.note}; })}; })}}).then(function(r){ b.disabled=false; b.textContent='צור תוכנית בתיקייה'; DONE.prog=S.client; render(); $('#pLast').innerHTML='נוצרה: <a href="'+esc(r.url)+'" target="_blank">'+esc(r.name)+'</a>'; window.open(r.url,'_blank'); toast('התוכנית נוצרה בתיקייה'); }).catch(function(e){ b.disabled=false; b.textContent='צור תוכנית בתיקייה'; toast(e.message,1); }); };
   $('#pTplSave').onclick=function(){ var n=$('#pTpl').value.trim(); if(!n){ toast('כותבים שם לתבנית',1); return; } call('dashboardProgTplSave',n,{split:'',days:P.days,avoid:[]}).then(function(r){ S.pstore=r; toast('נשמר כתבנית'); }).catch(function(e){ toast(e.message,1); }); };
   $('#pNoProg').onclick=function(){ call('dashboardClientFlag',S.client,'noProgram',true).then(function(){ toast('סומן: '+S.client+' בלי תוכנית אימון'); }).catch(function(e){ toast(e.message,1); }); };
 }
