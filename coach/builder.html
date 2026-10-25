@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>בונה תפריטים ותוכניות · AVIEL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f3ef;--card:#fff;--ink:#1c1f24;--mute:#6b7079;--line:#e4e0d8;--line2:#efebe4;--acc:#1f4e5f;--acc-l:#e6eef1;--ok:#1e7a4f;--ok-l:#e5f3ec;--warn:#a5620d;--warn-l:#fdf2e2;--bad:#b42318;--bad-l:#fdecea;--p:#2563a8;--c:#b7791f;--f:#8b4c9e;--sh:0 1px 2px rgba(20,20,20,.05),0 6px 18px -10px rgba(20,20,20,.18)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Heebo,Arial,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 12px;font-weight:600}
+button:hover{background:#faf8f5}
+button.p{background:var(--acc);border-color:var(--acc);color:#fff}
+button.p:hover{background:#173d4b}
+button.g{border-color:transparent;background:transparent;color:var(--mute);padding:5px 8px}
+button.g:hover{background:var(--line2);color:var(--ink)}
+button:disabled{opacity:.5;cursor:default}
+input,select,textarea{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;min-width:0}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.num{font-variant-numeric:tabular-nums}
+header{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-left));display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header .brand{font-weight:800;letter-spacing:.06em;color:var(--acc)}
+header select{min-width:180px;font-weight:600}
+.tabs{display:flex;gap:4px;background:var(--line2);padding:3px;border-radius:10px}
+.tabs button{border:0;background:transparent;padding:6px 14px}
+.tabs button.on{background:#fff;box-shadow:var(--sh);color:var(--acc)}
+header .sp{flex:1}
+header a{color:var(--mute);font-size:13.5px;text-decoration:none}
+header a:hover{color:var(--acc)}
+main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;padding:16px max(16px,env(safe-area-inset-left)) 120px;max-width:1280px;margin:0 auto}
+.side{position:sticky;top:76px;align-self:start;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh)}
+.pad{padding:14px}
+h2{font-size:15px;margin:0 0 10px;font-weight:700}
+.muted{color:var(--mute);font-size:13px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.upl{display:inline-flex;align-items:center;gap:6px;background:var(--acc);color:#fff;border-radius:9px;padding:7px 12px;font-weight:600;cursor:pointer}
+.upl input{display:none}
+/* totals */
+.tot .row{display:grid;grid-template-columns:60px 1fr auto;gap:8px;align-items:center;margin:7px 0;font-size:13.5px}
+.track{height:7px;border-radius:9px;background:var(--line2);overflow:hidden}
+.track i{display:block;height:100%;border-radius:9px;background:var(--acc)}
+.tot .big{font-size:26px;font-weight:800}
+.tot .of{color:var(--mute);font-size:13px}
+.rng{color:var(--mute);font-size:12px}
+/* meals */
+.meal{margin-bottom:14px}
+.mh{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line2)}
+.mh input.t{font-weight:700;font-size:16px;border-color:transparent;flex:1}
+.mh input.t:hover{border-color:var(--line)}
+.mh .kc{font-size:13px;color:var(--mute);white-space:nowrap}
+.rw{padding:10px 14px;border-bottom:1px solid var(--line2)}
+.rw:last-of-type{border-bottom:0}
+.rwh{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.rwh input.lbl{width:150px;font-weight:600;font-size:13.5px;color:var(--acc)}
+.rwh .hint{font-size:12px;color:var(--mute);flex:1}
+.op{display:grid;grid-template-columns:22px minmax(0,1fr) 78px 46px 210px 28px;gap:8px;align-items:center;padding:4px 0}
+.op .ix{font-size:12px;color:var(--mute);text-align:center}
+.op.alt .ix{color:var(--acc)}
+.op .g input{width:100%;text-align:center}
+.op .u{font-size:12px;color:var(--mute)}
+.mac{display:flex;gap:10px;font-size:12.5px;justify-content:flex-end;white-space:nowrap}
+.mac b{font-weight:700}
+.mac .p{color:var(--p)}.mac .c{color:var(--c)}.mac .f{color:var(--f)}
+.op.unm .fs input{background:var(--warn-l);border-color:#f0c88a}
+.rwf{display:flex;gap:6px;margin-top:6px}
+.mf{display:flex;gap:8px;padding:10px 14px;background:#fcfbf9;border-top:1px solid var(--line2);border-radius:0 0 14px 14px}
+/* autocomplete */
+.fs{position:relative}
+.fs input{width:100%}
+.ac{position:absolute;top:calc(100% + 4px);right:0;left:0;z-index:30;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px -10px rgba(0,0,0,.25);max-height:320px;overflow:auto}
+.ac div{padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-size:13.5px}
+.ac div.on,.ac div:hover{background:var(--acc-l)}
+.ac small{color:var(--mute);white-space:nowrap}
+.ac .src{font-size:10.5px;color:#fff;background:var(--acc);border-radius:5px;padding:0 5px;margin-inline-start:6px}
+/* program */
+.day{margin-bottom:14px}
+.ex{display:grid;grid-template-columns:22px minmax(0,1.6fr) 92px 54px 74px 62px 54px 28px;gap:6px;align-items:center;padding:5px 14px}
+.ex.head{font-size:12px;color:var(--mute);padding-top:10px}
+.ex input{width:100%;text-align:center}
+.ex .fs input{text-align:right;font-weight:600}
+.ex .mu{font-size:12.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ex .mv{display:flex;flex-direction:column}
+.ex .mv button{padding:0 4px;line-height:1;font-size:11px;border:0;background:transparent;color:var(--mute)}
+.ex .mv button:hover{color:var(--acc)}
+.exn{padding:0 14px 6px 50px}
+.exn input{width:100%;font-size:13px;border-style:dashed}
+.swp{display:flex;flex-wrap:wrap;gap:4px;padding:0 14px 8px 50px}
+.swp button{font-size:12.5px;padding:4px 8px}
+.vol .row{display:flex;justify-content:space-between;font-size:13.5px;padding:3px 0}
+.vol .lo{color:var(--warn)}.vol .hi{color:var(--bad)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;z-index:60;max-width:90vw}
+.toast.err{background:var(--bad)}
+.empty{padding:30px;text-align:center;color:var(--mute)}
+.chip{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--line2);color:var(--mute)}
+.chip.w{background:var(--warn-l);color:var(--warn)}
+.gate{max-width:420px;margin:12vh auto;padding:24px;text-align:center}
+.gate input{width:100%;margin:12px 0}
+@media (max-width:900px){
+ main{grid-template-columns:1fr}
+ .side{position:static}
+ .op{grid-template-columns:18px minmax(0,1fr) 64px 26px;row-gap:2px}
+ .op .u{display:none}.op .mac{grid-column:2/4;justify-content:flex-start}
+ .ex{grid-template-columns:18px minmax(0,1fr) 54px 54px 26px}
+ .ex .mu,.ex .rest,.ex .inc,.ex.head{display:none}
+ .exn,.swp{padding-right:14px;padding-left:14px}
+}
+</style></head><body>
+<div id="app"></div>
+<script>
+var API='https://script.google.com/macros/s/AKfycbxSkxJJ1ODs067IOfDkuosXzKX-pVi2W7uTcWKAS-7YFuh8PW9mrjSS8bNC4SaiRTkP/exec';
+var DATA='../data/';
+var Q=new URLSearchParams(location.search);
+var K=Q.get('k')||lsg('coach_k','');
+if(Q.get('k')) lss('coach_k',Q.get('k'));
+var S={tab:Q.get('tab')==='prog'?'prog':'menu', client:Q.get('c')||lsg('coach_c',''), clients:[], foods:[], coach:[], moh:[], ex:[], msug:null, psug:null, M:null, P:null, by:'k', mstore:null, pstore:null, busy:false};
+function lsg(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+function lss(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function $(s,r){ return (r||document).querySelector(s); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function r1(x){ return Math.round((+x||0)*10)/10; }
+function kc(m){ return Math.round(4*(+m[0]||0)+4*(+m[1]||0)+9*(+m[2]||0)); }
+function toast(t,err){ var e=document.createElement('div'); e.className='toast'+(err?' err':''); e.textContent=t; document.body.appendChild(e); setTimeout(function(){ e.remove(); },err?5000:2600); }
+function call(fn){ var args=[].slice.call(arguments,1); return fetch(API,{method:'POST',body:JSON.stringify({api:'coach',k:K,fn:fn,args:args})}).then(function(r){ return r.json(); }).then(function(j){ if(!j.ok) throw new Error(j.error||'שגיאה'); return j.r; }); }
+
+/* ===== מאגרי מזון ותרגילים ===== */
+function allFoods(){ // [name,p,c,f,kcal,src]
+  var seen={}, out=[]; S.coach.forEach(function(f){ if(!seen[f[0]]){ seen[f[0]]=1; out.push([f[0],+f[1]||0,+f[2]||0,+f[3]||0,+f[4]||kc([f[1],f[2],f[3]]),'שלי']); } });
+  S.foods.forEach(function(f){ if(!seen[f[0]]){ seen[f[0]]=1; out.push([f[0],+f[1]||0,+f[2]||0,+f[3]||0,kc([f[1],f[2],f[3]]),'בסיס']); } });
+  S.moh.forEach(function(f){ if(!seen[f[0]]){ seen[f[0]]=1; out.push([f[0],+f[1]||0,+f[2]||0,+f[3]||0,Math.round(+f[4]||kc([f[1],f[2],f[3]])),'']); } });
+  return out; }
+var FOODS_CACHE=null; function foods(){ if(!FOODS_CACHE) FOODS_CACHE=allFoods(); return FOODS_CACHE; }
+function norm(s){ return String(s||'').replace(/[,()'"׳״]/g,' ').replace(/([0-9]+) ?אחוז/,'$1%').replace(/ +/g,' ').trim(); }
+function searchFoods(q,limit){ q=norm(q); if(q.length<2) return []; var pct=(q.match(/[0-9.]+%/)||[''])[0], ws=q.replace(/[0-9.]+%/,' ').split(' ').filter(function(w){ return w.length>1; }); if(!ws.length&&!pct) return [];
+  var sc=function(n){ var h=norm(n), s=0; if(h.indexOf(ws[0]||'')===0) s+=4; if(h.indexOf(q)===0) s+=3; ws.forEach(function(w){ if(h.indexOf('לא '+w)>=0) s-=6; }); if(pct){ var at=h.indexOf(pct); if(at>=0&&!/[0-9.]/.test(h.charAt(at-1)||'')) s+=6; else if(/[0-9]%/.test(h)) s-=3; } if(/מיובש|אבקה|משומר|כבוש|בסירופ|מטוגן|בציפוי|FFQ|ממרח/.test(h)&&!/מיובש|אבקה|משומר|כבוש|סירופ|מטוגן|ציפוי|ממרח/.test(q)) s-=3; if(/טרי/.test(h)) s+=1; if(/ עם | ב?רוטב|מוקפצ|סגנון|ממולא|פשטידה|עוגה|סלט /.test(h)&&!/ עם |רוטב|סלט/.test(q)) s-=3; if(/ או /.test(h)) s-=1.5; if(h===q||h.indexOf(q+' ')===0||h.indexOf(q+',')===0) s+=4; return s-h.length/14; };
+  var hits=foods().filter(function(f){ var h=norm(f[0]); return ws.every(function(w){ return h.indexOf(w)>=0; }); });
+  return hits.map(function(f){ return {f:f,s:sc(f[0])+(f[5]==='שלי'?3:f[5]==='בסיס'?1:0)}; }).sort(function(a,b){ return b.s-a.s; }).slice(0,limit||12).map(function(x){ return x.f; }); }
+function findFood(name){ var n=norm(name); return foods().filter(function(f){ return norm(f[0])===n; })[0]||null; }
+function searchEx(q){ q=norm(q); if(q.length<2) return S.ex.slice(0,0); var ws=q.split(' ').filter(Boolean); return S.ex.filter(function(x){ var h=norm(x[2]); return ws.every(function(w){ return h.indexOf(w)>=0; }); }).sort(function(a,b){ return (norm(b[2]).indexOf(ws[0])===0)-(norm(a[2]).indexOf(ws[0])===0)||a[2].length-b[2].length; }).slice(0,12); }
+var MU_RE=[['יד אחורית',/פשיטת מרפק|יד אחורית|טרייספס/],['יד קדמית',/כפיפת מרפק|יד קדמית|בייספס/],['תאומים',/תאומים/],['בטן',/בטן|הרמת ברכיים|פלאנק/],['כתפיים',/כתפ|פרפר הפוך/],['חזה',/לחיצת חזה|פרפר חזה|חזה|מקבילים|שכיבות סמיכה/],['המסטרינג',/כפיפת ברך|דדליפט|RDL|כיסא רומי/],['ישבן',/ישבן|גשר|היפ תראסט|הרחקת ירך/],['ארבע ראשי',/סקוואט|לחיצת רגליים|פשיטת ברך|מכרע|לאנג/],['גב',/פולי|חתירה|מתח|פול דאון|גב|סופרמן/]];
+function muOf(e){ if(e.mu) return e.mu; var x=S.ex.filter(function(r){ return r[2]===e.n; })[0]; if(x) return x[0]; var h=MU_RE.filter(function(m){ return m[1].test(e.n||''); })[0]; return h?h[0]:''; }
+
+/* ===== אוטו-השלמה ===== */
+var AC=null;
+function closeAC(){ if(AC){ AC.box.remove(); AC=null; } }
+function openAC(input,kind,onPick){ closeAC(); var box=document.createElement('div'); box.className='ac'; input.parentNode.appendChild(box); AC={box:box,input:input,kind:kind,onPick:onPick,i:0,list:[]}; fillAC(); }
+function fillAC(){ if(!AC) return; var q=AC.input.value, L=AC.kind==='ex'?searchEx(q):searchFoods(q); AC.list=L; AC.i=0;
+  if(!L.length){ AC.box.innerHTML=q.trim().length>=2?'<div style="cursor:default;color:var(--mute)">לא נמצא. '+(AC.kind==='ex'?'אפשר להשאיר את השם כמו שהוא.':'אפשר להוסיף למאגר שלך למטה.')+'</div>':''; if(!q.trim()) closeAC(); return; }
+  AC.box.innerHTML=L.map(function(x,i){ return AC.kind==='ex'?'<div data-i="'+i+'"><span>'+esc(x[2])+'</span><small>'+esc(x[0])+'</small></div>':'<div data-i="'+i+'"><span>'+esc(x[0])+(x[5]?'<span class="src">'+x[5]+'</span>':'')+'</span><small class="num">'+x[4]+' קק״ל · ח '+r1(x[1])+' · פ '+r1(x[2])+' · ש '+r1(x[3])+'</small></div>'; }).join('');
+  hiAC(); }
+function hiAC(){ if(!AC) return; [].forEach.call(AC.box.children,function(d,i){ d.classList.toggle('on',i===AC.i); }); }
+document.addEventListener('mousedown',function(e){ if(!AC) return; var d=e.target.closest&&e.target.closest('.ac div[data-i]'); if(d){ e.preventDefault(); var x=AC.list[+d.dataset.i], cb=AC.onPick; closeAC(); cb(x); return; } if(!e.target.closest||!e.target.closest('.ac')) if(e.target!==AC.input) closeAC(); });
+document.addEventListener('keydown',function(e){ if(!AC||e.target!==AC.input) return; if(e.key==='ArrowDown'){ AC.i=Math.min(AC.list.length-1,AC.i+1); hiAC(); e.preventDefault(); } else if(e.key==='ArrowUp'){ AC.i=Math.max(0,AC.i-1); hiAC(); e.preventDefault(); } else if(e.key==='Enter'&&AC.list[AC.i]){ var x=AC.list[AC.i], cb=AC.onPick; closeAC(); cb(x); e.preventDefault(); } else if(e.key==='Escape') closeAC(); });
+
+/* ===== תפריט: מודל ===== */
+function emptyMenu(T){ return {T:T||1700, free:0, notes:'', meals:[['ארוחת בוקר'],['ארוחת ביניים'],['ארוחת צהריים'],['ארוחת ערב']].map(function(t){ return {title:t[0], rows:[{label:'חלבון',opts:[]},{label:'פחמימה',opts:[]}]}; })}; }
+function optFrom(f,g){ var per=[f[1],f[2],f[3]]; g=Math.max(0,Math.round(+g||0)); return {t:g+' גרם '+f[0], food:f[0], g:g, per:per, m:per.map(function(x){ return x*g/100; }), k100:f[4]}; }
+function setG(o,g){ g=Math.max(0,Math.round(+g||0)); o.g=g; if(o.per){ o.m=o.per.map(function(x){ return x*g/100; }); o.t=g+' גרם '+o.food; } }
+function matchG(base,f){ // גרמים לחלופה: אותן קלוריות (או אותו חלבון)
+  if(!base||!base.m) return 100; var tgt=S.by==='p'?base.m[0]:kc(base.m), per=S.by==='p'?f[1]:(f[4]||kc([f[1],f[2],f[3]])); if(!(per>0)||!(tgt>0)) return 100; var g=tgt/per*100; return Math.max(5,Math.round(g/5)*5); }
+function rowRange(r){ var o=r.opts.filter(function(x){ return x.m&&(x.m[0]||x.m[1]||x.m[2]); }); if(!o.length) return null; var ks=o.map(function(x){ return [kc(x.m),x.m[0],x.m[1],x.m[2]]; }); var lo=[0,1,2,3].map(function(i){ return Math.min.apply(null,ks.map(function(z){ return z[i]; })); }), hi=[0,1,2,3].map(function(i){ return Math.max.apply(null,ks.map(function(z){ return z[i]; })); }); return {lo:lo,hi:hi}; }
+function totals(M){ var lo=[0,0,0,0], hi=[0,0,0,0]; M.meals.forEach(function(ml){ ml.rows.forEach(function(r){ var R=rowRange(r); if(R) for(var i=0;i<4;i++){ lo[i]+=R.lo[i]; hi[i]+=R.hi[i]; } }); }); lo[0]+=+M.free||0; hi[0]+=+M.free||0; return {lo:lo,hi:hi}; }
+function mealK(ml){ var lo=0,hi=0; ml.rows.forEach(function(r){ var R=rowRange(r); if(R){ lo+=R.lo[0]; hi+=R.hi[0]; } }); return lo===hi?String(Math.round(lo)):Math.round(lo)+'–'+Math.round(hi); }
+function saveDraft(){ if(S.client&&S.M) lss('coach_draft_menu_'+S.client,S.M); if(S.client&&S.P) lss('coach_draft_prog_'+S.client,S.P); }
+function fromStored(M){ // מתפריט שמור/מיובא לפורמט הבונה
+  M.meals=(M.meals||[]).map(function(ml){ return {title:ml.title||'', note:ml.note||'', rows:(ml.rows||[]).map(function(r){ return {label:r.label||'', alt:!!r.alt, opts:(r.opts||[]).map(function(o){
+    if(o.food&&o.per) return {t:o.t, food:o.food, g:o.g, per:o.per, m:o.per.map(function(x){ return x*o.g/100; })};
+    if(o.food&&o.g){ var f=findFood(o.food); if(f) return optFrom(f,o.g); return {t:o.t, raw:o.food, g:o.g, m:[0,0,0], unm:1}; }
+    if(o.m&&(o.m[0]||o.m[1]||o.m[2])) return {t:o.t, m:o.m};
+    return {t:o.t, raw:o.t, g:0, m:[0,0,0], unm:1}; })}; })}; });
+  if(M.free==null) M.free=0; return M; }
+
+/* ===== תוכנית: מודל ===== */
+function emptyProg(n){ var L=['A','B','C','D','E','F']; var d=[]; for(var i=0;i<(n||3);i++) d.push({lbl:'אימון '+L[i], exercises:[]}); return {days:d, notes:''}; }
+function exFrom(x){ var rest=+x[5]||1.5; return {n:x[2], mu:x[0], s:String(x[3]||3), r:String(x[4]||'10'), rest:String(rest), inc:'', note:''}; }
+
+/* ===== רינדור ===== */
+function render(){
+  var app=$('#app');
+  if(!K){ app.innerHTML='<div class="card gate"><h2>בונה תפריטים ותוכניות</h2><p class="muted">פותחים את הדף מהדשבורד (כפתור "בונה"), או מדביקים כאן את מפתח המאמן.</p><input id="kIn" placeholder="מפתח מאמן"><button class="p" id="kGo">כניסה</button></div>'; $('#kGo').onclick=function(){ K=$('#kIn').value.trim(); lss('coach_k',K); boot(); }; return; }
+  var cl=S.clients.filter(function(c){ return c.status!=='הסתיים'; });
+  var h='<header><span class="brand">AVIEL · בונה</span><select id="cSel" aria-label="מתאמן"><option value="">בחירת מתאמן…</option>'+cl.map(function(c){ return '<option'+(c.name===S.client?' selected':'')+'>'+esc(c.name)+'</option>'; }).join('')+'</select>'+
+    '<div class="tabs" role="tablist"><button class="'+(S.tab==='menu'?'on':'')+'" data-tab="menu">תפריט</button><button class="'+(S.tab==='prog'?'on':'')+'" data-tab="prog">תוכנית אימון</button></div><span class="sp"></span>'+
+    '<a href="https://script.google.com/macros/s/AKfycbxUQUfU14Yhmx8RbzJo5hdy9gwASM2F3YfzTXnXRl4/dev?page=m">דשבורד נייד</a><a href="https://script.google.com/macros/s/AKfycbxUQUfU14Yhmx8RbzJo5hdy9gwASM2F3YfzTXnXRl4/dev?page=dashboard">דשבורד מלא</a></header>';
+  if(!S.client){ app.innerHTML=h+'<main><div class="card empty">בוחרים מתאמן למעלה ומתחילים לבנות.</div></main>'; wireTop(); return; }
+  h+='<main>'+(S.tab==='menu'?menuMain():progMain())+'</main>';
+  app.innerHTML=h; wireTop(); if(S.tab==='menu') wireMenu(); else wireProg(); }
+function wireTop(){ var cs=$('#cSel'); if(cs) cs.onchange=function(){ pickClient(cs.value); }; document.querySelectorAll('[data-tab]').forEach(function(b){ b.onclick=function(){ S.tab=b.dataset.tab; history.replaceState(null,'','?tab='+S.tab+(S.client?'&c='+encodeURIComponent(S.client):'')); if(S.tab==='prog'&&!S.P) loadProgCtx(); render(); }; }); }
+
+function menuMain(){ var M=S.M; if(!M) return '<div class="card empty">טוען…</div><div></div>';
+  var sug=S.msug||{}, store=S.mstore||[], own=store.filter(function(x){ return x.kind==='מתאמן'&&x.name===S.client; })[0], tpl=store.filter(function(x){ return x.kind==='תבנית'; }), oth=store.filter(function(x){ return x.kind==='מתאמן'&&x.name!==S.client; });
+  var h='<div><div class="bar"><label class="upl">העלאת קובץ תפריט<input type="file" id="mFile" accept=".doc,.docx,.pdf,.txt,image/*"></label>'+
+    '<select id="mLoad"><option value="">טעינת תפריט קיים…</option>'+(own?'<option value="מתאמן|'+esc(own.name)+'">האחרון שלו/ה ('+own.T+' · '+esc(own.d)+')</option>':'')+(tpl.length?'<optgroup label="תבניות">'+tpl.map(function(x){ return '<option value="תבנית|'+esc(x.name)+'">'+esc(x.name)+' ('+x.T+')</option>'; }).join('')+'</optgroup>':'')+(oth.length?'<optgroup label="ממתאמן אחר">'+oth.map(function(x){ return '<option value="מתאמן|'+esc(x.name)+'">'+esc(x.name)+' ('+x.T+')</option>'; }).join('')+'</optgroup>':'')+'</select>'+
+    '<button class="g" id="mNew">תפריט ריק</button><span class="sp" style="flex:1"></span><span class="muted">חלופה לפי</span><select id="mBy"><option value="k"'+(S.by==='k'?' selected':'')+'>קלוריות</option><option value="p"'+(S.by==='p'?' selected':'')+'>חלבון</option></select></div>';
+  if(sug.intakeText||sug.T) h+='<div class="muted" style="margin:-4px 0 10px">'+(sug.T?'לפי הטופס: '+sug.T+' קלוריות (שמירה ≈ '+sug.tdee+')':'')+(sug.intakeText?' · '+esc(sug.intakeText):'')+'</div>';
+  M.meals.forEach(function(ml,mi){
+    h+='<section class="card meal"><div class="mh"><input class="t" data-mt="'+mi+'" value="'+esc(ml.title)+'" aria-label="שם הארוחה"><span class="kc num">'+mealK(ml)+' קק״ל</span><button class="g" data-mmv="'+mi+'|-1" title="למעלה">↑</button><button class="g" data-mmv="'+mi+'|1" title="למטה">↓</button><button class="g" data-mdel="'+mi+'" title="מחיקת ארוחה">✕</button></div>';
+    ml.rows.forEach(function(r,ri){ var R=rowRange(r);
+      h+='<div class="rw"><div class="rwh"><input class="lbl" data-rl="'+mi+'|'+ri+'" value="'+esc(r.label||'')+'" placeholder="קבוצה (חלבון…)"><span class="hint">'+(r.opts.length>1?'לבחור 1 מתוך '+r.opts.length:'')+(R?' · '+(R.lo[0]===R.hi[0]?R.lo[0]:R.lo[0]+'–'+R.hi[0])+' קק״ל':'')+'</span><button class="g" data-rdel="'+mi+'|'+ri+'" title="מחיקת שורה">מחיקת שורה</button></div>';
+      r.opts.forEach(function(o,oi){ var key=mi+'|'+ri+'|'+oi;
+        h+='<div class="op'+(oi?' alt':'')+(o.unm?' unm':'')+'"><span class="ix">'+(oi?'או':'●')+'</span><div class="fs"><input data-fs="'+key+'" value="'+esc(o.food||o.raw||o.t||'')+'" placeholder="חיפוש מאכל…" autocomplete="off"></div><div class="g"><input type="number" inputmode="numeric" min="0" step="5" data-g="'+key+'" value="'+(o.g||'')+'" '+(o.per?'':'disabled')+' aria-label="גרם"></div><span class="u">גרם</span>'+
+          (o.m&&(o.m[0]||o.m[1]||o.m[2])?'<span class="mac num"><b>'+kc(o.m)+'</b> קק״ל <span class="p">ח '+r1(o.m[0])+'</span><span class="c">פ '+r1(o.m[1])+'</span><span class="f">ש '+r1(o.m[2])+'</span></span>':'<span class="mac"><span class="chip w">'+(o.unm?'לבחור מאכל מהמאגר':'בלי ערכים')+'</span></span>')+'<button class="g" data-odel="'+key+'" title="הסרה">✕</button></div>'+(o.unm&&o.raw?candHtml(o.raw,key):''); });
+      h+='<div class="rwf"><button data-oadd="'+mi+'|'+ri+'">'+(r.opts.length?'+ חלופה':'+ מאכל')+'</button></div></div>'; });
+    h+='<div class="mf"><button data-radd="'+mi+'">+ שורה</button><input data-mn="'+mi+'" value="'+esc(ml.note||'')+'" placeholder="הערה לארוחה (תופיע בתפריט)" style="flex:1"></div></section>'; });
+  h+='<div class="bar"><button id="mAddMeal">+ ארוחה</button><label class="muted">קלוריות חופשיות <input type="number" id="mFree" value="'+(M.free||0)+'" step="50" min="0" style="width:80px"></label></div>';
+  h+='<div class="card pad"><h2>הערות אישיות (בראש התפריט)</h2><textarea id="mNotes" rows="2" style="width:100%" placeholder="למשל: אוכל בחוץ בימי שלישי, מתאמן בערב">'+esc(M.notes||'')+'</textarea></div></div>';
+  var t=totals(M), T=+M.T||0, k=Math.round((t.lo[0]+t.hi[0])/2), pc=T?Math.min(100,Math.round(k/T*100)):0, mid=function(i){ return Math.round((t.lo[i]+t.hi[i])/2); };
+  var unm=0; M.meals.forEach(function(ml){ ml.rows.forEach(function(r){ r.opts.forEach(function(o){ if(o.unm) unm++; }); }); });
+  h+='<aside class="side"><div class="card pad tot"><h2>סה״כ ליום</h2><div><span class="big num">'+k.toLocaleString()+'</span> <span class="of">/ <input type="number" id="mT" value="'+T+'" step="50" style="width:78px;padding:3px 6px"> קק״ל יעד</span></div><div class="rng num">טווח לפי הבחירות: '+Math.round(t.lo[0])+'–'+Math.round(t.hi[0])+'</div><div class="track" style="margin-top:8px"><i style="width:'+pc+'%;background:'+(pc>108?'var(--bad)':pc<92?'var(--warn)':'var(--ok)')+'"></i></div>'+
+    [['חלבון','p',1,4],['פחמימה','c',2,4],['שומן','f',3,9]].map(function(x){ var g=mid(x[2]), share=k?Math.round(g*x[3]/k*100):0; return '<div class="row"><span>'+x[0]+'</span><div class="track"><i style="width:'+share+'%;background:var(--'+x[1]+')"></i></div><span class="num">'+g+' ג׳ · '+share+'%</span></div>'; }).join('')+'</div>'+
+    (unm?'<div class="card pad" style="border-color:#f0c88a;background:var(--warn-l)"><b>'+unm+' מאכלים לבחירה</b><div class="muted">מסומנים בצהוב. מקלידים בשדה ובוחרים מהרשימה.</div></div>':'')+
+    '<div class="card pad"><button class="p" id="mCreate" style="width:100%;padding:11px">צור תפריט בתיקייה</button><div class="bar" style="margin:10px 0 0"><input id="mTpl" placeholder="שם לתבנית" style="flex:1"><button id="mTplSave">שמירה כתבנית</button></div><div class="muted" id="mLast"></div></div>'+
+    '<div class="card pad"><h2>מאכל חדש למאגר שלי</h2><div class="muted" style="margin-bottom:6px">ערכים ל-100 גרם</div><input id="nfN" placeholder="שם" style="width:100%;margin-bottom:6px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"><input id="nfK" type="number" placeholder="קק״ל"><input id="nfP" type="number" placeholder="חלבון"><input id="nfC" type="number" placeholder="פחמ׳"><input id="nfF" type="number" placeholder="שומן"></div><button id="nfSave" style="width:100%;margin-top:8px">שמירה במאגר</button></div></aside>';
+  return h; }
+
+function candHtml(raw,key){ var L=searchFoods(raw,4); if(!L.length) L=searchFoods(String(raw).split(' ')[0],4); return '<div class="swp" style="padding:2px 30px 6px 0">'+(L.length?'<span class="muted">התכוונת ל:</span>'+L.map(function(f,i){ return '<button data-cand="'+key+'|'+i+'">'+esc(f[0])+' <small class="num" style="color:var(--mute)">'+f[4]+'</small></button>'; }).join(''):'<span class="muted">לא נמצא במאגרים. מקלידים שם אחר או מוסיפים למאגר שלי</span>')+'</div>'; }
+function wireMenu(){ var M=S.M; if(!M) return;
+  var at=function(key){ var k=key.split('|').map(Number); return {ml:M.meals[k[0]], r:M.meals[k[0]].rows[k[1]], o:k.length>2?M.meals[k[0]].rows[k[1]].opts[k[2]]:null, k:k}; };
+  var upd=function(){ saveDraft(); render(); };
+  document.querySelectorAll('[data-fs]').forEach(function(inp){ inp.onfocus=function(){ inp.select(); }; inp.oninput=function(){ if(!AC||AC.input!==inp) openAC(inp,'food',function(f){ var a=at(inp.dataset.fs), first=a.r.opts[0], g=a.k[2]>0&&first&&first.m?matchG(first,f):(a.o&&a.o.g?a.o.g:100); a.r.opts[a.k[2]]=optFrom(f,g); upd(); }); else fillAC(); }; });
+  document.querySelectorAll('[data-cand]').forEach(function(b){ b.onclick=function(){ var p=b.dataset.cand.split('|'), a=at(p.slice(0,3).join('|')), L=searchFoods(a.o.raw,4); if(!L.length) L=searchFoods(String(a.o.raw).split(' ')[0],4); var f=L[+p[3]]; if(f){ a.r.opts[a.k[2]]=optFrom(f,a.o.g||100); upd(); } }; });
+  document.querySelectorAll('[data-g]').forEach(function(inp){ inp.onchange=function(){ var a=at(inp.dataset.g); setG(a.o,inp.value); upd(); }; });
+  document.querySelectorAll('[data-odel]').forEach(function(b){ b.onclick=function(){ var a=at(b.dataset.odel); a.r.opts.splice(a.k[2],1); upd(); }; });
+  document.querySelectorAll('[data-oadd]').forEach(function(b){ b.onclick=function(){ var a=at(b.dataset.oadd); a.r.opts.push({t:'',raw:'',g:0,m:[0,0,0]}); render(); var ins=document.querySelectorAll('[data-fs^="'+a.k[0]+'|'+a.k[1]+'|"]'); var last=ins[ins.length-1]; if(last) last.focus(); }; });
+  document.querySelectorAll('[data-rdel]').forEach(function(b){ b.onclick=function(){ var a=at(b.dataset.rdel); a.ml.rows.splice(a.k[1],1); upd(); }; });
+  document.querySelectorAll('[data-rl]').forEach(function(i){ i.onchange=function(){ at(i.dataset.rl).r.label=i.value; saveDraft(); }; });
+  document.querySelectorAll('[data-radd]').forEach(function(b){ b.onclick=function(){ M.meals[+b.dataset.radd].rows.push({label:'',opts:[{t:'',raw:'',g:0,m:[0,0,0]}]}); render(); }; });
+  document.querySelectorAll('[data-mt]').forEach(function(i){ i.onchange=function(){ M.meals[+i.dataset.mt].title=i.value; saveDraft(); }; });
+  document.querySelectorAll('[data-mn]').forEach(function(i){ i.onchange=function(){ M.meals[+i.dataset.mn].note=i.value; saveDraft(); }; });
+  document.querySelectorAll('[data-mdel]').forEach(function(b){ b.onclick=function(){ var i=+b.dataset.mdel; if(M.meals[i].rows.some(function(r){ return r.opts.length; })&&!window.confirm('למחוק את '+M.meals[i].title+'?')) return; M.meals.splice(i,1); upd(); }; });
+  document.querySelectorAll('[data-mmv]').forEach(function(b){ b.onclick=function(){ var p=b.dataset.mmv.split('|').map(Number), j=p[0]+p[1]; if(j<0||j>=M.meals.length) return; var t=M.meals[p[0]]; M.meals[p[0]]=M.meals[j]; M.meals[j]=t; upd(); }; });
+  $('#mAddMeal').onclick=function(){ M.meals.push({title:'ארוחה חדשה',rows:[{label:'',opts:[]}]}); upd(); };
+  $('#mFree').onchange=function(){ M.free=Math.max(0,Math.round(+this.value||0)); upd(); };
+  $('#mT').onchange=function(){ M.T=Math.round(+this.value||0); upd(); };
+  $('#mNotes').onchange=function(){ M.notes=this.value; saveDraft(); };
+  $('#mBy').onchange=function(){ S.by=this.value; };
+  $('#mNew').onclick=function(){ if(!window.confirm('להתחיל תפריט ריק? מה שבנית כאן יימחק.')) return; S.M=emptyMenu((S.msug&&S.msug.T)||M.T); upd(); };
+  $('#mLoad').onchange=function(){ var v=this.value; if(!v) return; var kd=v.split('|')[0], src=v.split('|').slice(1).join('|'); toast('טוען…'); call('dashboardMenuStoreLoad',S.client,kd,src).then(function(r){ (r.foods||[]).forEach(function(f){ if(!S.foods.some(function(x){ return x[0]===f[0]; })) S.foods.push(f); }); FOODS_CACHE=null; var X=fromStored(r.M); X.T=X.T||M.T; X.notes=M.notes||''; S.M=X; upd(); toast('נטען: '+src); }).catch(function(e){ toast(e.message,1); }); };
+  $('#mFile').onchange=function(){ var f=this.files[0]; this.value=''; if(!f) return; if(f.size>9e6){ toast('הקובץ גדול מדי',1); return; } toast('קורא את הקובץ…'); var fr=new FileReader(); fr.onload=function(){ call('dashboardMenuImport',S.client,fr.result,f.type,f.name).then(function(r){ (r.foods||[]).forEach(function(x){ if(!S.foods.some(function(y){ return y[0]===x[0]; })) S.foods.push(x); }); FOODS_CACHE=null; var X=fromStored({meals:r.meals,free:r.free||0}); X.T=M.T; X.notes=M.notes||''; S.M=X; upd(); var u=0; X.meals.forEach(function(ml){ ml.rows.forEach(function(rr){ rr.opts.forEach(function(o){ if(o.unm) u++; }); }); }); toast('נטען מהקובץ'+(u?' · '+u+' מאכלים לבחירה בצהוב':'')); }).catch(function(e){ toast(e.message,1); }); }; fr.readAsDataURL(f); };
+  $('#mCreate').onclick=function(){ var b=this, u=0, empty=0; M.meals.forEach(function(ml){ ml.rows.forEach(function(r){ r.opts.forEach(function(o){ if(o.unm) u++; }); if(!r.opts.length) empty++; }); });
+    if(u&&!window.confirm(u+' מאכלים עדיין בלי ערכים (צהוב). ליצור בכל זאת?')) return; b.disabled=true; b.textContent='יוצר מסמך…';
+    var E={T:M.T, free:M.free||0, meals:M.meals.map(function(ml){ return {title:ml.title, note:ml.note||'', rows:ml.rows.filter(function(r){ return r.opts.length; }).map(function(r){ return {label:r.label||'', alt:!!r.alt, opts:r.opts.filter(function(o){ return o.t||o.food||o.raw; }).map(function(o){ return o.per?{t:o.t, food:o.food, g:o.g, per:o.per, m:o.m}:{t:o.t||((o.g?o.g+' גרם ':'')+(o.raw||'')), m:o.m||[0,0,0]}; })}; })}; }).filter(function(ml){ return ml.rows.length; })};
+    call('dashboardMenuCreate',S.client,Math.round(+M.T||1700),{edited:E,notes:M.notes||''}).then(function(r){ b.disabled=false; b.textContent='צור תפריט בתיקייה'; $('#mLast').innerHTML='נוצר: <a href="'+esc(r.url)+'" target="_blank">'+esc(r.name)+'</a>'; window.open(r.url,'_blank'); toast('התפריט נוצר בתיקייה'); }).catch(function(e){ b.disabled=false; b.textContent='צור תפריט בתיקייה'; toast(e.message,1); }); };
+  $('#mTplSave').onclick=function(){ var n=$('#mTpl').value.trim(); if(!n){ toast('כותבים שם לתבנית',1); return; } call('dashboardMenuTplSave',n,M).then(function(r){ S.mstore=r; toast('נשמר כתבנית'); }).catch(function(e){ toast(e.message,1); }); };
+  $('#nfSave').onclick=function(){ var n=$('#nfN').value.trim(), p=+$('#nfP').value, c=+$('#nfC').value, f=+$('#nfF').value, k=+$('#nfK').value; if(!n||isNaN(p)||isNaN(c)||isNaN(f)||$('#nfP').value===''){ toast('ממלאים שם, חלבון, פחמימה ושומן',1); return; } call('dashboardCoachFoodSave',{name:n,p:p,c:c,f:f,k:k||0}).then(function(r){ S.coach=r||S.coach; FOODS_CACHE=null; toast('נשמר: '+n); $('#nfN').value=''; ['nfK','nfP','nfC','nfF'].forEach(function(id){ $('#'+id).value=''; }); }).catch(function(e){ toast(e.message,1); }); };
+}
+
+function progMain(){ var P=S.P; if(!P) return '<div class="card empty">טוען…</div><div></div>';
+  var store=S.pstore||[], own=store.filter(function(x){ return x.kind==='מתאמן'&&x.name===S.client; })[0], tpl=store.filter(function(x){ return x.kind==='תבנית'; }), oth=store.filter(function(x){ return x.kind==='מתאמן'&&x.name!==S.client; }), sug=S.psug||{};
+  var h='<div><div class="bar"><label class="upl">העלאת קובץ תוכנית<input type="file" id="pFile" accept=".doc,.docx,.pdf,.txt,image/*"></label>'+
+    '<select id="pLoad"><option value="">טעינת תוכנית קיימת…</option>'+(own?'<option value="מתאמן|'+esc(own.name)+'">האחרונה שלו/ה ('+own.n+' אימונים · '+esc(own.d)+')</option>':'')+(tpl.length?'<optgroup label="תבניות">'+tpl.map(function(x){ return '<option value="תבנית|'+esc(x.name)+'">'+esc(x.name)+' ('+x.n+')</option>'; }).join('')+'</optgroup>':'')+(oth.length?'<optgroup label="ממתאמן אחר">'+oth.map(function(x){ return '<option value="מתאמן|'+esc(x.name)+'">'+esc(x.name)+' ('+x.n+')</option>'; }).join('')+'</optgroup>':'')+'</select><button class="g" id="pNew">תוכנית ריקה</button></div>';
+  if(sug.exp||sug.injText) h+='<div class="muted" style="margin:-4px 0 10px">מהטופס: '+(sug.exp?'ניסיון '+esc(sug.exp):'')+(sug.freq?' · '+esc(sug.freq):'')+(sug.injText?' · פציעות: '+esc(sug.injText):'')+'</div>';
+  P.days.forEach(function(d,di){
+    h+='<section class="card day"><div class="mh"><input class="t" data-dl="'+di+'" value="'+esc(d.lbl)+'" aria-label="שם האימון"><span class="kc">'+d.exercises.length+' תרגילים · כ-'+pMin(d)+' דק׳</span><button class="g" data-dmv="'+di+'|-1">↑</button><button class="g" data-dmv="'+di+'|1">↓</button><button class="g" data-ddel="'+di+'" title="מחיקת אימון">✕</button></div>'+
+      '<div class="ex head"><span></span><span>תרגיל</span><span>שריר</span><span>סטים</span><span>חזרות</span><span class="rest">מנוחה</span><span class="inc">+ק״ג</span><span></span></div>';
+    d.exercises.forEach(function(e,ei){ var key=di+'|'+ei;
+      h+='<div class="ex"><span class="mv"><button data-emv="'+key+'|-1" aria-label="למעלה">▲</button><button data-emv="'+key+'|1" aria-label="למטה">▼</button></span><div class="fs"><input data-en="'+key+'" value="'+esc(e.n)+'" autocomplete="off" placeholder="חיפוש תרגיל…"></div><span class="mu">'+esc(muOf(e))+'</span><input data-ef="'+key+'|s" value="'+esc(e.s)+'" aria-label="סטים"><input data-ef="'+key+'|r" value="'+esc(e.r)+'" aria-label="חזרות"><input class="rest" data-ef="'+key+'|rest" value="'+esc(e.rest)+'" aria-label="מנוחה בדקות" placeholder="1.5"><input class="inc" data-ef="'+key+'|inc" value="'+esc(e.inc||'')+'" aria-label="העלאה בק״ג" placeholder="2.5"><button class="g" data-edel="'+key+'" title="הסרה">✕</button></div>'+
+        '<div class="exn"><input data-ef="'+key+'|note" value="'+esc(e.note||'')+'" placeholder="הערה (תופיע בתוכנית): קצב, טכניקה, משקל"></div>'+'<div class="swp" style="padding-top:0"><button class="g" data-esw="'+key+'">'+(SWAP===key?'סגירת החלופות':'חלופות ל'+esc(muOf(e)||'תרגיל'))+'</button></div>'+(SWAP===key?swapHtml(e,key):''); });
+    h+='<div class="mf"><div class="fs" style="flex:1"><input data-eadd="'+di+'" placeholder="+ הוספת תרגיל: מקלידים ובוחרים" autocomplete="off"></div></div></section>'; });
+  h+='<div class="bar"><button id="pAddDay">+ אימון</button></div><div class="card pad"><h2>הערות אישיות (בראש התוכנית)</h2><textarea id="pNotes" rows="2" style="width:100%" placeholder="למשל: להתחיל קל בשבוע הראשון">'+esc(P.notes||'')+'</textarea></div></div>';
+  var vol={}; P.days.forEach(function(d){ d.exercises.forEach(function(e){ var g=muOf(e)||'אחר'; vol[g]=(vol[g]||0)+(parseInt(e.s,10)||0); }); }); var vk=Object.keys(vol).sort(function(a,b){ return vol[b]-vol[a]; });
+  h+='<aside class="side"><div class="card pad vol"><h2>סטים בשבוע לפי שריר</h2>'+(vk.length?vk.map(function(g){ var n=vol[g], big=/חזה|גב|ארבע ראשי|המסטרינג|ישבן|כתפיים/.test(g); return '<div class="row"><span>'+esc(g)+'</span><b class="num '+(big&&n<8?'lo':n>22?'hi':'')+'">'+n+'</b></div>'; }).join('')+'<div class="muted" style="margin-top:6px">כתום: פחות מ-8 לשריר גדול · אדום: מעל 22</div>':'<div class="muted">עוד אין תרגילים</div>')+'</div>'+
+    '<div class="card pad"><button class="p" id="pCreate" style="width:100%;padding:11px">צור תוכנית בתיקייה</button><div class="bar" style="margin:10px 0 0"><input id="pTpl" placeholder="שם לתבנית" style="flex:1"><button id="pTplSave">שמירה כתבנית</button></div><button class="g" id="pNoProg" style="width:100%;margin-top:6px">המתאמן/ת בלי תוכנית אימון</button><div class="muted" id="pLast"></div></div></aside>';
+  return h; }
+var SWAP=null;
+function swapHtml(e,key){ var g=muOf(e); var c=S.ex.filter(function(x){ return x[0]===g&&x[2]!==e.n; }).sort(function(a,b){ return (b[6]==='a')-(a[6]==='a'); }).slice(0,12); return '<div class="swp">'+(c.length?c.map(function(x,i){ return '<button data-swto="'+key+'|'+i+'">'+(x[6]==='a'?'★ ':'')+esc(x[2])+'</button>'; }).join(''):'<span class="muted">אין חלופות במאגר לקבוצה הזו</span>')+'</div>'; }
+function pMin(d){ var t=5; d.exercises.forEach(function(e){ var s=parseInt(e.s,10)||3, r=+e.rest||1.5; if(r>10) r=r/60; t+=s*(40+r*60)/60; }); return Math.round(t/5)*5; }
+function wireProg(){ var P=S.P; if(!P) return; var upd=function(){ saveDraft(); render(); };
+  var at=function(key){ var k=key.split('|'); var d=P.days[+k[0]]; return {d:d, e:k.length>1?d.exercises[+k[1]]:null, k:k}; };
+  document.querySelectorAll('[data-en]').forEach(function(inp){ inp.oninput=function(){ if(!AC||AC.input!==inp) openAC(inp,'ex',function(x){ var a=at(inp.dataset.en); var e=a.e; e.n=x[2]; e.mu=x[0]; if(!e.s) e.s=String(x[3]||3); if(!e.r) e.r=String(x[4]||10); if(!e.rest) e.rest=String(+x[5]||1.5); upd(); }); else fillAC(); }; inp.onchange=function(){ var a=at(inp.dataset.en); if(a.e.n!==inp.value){ a.e.n=inp.value; a.e.mu=''; saveDraft(); } }; });
+  document.querySelectorAll('[data-eadd]').forEach(function(inp){ inp.oninput=function(){ if(!AC||AC.input!==inp) openAC(inp,'ex',function(x){ P.days[+inp.dataset.eadd].exercises.push(exFrom(x)); upd(); var n=document.querySelector('[data-eadd="'+inp.dataset.eadd+'"]'); if(n) n.focus(); }); else fillAC(); }; inp.onkeydown=function(e){ if(e.key==='Enter'&&!AC&&inp.value.trim().length>1){ P.days[+inp.dataset.eadd].exercises.push({n:inp.value.trim(),mu:'',s:'3',r:'10',rest:'1.5',inc:'',note:''}); upd(); } }; });
+  document.querySelectorAll('[data-ef]').forEach(function(inp){ inp.onchange=function(){ var p=inp.dataset.ef.split('|'); P.days[+p[0]].exercises[+p[1]][p[2]]=inp.value.trim(); saveDraft(); if(p[2]==='s'||p[2]==='rest') render(); }; });
+  document.querySelectorAll('[data-edel]').forEach(function(b){ b.onclick=function(){ var a=at(b.dataset.edel); a.d.exercises.splice(+a.k[1],1); upd(); }; });
+  document.querySelectorAll('[data-emv]').forEach(function(b){ b.onclick=function(){ var p=b.dataset.emv.split('|').map(Number), L=P.days[p[0]].exercises, j=p[1]+p[2]; if(j<0||j>=L.length) return; var t=L[p[1]]; L[p[1]]=L[j]; L[j]=t; upd(); }; });
+  document.querySelectorAll('[data-esw]').forEach(function(b){ b.onclick=function(){ SWAP=SWAP===b.dataset.esw?null:b.dataset.esw; render(); }; });
+  document.querySelectorAll('[data-swto]').forEach(function(b){ b.onclick=function(){ var p=b.dataset.swto.split('|'), key=p[0]+'|'+p[1], e=P.days[+p[0]].exercises[+p[1]], g=muOf(e); var c=S.ex.filter(function(x){ return x[0]===g&&x[2]!==e.n; }).sort(function(a,b2){ return (b2[6]==='a')-(a[6]==='a'); }).slice(0,12); var x=c[+p[2]]; if(!x) return; e.n=x[2]; e.mu=x[0]; SWAP=null; upd(); }; });
+  document.querySelectorAll('[data-dl]').forEach(function(i){ i.onchange=function(){ P.days[+i.dataset.dl].lbl=i.value; saveDraft(); }; });
+  document.querySelectorAll('[data-ddel]').forEach(function(b){ b.onclick=function(){ var i=+b.dataset.ddel; if(P.days[i].exercises.length&&!window.confirm('למחוק את '+P.days[i].lbl+'?')) return; P.days.splice(i,1); upd(); }; });
+  document.querySelectorAll('[data-dmv]').forEach(function(b){ b.onclick=function(){ var p=b.dataset.dmv.split('|').map(Number), j=p[0]+p[1]; if(j<0||j>=P.days.length) return; var t=P.days[p[0]]; P.days[p[0]]=P.days[j]; P.days[j]=t; upd(); }; });
+  $('#pAddDay').onclick=function(){ if(P.days.length>=7){ toast('עד 7 אימונים',1); return; } P.days.push({lbl:'אימון '+String.fromCharCode(65+P.days.length),exercises:[]}); upd(); };
+  $('#pNotes').onchange=function(){ P.notes=this.value; saveDraft(); };
+  $('#pNew').onclick=function(){ if(!window.confirm('להתחיל תוכנית ריקה? מה שבנית כאן יימחק.')) return; S.P=emptyProg((S.psug&&S.psug.n)||3); upd(); };
+  $('#pLoad').onchange=function(){ var v=this.value; if(!v) return; toast('טוען…'); call('dashboardProgStoreLoad',v.split('|')[0],v.split('|').slice(1).join('|')).then(function(r){ S.P={days:(r.days||[]).map(function(d){ return {lbl:d.lbl, exercises:(d.exercises||[]).map(function(e){ return {n:e.n,mu:e.mu||'',s:String(e.s||''),r:String(e.r||''),rest:String(e.rest||''),inc:String(e.inc||''),note:e.note||''}; })}; }), notes:P.notes||''}; upd(); toast('נטען'); }).catch(function(e){ toast(e.message,1); }); };
+  $('#pFile').onchange=function(){ var f=this.files[0]; this.value=''; if(!f) return; if(f.size>9e6){ toast('הקובץ גדול מדי',1); return; } toast('קורא את הקובץ…'); var fr=new FileReader(); fr.onload=function(){ call('dashboardProgImport',S.client,fr.result,f.type,f.name).then(function(r){ S.P={days:r.P.days.map(function(d){ return {lbl:d.lbl, exercises:d.exercises.map(function(e){ return {n:e.n,mu:e.mu||'',s:String(e.s||''),r:String(e.r||''),rest:String(e.rest||''),inc:'',note:e.note||''}; })}; }), notes:P.notes||''}; upd(); toast('נטען: '+r.P.days.length+' אימונים'); }).catch(function(e){ toast(e.message,1); }); }; fr.readAsDataURL(f); };
+  $('#pCreate').onclick=function(){ var b=this, days=P.days.filter(function(d){ return d.exercises.length; }); if(!days.length){ toast('אין תרגילים בתוכנית',1); return; } var n=days.length, s=S.psug||{}, lv=(s.levels||[]).filter(function(l){ return l[0]===s.lvl&&l[1].indexOf(n)>=0; })[0]||(s.levels||[]).filter(function(l){ return l[1].indexOf(n)>=0; })[0];
+    var lvl=lv?lv[0]:(s.lvl||'בינוני'), nn=lv?n:((s.levels||[]).filter(function(l){ return l[0]===lvl; })[0]||[0,[3]])[1][0];
+    b.disabled=true; b.textContent='יוצר מסמך…';
+    call('dashboardProgramCreate',S.client,{gender:s.gender||'male',lvl:lvl,n:nn,inj:[],notes:P.notes||'',edited:{days:days.map(function(d){ return {lbl:d.lbl,dur:pMin(d),exercises:d.exercises.map(function(e){ return {n:e.n,mu:muOf(e),s:e.s,r:e.r,rest:e.rest,inc:e.inc,note:e.note}; })}; })}}).then(function(r){ b.disabled=false; b.textContent='צור תוכנית בתיקייה'; $('#pLast').innerHTML='נוצרה: <a href="'+esc(r.url)+'" target="_blank">'+esc(r.name)+'</a>'; window.open(r.url,'_blank'); toast('התוכנית נוצרה בתיקייה'); }).catch(function(e){ b.disabled=false; b.textContent='צור תוכנית בתיקייה'; toast(e.message,1); }); };
+  $('#pTplSave').onclick=function(){ var n=$('#pTpl').value.trim(); if(!n){ toast('כותבים שם לתבנית',1); return; } call('dashboardProgTplSave',n,{split:'',days:P.days,avoid:[]}).then(function(r){ S.pstore=r; toast('נשמר כתבנית'); }).catch(function(e){ toast(e.message,1); }); };
+  $('#pNoProg').onclick=function(){ call('dashboardClientFlag',S.client,'noProgram',true).then(function(){ toast('סומן: '+S.client+' בלי תוכנית אימון'); }).catch(function(e){ toast(e.message,1); }); };
+}
+
+/* ===== טעינה ===== */
+function loadMenuCtx(){ var c=S.client; S.M=lsg('coach_draft_menu_'+c,null); S.msug=null;
+  call('dashboardMenuSuggest',c).then(function(r){ if(S.client!==c) return; S.msug=r; if(!S.M) S.M=emptyMenu(r.T||1700); if(!S.M.T) S.M.T=r.T||1700; render(); }).catch(function(e){ if(!S.M) S.M=emptyMenu(1700); render(); toast(e.message,1); });
+  if(!S.mstore) call('dashboardMenuStoreList').then(function(r){ S.mstore=r; render(); }).catch(function(){}); }
+function loadProgCtx(){ var c=S.client; S.P=lsg('coach_draft_prog_'+c,null); S.psug=null;
+  call('dashboardProgramSuggest',c).then(function(r){ if(S.client!==c) return; S.psug=r; if(!S.P) S.P=emptyProg(r.n||3); render(); }).catch(function(e){ if(!S.P) S.P=emptyProg(3); render(); toast(e.message,1); });
+  if(!S.pstore) call('dashboardProgStoreList').then(function(r){ S.pstore=r; render(); }).catch(function(){}); }
+function pickClient(n){ S.client=n; lss('coach_c',n); SWAP=null; history.replaceState(null,'','?tab='+S.tab+(n?'&c='+encodeURIComponent(n):'')); S.M=null; S.P=null; if(n){ loadMenuCtx(); loadProgCtx(); } render(); }
+function boot(){ render();
+  fetch(DATA+'foods-moh.json').then(function(r){ return r.json(); }).then(function(d){ S.moh=d; FOODS_CACHE=null; }).catch(function(){});
+  fetch(DATA+'exercise-library.json').then(function(r){ return r.json(); }).then(function(d){ S.ex=d; if(S.tab==='prog') render(); }).catch(function(){});
+  if(!K) return;
+  call('dashboardList').then(function(r){ S.clients=(r.clients||r||[]).filter(function(c){ return c.name; }); render(); }).catch(function(e){ if(/מפתח/.test(e.message)){ K=''; lss('coach_k',''); } render(); toast(e.message,1); });
+  call('dashboardCoachFoods').then(function(r){ S.coach=r||[]; FOODS_CACHE=null; }).catch(function(){});
+  call('dashboardBaseFoods').then(function(r){ (r||[]).forEach(function(f){ if(!S.foods.some(function(x){ return x[0]===f[0]; })) S.foods.push(f); }); FOODS_CACHE=null; }).catch(function(){});
+  if(S.client){ loadMenuCtx(); loadProgCtx(); } }
+boot();
+</script>
+</body></html>
