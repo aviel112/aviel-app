@@ -388,6 +388,11 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .news,.recap,.board{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--sh)}
 .news{border-color:var(--gold-d)}
 .news.fw p{margin:6px 0 10px;font-size:14.5px;line-height:1.55}
+.news.guides .gd{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line);color:var(--text);text-decoration:none}
+.news.guides .gd:first-of-type{border-top:0;margin-top:4px}
+.news.guides .gd b{display:block;font-size:15px}
+.news.guides .gd small{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+.news.guides .gd i{font-style:normal;font-weight:700;font-size:13px;color:var(--gold);white-space:nowrap}
 .askf{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .askf textarea{width:100%;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
 .askf button{min-height:40px}
@@ -1277,7 +1282,7 @@ function todayItems(){
   return it;
 }
 /* הרגלים יומיים (נשמרים בטלפון וגם בקובץ המעקב) + רצף ימים */
-var HABITS=[{id:'water',t:'2 ליטר מים'},{id:'sleep',t:'7 שעות שינה'},{id:'protein',t:'חלבון בכל ארוחה'},{id:'steps',t:'צעדים לפי היעד'}];
+var HABITS=[{id:'water',t:'2 ליטר מים'},{id:'sleep',t:'7 שעות שינה'},{id:'menu',t:'אכלתי לפי התפריט'},{id:'steps',t:'צעדים לפי היעד'}];
 function habitsToday(){ var m=ls('aviel_habits',{}), d=m[TODAY]||{}, n=HABITS.filter(function(h){ return d[h.id]; }).length; return {done:n,total:HABITS.length,map:d}; }
 function habitSet(id,on){ var m=ls('aviel_habits',{}); m[TODAY]=m[TODAY]||{}; if(on) m[TODAY][id]=1; else delete m[TODAY][id];
   var keys=Object.keys(m).sort(); if(keys.length>120) keys.slice(0,keys.length-120).forEach(function(k){ delete m[k]; }); lsSet('aviel_habits',m);
@@ -1473,7 +1478,7 @@ var BOARD=null, BOARD_TRIED=false;
 function boardHtml(){ if(!BOARD||!BOARD.list||!BOARD.list.length) return ''; var me=BOARD.me||'';
   return '<div class="board"><div class="row"><b>אתגר הצעדים השבועי</b><small>ממוצע ליום</small></div>'+BOARD.list.slice(0,5).map(function(x,i){ return '<div class="brow'+(x.n===me?' me':'')+'"><span class="bn num">'+(i+1)+'</span><span class="bname">'+esc(x.n)+(x.n===me?' (את/ה)':'')+'</span><span class="num">'+x.avg.toLocaleString('he-IL')+'</span></div>'; }).join('')+(BOARD.rank&&BOARD.rank>5?'<div class="brow me"><span class="bn num">'+BOARD.rank+'</span><span class="bname">'+esc(me)+' (את/ה)</span><span class="num">'+(BOARD.mine||0).toLocaleString('he-IL')+'</span></div>':'')+'<div class="swaphint">מתעדכן כל שעה מהצעדים שכולם רושמים. כל מי שמסיים את השבוע עם 7 ימי רישום מקבל ממני כבוד.</div></div>'; }
 function renderExtras(el){ var x=document.getElementById('extras'); if(!x){ x=document.createElement('div'); x.id='extras'; el.parentNode.insertBefore(x,el.nextSibling); }
-  x.innerHTML=firstWeekHtml()+whatsNewHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+photoDueHtml()+reportHtml()+recapHtml()+boardHtml()+askHtml();
+  x.innerHTML=firstWeekHtml()+whatsNewHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+photoDueHtml()+reportHtml()+recapHtml()+boardHtml()+guidesHtml()+askHtml();
   wireAsk(x);
   wireMonthly(x);
   wireBlood(x); var sx=x.querySelector('#suppX'); if(sx) sx.onclick=function(){ lsSet('aviel_supp_seen',INBOX.supp.at); renderExtras(document.getElementById('todayCard')); };
@@ -1606,6 +1611,11 @@ var PHOTOS_L=null;
 function photoDueHtml(){ if(PHOTOS_L==null) return ''; if(ls('aviel_photo_snooze','')===TODAY) return ''; var last=PHOTOS_L.length?PHOTOS_L[PHOTOS_L.length-1].d:'';
   var days=last?Math.round((new Date(TODAY+'T12:00:00')-new Date(String(last).slice(0,10)+'T12:00:00'))/864e5):999; if(days<30) return '';
   return '<div class="news"><div class="row"><b>'+(last?'עבר חודש מהתמונה האחרונה':'תמונת התחלה')+'</b><button type="button" class="linkbtn" onclick="lsSet(\'aviel_photo_snooze\',TODAY); renderExtras(document.getElementById(\'todayCard\'));">לא היום</button></div><p>'+(last?'תמונה חדשה באותו מקום ובאותה תאורה, ותראה/י את ההבדל בלפני-אחרי.':'תמונה אחת עכשיו, ובעוד חודש תראה/י את ההבדל. רק את/ה ואביאל רואים אותה.')+'</p><button type="button" class="vplay" onclick="show(\'prog\'); setTimeout(function(){ var i=document.getElementById(\'phIn\'); if(i) i.click(); },250);">צילום עכשיו</button></div>'; }
+/* ===== המדריכים של אביאל: רשימה שהוא מנהל מהדשבורד (לשונית "מדריכים" בלוח) ===== */
+var GUIDES=null, GUIDES_TRIED=false;
+function guidesHtml(){ if(!GUIDES_TRIED&&typeof api==='function'){ GUIDES_TRIED=true; api('guides',{}).then(function(r){ GUIDES=r||[]; if(GUIDES.length) renderExtras(document.getElementById('todayCard')); }).catch(function(){}); }
+  if(!GUIDES||!GUIDES.length) return '';
+  return '<div class="news guides"><div class="row"><b>המדריכים של אביאל</b><small>'+GUIDES.length+' מדריכים</small></div>'+GUIDES.map(function(g){ return '<a class="gd" target="_blank" rel="noopener" href="'+esc(g.u)+'"><span><b>'+esc(g.t)+'</b>'+(g.d?'<small>'+esc(g.d)+'</small>':'')+'</span><i>פתיחה</i></a>'; }).join('')+'</div>'; }
 /* ===== שאלה לאביאל מתוך האפליקציה (במקום לחפש בוואטסאפ) ===== */
 function askHtml(){ return '<div class="news ask"><div class="row"><b>שאלה לאביאל</b><small>מגיע ישר אליו</small></div><form id="askF" class="askf"><textarea id="askQ" rows="2" placeholder="למשל: אפשר להחליף את האורז בצהריים בפסטה?"></textarea><button type="submit">שליחה</button></form></div>'; }
 function wireAsk(x){ var f=x.querySelector('#askF'); if(!f) return; f.onsubmit=function(e){ e.preventDefault(); var q=x.querySelector('#askQ').value.trim(); if(q.length<3){ toast('כותבים שאלה',1); return; } var b=f.querySelector('button'); b.disabled=true;
