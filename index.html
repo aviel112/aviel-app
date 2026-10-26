@@ -312,7 +312,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
 .ex .mu{color:var(--gold);letter-spacing:.02em}
 .ex .nm{font-size:17px}
 .setrow input{background:var(--panel)}
-.setrow button{background:var(--cta);color:var(--cta-t);min-height:40px}
+.setrow button{background:transparent;color:var(--gold);border:1.5px solid var(--gold-d);min-height:40px}
+.setrow:focus-within button[type=submit]{background:var(--cta);color:var(--cta-t);border-color:var(--cta)} /* סט שעוד לא בוצע: מסגרת; הסט שממלאים עכשיו: מלא; בוצע: ירוק */
 .setrow.ok input,.setrow.ok button,.setrow.ok select{background:rgba(46,133,81,.08);border-color:rgba(46,133,81,.45);color:var(--good)}
 .sugg{background:var(--soft);border-color:var(--gold-d)}
 .toast{background:var(--cta);color:var(--cta-t);border-radius:14px;box-shadow:0 10px 30px -10px rgba(0,0,0,.35);font-weight:700}
@@ -709,7 +710,7 @@ input,select,textarea{font-size:16px}
     <div class="stack">
       <div class="card"><div class="label">ממוצע שבועי (ק״ג)</div><div id="chart"></div></div><div class="card"><div class="row"><span class="label">תמונות התקדמות · פעם בחודש</span><label class="ghost sm" for="phIn" style="border:1px solid var(--line);border-radius:12px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer">+ תמונה</label></div>
         <input type="file" id="phIn" accept="image/*" hidden>
-        <div class="sub" style="margin-top:6px">מצלמים באותו מקום ובאותה תאורה, בבוקר. רק אתה ואביאל רואים את התמונות.</div>
+        <div class="sub" style="margin-top:6px">מצלמים באותו מקום ובאותה תאורה, בבוקר. רק לך ולאביאל יש גישה לתמונות.</div>
         <div id="phBox"></div></div>
       <div class="card"><div class="label">כוח · מאיפה התחלת ולאן הגעת</div><div id="strength"></div></div>
       <div class="card">
@@ -875,7 +876,7 @@ function renderTrain(){
 function drawStrength(){
   var el=$('#strength'); if(!el) return;
   var L=P&&P.lifts||{}, rows=Object.keys(L).map(function(k){ var h=L[k].hist, f=L[k].first, l=h[h.length-1]; return {ex:k, from:f.kg, to:l.kg, n:h.length, pct:f.kg>0?Math.round((l.kg-f.kg)/f.kg*100):0}; }).filter(function(x){ return x.n>1; }).sort(function(a,b){ return b.pct-a.pct; }).slice(0,8);
-  el.innerHTML=rows.length?'<div class="str">'+rows.map(function(r){ return '<span>'+esc(r.ex)+'</span><span class="num" dir="ltr">'+r.from+' → '+r.to+'</span><span class="num pct '+(r.pct>0?'good':'')+'" dir="ltr">'+(r.pct>0?'+':'')+r.pct+'%</span>'; }).join('')+'</div>':'<div class="sub" style="padding-top:8px">אחרי כמה אימונים עם רישום משקלים, כאן תראה כמה התחזקת בכל תרגיל.</div>';
+  el.innerHTML=rows.length?'<div class="str">'+rows.map(function(r){ return '<span>'+esc(r.ex)+'</span><span class="num" dir="ltr">'+r.from+' → '+r.to+'</span><span class="num pct '+(r.pct>0?'good':'')+'" dir="ltr">'+(r.pct>0?'+':'')+r.pct+'%</span>'; }).join('')+'</div>':'<div class="sub" style="padding-top:8px">אחרי כמה אימונים עם רישום משקלים, כאן רואים כמה התחזקת בכל תרגיל.</div>';
 }
 
 function render(){
@@ -1142,7 +1143,7 @@ function renderPhotos(L){ var box=$('#phBox'); if(!L||!L.length){ box.innerHTML=
     '<div class="photos">'+L.slice().reverse().map(function(x){ return '<figure><img src="'+x.data+'" alt=""><figcaption>'+d(x)+'</figcaption></figure>'; }).join('')+'</div>'; }
 $('#msIn').addEventListener('change',function(){ var file=this.files&&this.files[0]; this.value=''; if(!file) return; toast('שולח את התמונה לאביאל…');
   shrink(file,1280,.8).then(function(img){ return fetch(API,{method:'POST',body:JSON.stringify({api:'mealphoto',t:T,p:{photo:img,meal:fMeal()}})}).then(function(r){ return r.json(); }); })
-  .then(function(j){ if(!j.ok) throw new Error(j.error||'לא נשלח'); toast('התמונה אצל אביאל. תקבל/י ממנו תשובה באפליקציה'); })
+  .then(function(j){ if(!j.ok) throw new Error(j.error||'לא נשלח'); toast('התמונה אצל אביאל. התשובה שלו תגיע לכאן, לאפליקציה'); })
   .catch(function(e){ toast(e.message||'התמונה לא נשלחה, נסו שוב',1); }); });
 $('#phIn').addEventListener('change',function(){ var file=this.files&&this.files[0]; if(!file) return; toast('מעלה את התמונה…');
   Promise.all([shrink(file,1280,.82),shrink(file,320,.7)]).then(function(x){
@@ -1334,10 +1335,11 @@ function todayItems(){
   var d=D||{}, wk=d.week||[], last=wk[wk.length-1], it=[];
   it.push({k:'w', t:'שקילת בוקר', s:last&&last.kg?last.kg.toFixed(1)+' ק״ג':'לפני אוכל ושתייה', done:!!(last&&last.kg)});
   var p=P&&P.program, days=p&&p.blocks?p.blocks.filter(function(b){ return b.ex&&b.ex.length; }):[];
-  if(days.length){ var dm=doneMap(), trained=Object.keys(dm).some(function(x){ return dm[x]===TODAY; })||Object.keys((P&&P.lifts)||{}).some(function(x){ return (P.lifts[x].hist||[]).some(function(h){ return h.d===TODAY; }); });
+  if(days.length){ var dm=doneMap(), finToday=Object.keys(dm).some(function(x){ return dm[x]===TODAY; }), setsToday=Object.keys((P&&P.lifts)||{}).some(function(x){ return (P.lifts[x].hist||[]).some(function(h){ return h.d===TODAY; }); });
     var nx=0; for(var q=0;q<days.length;q++){ if(!dm[q]){ nx=q; break; } }
     var wkDone=Object.keys(dm).length;
-    it.push({k:'t', t:trained?'אימון רשום להיום':'האימון הבא: אימון '+(nx+1), s:wkDone+' מתוך '+days.length+' השבוע', done:trained}); }
+    /* סטים נרשמו אבל לא לחצו "סיימתי": האימון לא נספר בשבוע — מזכירים לסיים במקום לסמן כבוצע */
+    it.push({k:'t', t:finToday?'האימון של היום הושלם':setsToday?'אימון בתהליך':'האימון הבא: אימון '+(nx+1), s:setsToday&&!finToday?'בסוף לוחצים "סיימתי" כדי שייספר':wkDone+' מתוך '+days.length+' השבוע', done:finToday}); }
   var ate=(ls('aviel_ate_'+TODAY,[])||[]).length, fd=(typeof FDAY!=='undefined'&&FDAY&&FDAY.d===TODAY&&FDAY.items)?FDAY.items.length:0;
   it.push({k:'f', t:'אוכל', s:ate?ate+' ארוחות סומנו':fd?fd+' רישומים ביומן':'מסמנים מה אכלת', done:!!(ate||fd)});
   it.push({k:'c', t:'צ׳ק-אין שבועי', s:d.checkinDone?'נשלח השבוע':'2 דקות, פעם בשבוע', done:!!d.checkinDone});
@@ -1521,7 +1523,7 @@ function techInput(){ if(TECH_IN) return TECH_IN; TECH_IN=document.createElement
     if(f.size>30e6){ toast('הסרטון גדול מדי. מספיקות 2–3 חזרות (עד 30MB)',1); return; }
     toast('מעלה את הסרטון לאביאל… אפשר להמשיך באימון');
     var fr=new FileReader(); fr.onload=function(){ fetch(API,{method:'POST',body:JSON.stringify({api:'techvid',t:T,p:{ex:TECH_EX,video:fr.result,mime:f.type}})}).then(function(r){ return r.json(); })
-      .then(function(j){ if(!j.ok) throw new Error(j.error||'לא נשלח'); toast('הסרטון אצל אביאל. תקבל/י ממנו תשובה קולית באפליקציה'); })
+      .then(function(j){ if(!j.ok) throw new Error(j.error||'לא נשלח'); toast('הסרטון אצל אביאל. התשובה הקולית שלו תגיע לכאן, לאפליקציה'); })
       .catch(function(e){ toast(e.message||'הסרטון לא נשלח, נסו שוב עם וויפיי',1); }); }; fr.readAsDataURL(f); });
   return TECH_IN; }
 document.addEventListener('click',function(ev){ var b=ev.target.closest('[data-tech]'); if(!b) return; var days=(P.program.blocks||[]).filter(function(x){ return x.ex&&x.ex.length; }), d=applySwaps(days[DAY]), e=d.ex[+b.dataset.tech]; TECH_EX=e?e.ex:''; techInput().click(); });
@@ -1545,7 +1547,7 @@ function recapHtml(){ var d=D||{}, wk=d.week||[], keys=weekKeys(), ws=weekStart(
 /* ===== אתגר צעדים שבועי: מי הולך הכי הרבה (שמות פרטיים בלבד) ===== */
 var BOARD=null, BOARD_TRIED=false;
 function boardHtml(){ if(!BOARD||!BOARD.list||!BOARD.list.length) return ''; var me=BOARD.me||'';
-  return '<div class="board"><div class="row"><b>אתגר הצעדים השבועי</b><small>ממוצע ליום</small></div>'+BOARD.list.slice(0,5).map(function(x,i){ return '<div class="brow'+(x.n===me?' me':'')+'"><span class="bn num">'+(i+1)+'</span><span class="bname">'+esc(x.n)+(x.n===me?' (את/ה)':'')+'</span><span class="num">'+x.avg.toLocaleString('he-IL')+'</span></div>'; }).join('')+(BOARD.rank&&BOARD.rank>5?'<div class="brow me"><span class="bn num">'+BOARD.rank+'</span><span class="bname">'+esc(me)+' (את/ה)</span><span class="num">'+(BOARD.mine||0).toLocaleString('he-IL')+'</span></div>':'')+'<div class="swaphint">מתעדכן כל שעה מהצעדים שכולם רושמים. כל מי שמסיים את השבוע עם 7 ימי רישום מקבל ממני כבוד.</div></div>'; }
+  return '<div class="board"><div class="row"><b>אתגר הצעדים השבועי</b><small>ממוצע ליום</small></div>'+BOARD.list.slice(0,5).map(function(x,i){ return '<div class="brow'+(x.n===me?' me':'')+'"><span class="bn num">'+(i+1)+'</span><span class="bname">'+esc(x.n)+(x.n===me?' (אני)':'')+'</span><span class="num">'+x.avg.toLocaleString('he-IL')+'</span></div>'; }).join('')+(BOARD.rank&&BOARD.rank>5?'<div class="brow me"><span class="bn num">'+BOARD.rank+'</span><span class="bname">'+esc(me)+' (אני)</span><span class="num">'+(BOARD.mine||0).toLocaleString('he-IL')+'</span></div>':'')+'<div class="swaphint">מתעדכן כל שעה מהצעדים שכולם רושמים. כל מי שמסיים את השבוע עם 7 ימי רישום מקבל ממני כבוד.</div></div>'; }
 function renderExtras(el){ var x=document.getElementById('extras'), wf=document.getElementById('wForm'), wc=wf&&wf.closest('.card'), at=wc||el;
   if(!x){ x=document.createElement('div'); x.id='extras'; } if(x.previousSibling!==at) at.parentNode.insertBefore(x,at.nextSibling);
   var x2=document.getElementById('extras2'); if(!x2){ x2=document.createElement('div'); x2.id='extras2'; } if(x2.parentNode!==at.parentNode||x2.nextSibling) at.parentNode.appendChild(x2);
@@ -1639,7 +1641,7 @@ function wireMonthly(x){ var o=x.querySelector('#moOpen'); if(o) o.onclick=funct
   var cy=x.querySelector('#cnYes'), cn=x.querySelector('#cnNo'); var ans=function(ok){ api('consent',{ok:ok}).then(function(){ INBOX.consentAsk=''; toast(ok?'תודה! אביאל יעדכן לפני שמפרסם':'בסדר גמור, לא מפרסמים'); renderExtras(document.getElementById('todayCard')); }).catch(function(er){ toast(er.message||'לא נשלח',1); }); };
   if(cy) cy.onclick=function(){ ans(true); }; if(cn) cn.onclick=function(){ ans(false); }; }
 /* ===== בקשת אישור לפרסום לפני/אחרי ===== */
-function consentHtml(){ if(!INBOX||!INBOX.consentAsk) return ''; return '<div class="news"><div class="row"><b>שאלה קטנה מאביאל</b></div><p>ההתקדמות שלך מדהימה. מאשר/ת לשתף תמונת לפני ואחרי? אפשר גם בלי פנים, ואביאל מראה לך לפני שמפרסם.</p><div class="kv" style="display:flex;gap:10px"><button type="button" class="vplay" id="cnYes">מאשר/ת</button><button type="button" class="linkbtn" id="cnNo">מעדיף/ה שלא</button></div></div>'; }
+function consentHtml(){ if(!INBOX||!INBOX.consentAsk) return ''; return '<div class="news"><div class="row"><b>שאלה קטנה מאביאל</b></div><p>ההתקדמות שלך מדהימה. אפשר לשתף תמונת לפני ואחרי? אפשר גם בלי פנים, ואביאל מראה לך לפני שמפרסם.</p><div class="kv" style="display:flex;gap:10px"><button type="button" class="vplay" id="cnYes">כן, אפשר</button><button type="button" class="linkbtn" id="cnNo">עדיף שלא</button></div></div>'; }
 /* ===== רשימת קניות לשבוע מהתפריט (לפי מה שבחרת, או האפשרות הראשונה) ===== */
 function renderShopBtn(M){ var box=document.getElementById('menuBox'); if(!box||document.getElementById('shopCard')||!M||!M.blocks) return; var el=document.createElement('div'); el.id='shopCard'; el.className='card'; el.innerHTML='<div class="row"><h3 style="margin:0;font-size:16px">רשימת קניות לשבוע</h3></div><p class="sub" style="margin:6px 0 10px">לפי האפשרויות שבחרת בתפריט (או הראשונה בכל ארוחה), כפול 7 ימים.</p><button type="button" id="shopBtn">יצירת רשימה</button>'; box.appendChild(el); el.querySelector('#shopBtn').onclick=function(){ openShop(M); }; }
 function shopItems(M){ var pick=ls('aviel_pick_'+TODAY,{}), learn=ls('aviel_menu_learn',{}), raw=[];
@@ -1687,7 +1689,7 @@ function firstWeekHtml(){ if(!D||D.weekNo==null||D.weekNo>1||D.lastKg!=null&&D.f
 var PHOTOS_L=null;
 function photoDueHtml(){ if(PHOTOS_L==null) return ''; if(ls('aviel_photo_snooze','')===TODAY) return ''; var last=PHOTOS_L.length?PHOTOS_L[PHOTOS_L.length-1].d:'';
   var days=last?Math.round((new Date(TODAY+'T12:00:00')-new Date(String(last).slice(0,10)+'T12:00:00'))/864e5):999; if(days<30) return '';
-  return '<div class="news"><div class="row"><b>'+(last?'עבר חודש מהתמונה האחרונה':'תמונת התחלה')+'</b><button type="button" class="linkbtn" onclick="lsSet(\'aviel_photo_snooze\',TODAY); renderExtras(document.getElementById(\'todayCard\'));">לא היום</button></div><p>'+(last?'תמונה חדשה באותו מקום ובאותה תאורה, ותראה/י את ההבדל בלפני-אחרי.':'תמונה אחת עכשיו, ובעוד חודש תראה/י את ההבדל. רק את/ה ואביאל רואים אותה.')+'</p><button type="button" class="vplay" onclick="show(\'prog\'); setTimeout(function(){ var i=document.getElementById(\'phIn\'); if(i) i.click(); },250);">צילום עכשיו</button></div>'; }
+  return '<div class="news"><div class="row"><b>'+(last?'עבר חודש מהתמונה האחרונה':'תמונת התחלה')+'</b><button type="button" class="linkbtn" onclick="lsSet(\'aviel_photo_snooze\',TODAY); renderExtras(document.getElementById(\'todayCard\'));">לא היום</button></div><p>'+(last?'תמונה חדשה באותו מקום ובאותה תאורה, וההבדל יופיע בלפני-אחרי.':'תמונה אחת עכשיו, ובעוד חודש רואים את ההבדל. רק לך ולאביאל יש גישה אליה.')+'</p><button type="button" class="vplay" onclick="show(\'prog\'); setTimeout(function(){ var i=document.getElementById(\'phIn\'); if(i) i.click(); },250);">צילום עכשיו</button></div>'; }
 /* ===== המדריכים של אביאל: רשימה שהוא מנהל מהדשבורד (לשונית "מדריכים" בלוח) ===== */
 var GUIDES=null, GUIDES_TRIED=false;
 function guidesHtml(){ if(!GUIDES_TRIED&&typeof api==='function'){ GUIDES_TRIED=true; api('guides',{}).then(function(r){ GUIDES=r||[]; if(GUIDES.length) renderExtras(document.getElementById('todayCard')); }).catch(function(){}); }
@@ -1699,7 +1701,7 @@ function chatAgo(at){ var t=Date.parse(at); if(isNaN(t)) return ''; var m=Math.r
 function askHtml(){ if(!CHAT_TRIED&&typeof api==='function'){ CHAT_TRIED=true; api('chat',{}).then(function(r){ CHAT=(r&&r.list)||[]; if(CHAT.length) renderExtras(document.getElementById('todayCard')); }).catch(function(){}); }
   var ALL=CHAT||[], more=CHAT_ALL?0:Math.max(0,ALL.length-6), L=CHAT_ALL?ALL:ALL.slice(-6), has=L.length>0;
   return '<div class="news ask"><div class="row"><b>'+(has?'השיחה עם אביאל':'שאלה לאביאל')+'</b><small>מגיע ישר אליו</small></div>'+
-    (more?'<button type="button" class="linkbtn" id="chatMore" style="margin-top:6px">הודעות קודמות ('+more+')</button>':'')+(has?'<div class="chat" role="log" aria-label="השיחה עם אביאל">'+L.map(function(x){ var me=x.f==='c'; return '<div class="cb'+(me?' me':'')+'"><div>'+esc(x.t||'')+(x.v?(x.d?' <i>· '+x.d+' שנ׳</i>':' <i>(הודעה קולית)</i>'):'')+(x.vid?' <button type="button" class="linkbtn cvp" data-vid="'+esc(x.vid)+'">השמעה</button>':'')+'</div><small>'+(me?'את/ה':'אביאל')+' · '+chatAgo(x.at)+'</small></div>'; }).join('')+'</div>':'')+
+    (more?'<button type="button" class="linkbtn" id="chatMore" style="margin-top:6px">הודעות קודמות ('+more+')</button>':'')+(has?'<div class="chat" role="log" aria-label="השיחה עם אביאל">'+L.map(function(x){ var me=x.f==='c'; return '<div class="cb'+(me?' me':'')+'"><div>'+esc(x.t||'')+(x.v?(x.d?' <i>· '+x.d+' שנ׳</i>':' <i>(הודעה קולית)</i>'):'')+(x.vid?' <button type="button" class="linkbtn cvp" data-vid="'+esc(x.vid)+'">השמעה</button>':'')+'</div><small>'+(me?'אני':'אביאל')+' · '+chatAgo(x.at)+'</small></div>'; }).join('')+'</div>':'')+
     '<form id="askF" class="askf"><textarea id="askQ" rows="2" placeholder="'+(has?'כותבים לאביאל':'למשל: אפשר להחליף את האורז בצהריים בפסטה?')+'">'+esc(ASKD)+'</textarea><div class="askrow"><button type="submit"'+(ASK_BUSY?' disabled':'')+'>'+(ASK_BUSY?'שולח…':'שליחה')+'</button>'+(VN_OK?'<button type="button" id="askMic" class="mic" aria-label="הקלטת הודעה קולית לאביאל"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12z"/></svg><span>קולית</span></button>':'')+'</div></form></div>'; }
 function wireAsk(x){ var f=x.querySelector('#askF'); if(!f) return; var ta=x.querySelector('#askQ'); ta.oninput=function(){ ASKD=ta.value; }; wireChatVoice(x); var cm=x.querySelector('#chatMore'); if(cm) cm.onclick=function(){ CHAT_ALL=true; renderExtras(document.getElementById('todayCard')); }; wireMic(x);
   f.onsubmit=function(e){ e.preventDefault(); if(ASK_BUSY) return; var q=ta.value.trim(); if(q.length<3){ toast('כותבים שאלה',1); return; } var b=f.querySelector('button'); b.disabled=true; ASK_BUSY=true;
@@ -1905,7 +1907,7 @@ function exImgFor(n){ if(!EXIMG) return null; var m=EXIMG.map, k=String(n||'').t
   var best=null, bl=0; Object.keys(EXIMG._n).forEach(function(x){ if(x.length>bl&&x.length>=3&&(nk===x||nk.indexOf(x+' ')===0)){ best=EXIMG._n[x]; bl=x.length; } }); if(best) return best;
   var sl=1e9; Object.keys(EXIMG._n).forEach(function(x){ if(nk.length>=5&&x.indexOf(nk+' ')===0&&x.length<sl){ best=EXIMG._n[x]; sl=x.length; } }); return best; }
 function openExImg(name,id){ var s=document.createElement('div'); s.className='sheet'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true');
-  s.innerHTML='<div class="sheet-in exsheet"><h2>'+esc(name)+'</h2><div class="exanim"><img alt="תחילת התנועה" src="'+EXIMG.base+id+'/0.jpg"><img alt="סוף התנועה" src="'+EXIMG.base+id+'/1.jpg"></div><div class="sub">התמונות מתחלפות: תחילת התנועה וסוף התנועה. לא בטוח/ה בטכניקה? מצלמים סרטון קצר ושולחים לאביאל בכפתור "טכניקה".</div><a class="ytl" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query='+encodeURIComponent(String(id).replace(/_/g,' ')+' exercise proper form')+'">סרטון הדגמה (יוטיוב)</a><button type="button">סגירה</button></div>';
+  s.innerHTML='<div class="sheet-in exsheet"><h2>'+esc(name)+'</h2><div class="exanim"><img alt="תחילת התנועה" src="'+EXIMG.base+id+'/0.jpg"><img alt="סוף התנועה" src="'+EXIMG.base+id+'/1.jpg"></div><div class="sub">התמונות מתחלפות: תחילת התנועה וסוף התנועה. יש ספק בטכניקה? מצלמים סרטון קצר ושולחים לאביאל בכפתור "טכניקה".</div><a class="ytl" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query='+encodeURIComponent(String(id).replace(/_/g,' ')+' exercise proper form')+'">סרטון הדגמה (יוטיוב)</a><button type="button">סגירה</button></div>';
   var close=function(){ s.remove(); }; s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('button').onclick=close; document.body.appendChild(s); s.querySelector('button').focus(); }
 function addExImgs(){ if(!EXIMG){ if(!EXIMG_TRIED){ EXIMG_TRIED=true; fetch('data/exercise-images.json').then(function(r){ return r.json(); }).then(function(j){ EXIMG=j; addExImgs(); }).catch(function(){}); } return; }
   document.querySelectorAll('#progBox .card.ex .nmrow').forEach(function(row){ if(row.querySelector('.exthumb')) return; var nm=row.querySelector('.nm'); if(!nm) return; var id=exImgFor(nm.textContent); if(!id) return;
