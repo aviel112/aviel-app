@@ -451,7 +451,7 @@ function clFilters(){ var P=function(c){ return PU&&PU[c.name]; };
     ['nw','לא נשקלו 3+ ימים',function(c){ var p=P(c); return !!(p&&!p.err&&(p.never||p.gap>=3)); }],
     ['nt','בלי אימון השבוע',function(c){ var p=P(c); return !!(p&&p.lw===0); }],
     ['bal','יתרה פתוחה',function(c){ return c.balance>0; }],
-    ['end','מסיימים ב-14 יום',function(c){ return c.daysLeft!=null&&c.daysLeft>=0&&c.daysLeft<=14; }]].concat(tagFilters()); }
+    ['end','לחידוש',function(c){ return c.daysLeft!=null&&c.daysLeft>=-30&&c.daysLeft<=14; }] /* 14 יום לפני הסוף עד סוף חודש החסד */].concat(tagFilters()); }
 document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('[data-fcl]'); if(!b) return; FCL=FCL===b.dataset.fcl?'':b.dataset.fcl; renderClients(); });
 /* השבוע במבט: שורה לכל מתאמן/ת — שקילות ב-7 ימים, ימי אימון מיום ראשון, צ׳ק-אין, כניסה אחרונה. ירוק = בסדר, אדום = דורש פנייה */
 function weekTable(list){ if(!PU) return ''; var dow=new Date().getDay(), t0=new Date(new Date().toDateString());
