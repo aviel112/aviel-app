@@ -975,9 +975,18 @@ function showLogin(){ $('#boot').hidden=true; $('#tabs').hidden=true; var f=$('#
       .catch(function(e){ toast(/fetch|network/i.test(e.message)?'אין חיבור לאינטרנט':e.message,1); b.disabled=false; b.textContent='כניסה'; }); }; }
 if(!T){ showLogin(); }
 else {
-  api('data').then(function(r){ D=r; $('#boot').hidden=true; $('#tabs').hidden=false; var last='home'; try{ last=localStorage.getItem('aviel_tab')||'home'; }catch(e){} show(last); render(); renderMenu(); renderTrain(); drawStrength(); })
-    .catch(function(er){ if(/הקישור לא בתוקף/.test(er.message||'')){ try{ localStorage.removeItem('aviel_tb'); }catch(e){} showLogin(); } else fatal(er.message); });
-  api('plan').then(function(r){ P=r; P.lifts=normLifts(P.lifts); if(D){ renderMenu(); renderTrain(); drawStrength(); } }).catch(function(){ P={menu:null,program:null,lifts:{}}; if(D){ renderMenu(); renderTrain(); } });
+  /* פתיחה מיידית: המידע האחרון מהטלפון מוצג מיד, והמידע הטרי מהשרת מחליף אותו כשהוא מגיע (בלי מסך טעינה של כמה שניות) */
+  var CK='aviel_c_'+String(T).slice(0,12), CACHED=null, BOOTED=false; try{ CACHED=JSON.parse(localStorage.getItem(CK)||'null'); }catch(e){ CACHED=null; }
+  if(CACHED&&(!CACHED.D||Date.now()-(CACHED.at||0)>7*864e5)) CACHED=null;
+  var saveC=function(){ try{ if(D) localStorage.setItem(CK,JSON.stringify({at:Date.now(),D:D,P:P})); }catch(e){} };
+  var bootUI=function(){ if(BOOTED) return; BOOTED=true; $('#boot').hidden=true; $('#tabs').hidden=false; var last='home'; try{ last=localStorage.getItem('aviel_tab')||'home'; }catch(e){} show(last); };
+  var drawAll=function(){ try{ render(); renderMenu(); renderTrain(); drawStrength(); }catch(e){} };
+  var FRESH=false;
+  if(CACHED){ var fromCache=function(){ if(FRESH) return; D=CACHED.D; if(CACHED.P&&!P) P=CACHED.P; bootUI(); drawAll(); }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fromCache); else setTimeout(fromCache,0); }
+  api('data').then(function(r){ FRESH=true; D=r; bootUI(); drawAll(); saveC(); })
+    .catch(function(er){ if(BOOTED) toast('אין חיבור כרגע. מוצג המידע האחרון ששמור בטלפון',1); else fatal(er.message); });
+  api('plan').then(function(r){ P=r; P.lifts=normLifts(P.lifts); if(D){ renderMenu(); renderTrain(); drawStrength(); } saveC(); }).catch(function(){ if(!P) P={menu:null,program:null,lifts:{}}; if(D){ renderMenu(); renderTrain(); } });
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') saveC(); });
 }
 </script>
 
