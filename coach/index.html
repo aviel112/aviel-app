@@ -407,6 +407,7 @@ function renderClients(){
   h+='<div class="sec"><span>'+list.length+((FCL||q)?' מתוך '+active().length:'')+' פעילים</span><span>לחיצה פותחת פעולות</span></div>';
   h+=list.map(function(c){ var p=PU&&PU[c.name], tags=[]; (TAGS[c.name]||[]).forEach(function(t){ tags.push('<span class="tag ct">'+esc(t)+'</span>'); });
     if(p&&p.risk) tags.push('<span class="tag'+(p.risk.lvl==='red'?' r':p.risk.lvl==='yellow'?' w':' g')+'">'+(p.risk.lvl==='red'?'אדום':p.risk.lvl==='yellow'?'צהוב':'ירוק')+'</span>');
+    if(p&&p.fend){ var fdl=Math.round((new Date(p.fend+'T00:00:00')-new Date(new Date().toDateString()))/864e5); if(fdl<0) tags.push('<span class="tag r">קובץ המעקב נגמר ב-'+p.fend.slice(8,10)+'/'+p.fend.slice(5,7)+'</span>'); else if(fdl<=7) tags.push('<span class="tag w">קובץ המעקב נגמר בעוד '+fdl+' ימים</span>'); }
     if(p&&!p.err){ if(p.never) tags.push('<span class="tag w">לא נשקל/ה</span>'); else if(p.gap>=3) tags.push('<span class="tag w">לא נשקל/ה '+p.gap+' ימים</span>');
       tags.push('<span class="tag'+(p.lw?' g':'')+'">אימונים השבוע: '+(p.lw==null?'–':p.lw)+'</span>'); }
     if(TM) tags.push(TM[c.name]?'<span class="tag">'+esc(TM[c.name])+'</span>':'<span class="tag w">לא סווג</span>');
