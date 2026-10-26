@@ -1971,6 +1971,11 @@ function wireCtasks(x){ x.querySelectorAll('[data-ctid]').forEach(function(b){ b
     else if(k==='measure'){ show('prog'); setTimeout(function(){ var f=document.getElementById('mForm'); if(f){ f.hidden=false; f.scrollIntoView({behavior:'smooth',block:'center'}); } },300); }
     else if(k==='checkin'){ var c=document.getElementById('ciForm')||document.getElementById('ciDone'); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); }
     else if(k==='guide'){ var g=document.querySelector('.news.guides'); if(g) g.scrollIntoView({behavior:'smooth',block:'center'}); } }; }); }
+
+/* ===== חזרה לאפליקציה (אחרי דקה ומעלה): הודעות, שיחה ומשימות מאביאל מתרעננים בלי לסגור את האפליקציה ===== */
+var BACK_AT=Date.now();
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden'){ BACK_AT=Date.now(); return; }
+  if(Date.now()-BACK_AT<60000||!D) return; INBOX_TRIED=false; CHAT_TRIED=false; CT_TRIED=false; try{ renderTodayCard(); }catch(e){} });
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
