@@ -398,6 +398,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .chat{display:flex;flex-direction:column;gap:6px;margin-top:8px}.chat .cb{max-width:86%;align-self:flex-start;background:var(--soft);border:1px solid var(--line);border-radius:16px 16px 5px 16px;padding:8px 12px;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}.chat .cb.me{align-self:flex-end;background:var(--text);color:var(--ink);border-color:var(--text);border-radius:16px 16px 16px 5px}.chat .cb small{display:block;font-size:12px;opacity:.7;margin-top:2px}.chat .cb i{font-style:normal;opacity:.8}
 .askf textarea{width:100%;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
 .askf button{min-height:40px}
+.bfrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0 2px}.bfv{font-size:26px}.bfsp{color:var(--gold);margin-inline-start:auto}.bff{display:flex;gap:8px;margin-top:10px}.bff input{flex:1;min-width:0;font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}.bff button{flex:none;min-height:40px;padding:0 16px}
 .ctl .cti{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.ctl .cti:first-of-type{border-top:0}.ctl .cti .tdc{flex:none;background:transparent;border:2px solid var(--line);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;padding:0;min-height:0;color:var(--good)}.ctl .cti.ok .tdc{border-color:var(--good)}.ctl .ctt{flex:1;min-width:0;display:flex;flex-direction:column}.ctl .ctt small{font-size:12.5px;color:var(--mute)}.ctl .ctt small.late{color:var(--bad);font-weight:700}.ctl .cti.ok b{text-decoration:line-through;opacity:.6}
 .fpend{color:var(--mute);font-size:12px;margin-inline-start:6px}
 .setrow .sundo{background:var(--good)!important;color:#fff!important;border-color:var(--good)!important}.setrow .sundo.arm{background:var(--bad)!important;border-color:var(--bad)!important;font-size:12.5px;font-weight:800;padding:0 6px;white-space:nowrap}
@@ -1976,6 +1977,20 @@ function wireCtasks(x){ x.querySelectorAll('[data-ctid]').forEach(function(b){ b
 var BACK_AT=Date.now();
 document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden'){ BACK_AT=Date.now(); return; }
   if(Date.now()-BACK_AT<60000||!D) return; INBOX_TRIED=false; CHAT_TRIED=false; CT_TRIED=false; try{ renderTodayCard(); }catch(e){} });
+
+/* ===== אחוז שומן (מהמשקל החכם): כרטיס בלשונית ההתקדמות, אחרי ההיקפים ===== */
+var BF=null, BF_TRIED=false;
+function bfSpark(v){ if(!v||v.length<2) return ''; var W=120,H=34,mn=Math.min.apply(null,v),mx=Math.max.apply(null,v),r=(mx-mn)||1; var pts=v.map(function(x,i){ return (i*(W-4)/(v.length-1)+2).toFixed(1)+','+(H-3-(x-mn)/r*(H-6)).toFixed(1); }).join(' '); return '<svg class="bfsp" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" aria-hidden="true"><polyline points="'+pts+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>'; }
+function bfEnsure(){ var mt=document.getElementById('mTable'), mc=mt&&mt.closest('.card'); if(!mc) return; var c=document.getElementById('bfCard'); if(!c){ c=document.createElement('div'); c.className='card'; c.id='bfCard'; mc.parentNode.insertBefore(c,mc.nextSibling); }
+  if(!BF_TRIED&&typeof api==='function'){ BF_TRIED=true; api('bodyfatlist',{}).then(function(r){ BF=r||[]; bfEnsure(); }).catch(function(){}); }
+  var L=BF||[], last=L[L.length-1], first=L[0], dd=last&&first&&L.length>1?Math.round((last.v-first.v)*10)/10:null, today=last&&last.d===TODAY;
+  c.innerHTML='<div class="row"><span class="label">אחוז שומן · מהמשקל החכם</span>'+(last?'<span class="sub">'+(today?'נרשם היום':'אחרון '+last.d.slice(8,10)+'/'+last.d.slice(5,7))+'</span>':'')+'</div>'+
+    (last?'<div class="bfrow"><b class="num bfv">'+last.v+'%</b>'+(dd!=null?'<span class="sub">'+(dd<0?'ירידה של '+(-dd):dd>0?'עלייה של '+dd:'ללא שינוי')+(dd?' מההתחלה':'')+'</span>':'')+bfSpark(L.map(function(x){ return x.v; }))+'</div>':'<p class="sub" style="margin:6px 0">אם יש לך משקל שמודד אחוז שומן, רושמים כאן פעם בשבוע באותו בוקר של השקילה. לא חובה.</p>')+
+    '<form id="bfForm" class="bff"><input id="bfIn" inputmode="decimal" placeholder="למשל 22.5" aria-label="אחוז שומן"><button type="submit">שמירה</button></form>';
+  c.querySelector('#bfForm').onsubmit=function(e){ e.preventDefault(); var v=parseFloat(String(c.querySelector('#bfIn').value).replace(',','.')); if(!(v>=3&&v<=60)){ toast('רושמים אחוז שומן בין 3 ל-60',1); return; }
+    var prev=BF?BF.slice():[]; BF=(BF||[]).filter(function(x){ return x.d!==TODAY; }).concat([{d:TODAY,v:Math.round(v*10)/10}]); bfEnsure(); toast('נשמר · '+v+'%');
+    api('bodyfat',{v:v}).then(function(r){ BF=r||BF; bfEnsure(); }).catch(function(er){ BF=prev; bfEnsure(); toast(er.message||'לא נשמר',1); }); }; }
+var _renderBF=render; render=function(){ _renderBF.apply(this,arguments); try{ bfEnsure(); }catch(e){} };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
