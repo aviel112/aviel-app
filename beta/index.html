@@ -1690,9 +1690,9 @@ function chatAgo(at){ var t=Date.parse(at); if(isNaN(t)) return ''; var m=Math.r
 function askHtml(){ if(!CHAT_TRIED&&typeof api==='function'){ CHAT_TRIED=true; api('chat',{}).then(function(r){ CHAT=(r&&r.list)||[]; if(CHAT.length) renderExtras(document.getElementById('todayCard')); }).catch(function(){}); }
   var L=(CHAT||[]).slice(-6), has=L.length>0;
   return '<div class="news ask"><div class="row"><b>'+(has?'השיחה עם אביאל':'שאלה לאביאל')+'</b><small>מגיע ישר אליו</small></div>'+
-    (has?'<div class="chat" role="log" aria-label="השיחה עם אביאל">'+L.map(function(x){ var me=x.f==='c'; return '<div class="cb'+(me?' me':'')+'"><div>'+esc(x.t||'')+(x.v?(x.d?' <i>· '+x.d+' שנ׳</i>':' <i>(הודעה קולית)</i>'):'')+'</div><small>'+(me?'את/ה':'אביאל')+' · '+chatAgo(x.at)+'</small></div>'; }).join('')+'</div>':'')+
+    (has?'<div class="chat" role="log" aria-label="השיחה עם אביאל">'+L.map(function(x){ var me=x.f==='c'; return '<div class="cb'+(me?' me':'')+'"><div>'+esc(x.t||'')+(x.v?(x.d?' <i>· '+x.d+' שנ׳</i>':' <i>(הודעה קולית)</i>'):'')+(x.vid?' <button type="button" class="linkbtn cvp" data-vid="'+esc(x.vid)+'">השמעה</button>':'')+'</div><small>'+(me?'את/ה':'אביאל')+' · '+chatAgo(x.at)+'</small></div>'; }).join('')+'</div>':'')+
     '<form id="askF" class="askf"><textarea id="askQ" rows="2" placeholder="'+(has?'כותבים לאביאל':'למשל: אפשר להחליף את האורז בצהריים בפסטה?')+'">'+esc(ASKD)+'</textarea><div class="askrow"><button type="submit">שליחה</button>'+(VN_OK?'<button type="button" id="askMic" class="mic" aria-label="הקלטת הודעה קולית לאביאל"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12z"/></svg><span>קולית</span></button>':'')+'</div></form></div>'; }
-function wireAsk(x){ var f=x.querySelector('#askF'); if(!f) return; var ta=x.querySelector('#askQ'); ta.oninput=function(){ ASKD=ta.value; }; wireMic(x);
+function wireAsk(x){ var f=x.querySelector('#askF'); if(!f) return; var ta=x.querySelector('#askQ'); ta.oninput=function(){ ASKD=ta.value; }; wireChatVoice(x); wireMic(x);
   f.onsubmit=function(e){ e.preventDefault(); var q=ta.value.trim(); if(q.length<3){ toast('כותבים שאלה',1); return; } var b=f.querySelector('button'); b.disabled=true;
   api('question',{q:q}).then(function(){ ASKD=''; CHAT=(CHAT||[]).concat([{at:new Date().toISOString(),f:'c',t:q}]); renderExtras(document.getElementById('todayCard')); toast('נשלח לאביאל. התשובה תגיע לכאן ותקפוץ לך בטלפון'); }).catch(function(er){ b.disabled=false; toast(er.message||'לא נשלח',1); }); }; }
 
@@ -1991,6 +1991,14 @@ function bfEnsure(){ var mt=document.getElementById('mTable'), mc=mt&&mt.closest
     var prev=BF?BF.slice():[]; BF=(BF||[]).filter(function(x){ return x.d!==TODAY; }).concat([{d:TODAY,v:Math.round(v*10)/10}]); bfEnsure(); toast('נשמר · '+v+'%');
     api('bodyfat',{v:v}).then(function(r){ BF=r||BF; bfEnsure(); }).catch(function(er){ BF=prev; bfEnsure(); toast(er.message||'לא נשמר',1); }); }; }
 var _renderBF=render; render=function(){ _renderBF.apply(this,arguments); try{ bfEnsure(); }catch(e){} };
+
+/* ===== השמעת הודעה קולית ישנה מאביאל מתוך השיחה (לחיצה ראשונה טוענת ומנגנת, ואם הטלפון חוסם — לחיצה שנייה מנגנת) ===== */
+var CVA={}, CVP=null;
+function wireChatVoice(x){ x.querySelectorAll('.cvp').forEach(function(b){ b.onclick=function(){ var id=b.dataset.vid, a=CVA[id];
+  if(CVP&&CVP!==a){ CVP.pause(); } if(a&&!a.paused){ a.pause(); b.textContent='השמעה'; return; } if(a){ CVP=a; a.play().then(function(){ b.textContent='עצירה'; }).catch(function(){}); return; }
+  b.disabled=true; b.textContent='טוען…'; api('voice',{id:id}).then(function(r){ b.disabled=false; if(!r||!r.b64){ b.textContent='השמעה'; toast('ההודעה לא נמצאה',1); return; }
+    a=CVA[id]=new Audio('data:'+(r.mime||'audio/mp4')+';base64,'+r.b64); a.onended=function(){ b.textContent='שוב'; }; CVP=a;
+    a.play().then(function(){ b.textContent='עצירה'; }).catch(function(){ b.textContent='השמעה'; }); }).catch(function(e){ b.disabled=false; b.textContent='השמעה'; toast(e.message||'לא נטען',1); }); }; }); }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
