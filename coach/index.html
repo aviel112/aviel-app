@@ -364,10 +364,10 @@ document.addEventListener('click',function(e){ var el=e.target; if(!el||!el.clos
     .then(function(r){ return caches.open('aviel-coach-ps').then(function(c){ return c.put('ps', new Response(r.ps)); }); })
     .then(function(){ cpLs('coach_push','1'); toast('ההתראות הופעלו בטלפון הזה'); renderToday(); })
     .catch(function(er){ b.disabled=false; toast((er&&er.message)||'לא הצלחנו להפעיל'); }); });
-/* לחיצה על התראה ("בוקר טוב") → מצב בוקר: מההתראה כשהאפליקציה פתוחה, או מהכתובת כשהיא נפתחת ממנה */
-function cpGo(u){ if(/#morning/.test(String(u||''))) setTimeout(openMorning,400); }
+/* לחיצה על התראה: "בוקר טוב" → מצב בוקר, "ליד חדש" → לידים: מההתראה כשהאפליקציה פתוחה, או מהכתובת כשהיא נפתחת ממנה */
+function cpGo(u){ u=String(u||''); if(/#morning/.test(u)) setTimeout(openMorning,400); else if(/#leads/.test(u)) setTimeout(function(){ show('leads'); },400); }
 if(window.__API&&navigator.serviceWorker){ navigator.serviceWorker.addEventListener('message',function(e){ if(e.data&&e.data.go) cpGo(e.data.go); }); }
-if(window.__API&&location.hash==='#morning'){ try{ history.replaceState(null,'',location.pathname); }catch(e){} cpGo('#morning'); }
+if(window.__API&&/^#(morning|leads)$/.test(location.hash)){ var cpH=location.hash; try{ history.replaceState(null,'',location.pathname); }catch(e){} cpGo(cpH); }
 function renderToday(){
   var box=$('section[data-v="today"]'); if(!TK){ box.innerHTML='<div class="skel"></div><div class="skel"></div><div class="empty" style="padding:4px">בודק את כל המתאמנים...</div>'; return; }
   var op=TK.open, hot=op.filter(function(t){ return t.hot; }).length;
