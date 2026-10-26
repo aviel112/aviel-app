@@ -341,8 +341,8 @@ function wireMenu(){ var M=S.M; if(!M) return; M.meals.forEach(function(ml){ ml.
   $('#nfSave').onclick=function(){ var unit=!!document.querySelector('[data-nf="u"].on'); var n=$('#nfN').value.trim().replace(/ \(יחידה\)$/,'')+(unit&&$('#nfN').value.trim()?' (יחידה)':''), p=+$('#nfP').value, c=+$('#nfC').value, f=+$('#nfF').value, k=+$('#nfK').value; if(!n||isNaN(p)||isNaN(c)||isNaN(f)||$('#nfP').value===''){ toast('ממלאים שם, חלבון, פחמימה ושומן',1); return; } call('dashboardCoachFoodSave',{name:n,p:p,c:c,f:f,k:k||0}).then(function(r){ S.coach=r||S.coach; FOODS_CACHE=null; syncCoachUnits(); toast(unit?'נשמר ליחידה. כותבים למשל "2 '+n.replace(' (יחידה)','')+'" והערכים מחושבים':'נשמר: '+n); $('#nfN').value=''; ['nfK','nfP','nfC','nfF'].forEach(function(id){ $('#'+id).value=''; }); }).catch(function(e){ toast(e.message,1); }); };
 }
 
-function autoProgCtl(){ var s=S.psug||{}, lv=(s.levels||[]).filter(function(l){ return l[0]===s.lvl; })[0]||(s.levels||[])[0], rec=lv?lv[1]:[2,3,4], days=[2,3,4,5,6]; var n=days.indexOf(s.n)>=0?s.n:rec[0]; // תמיד 2-6; ליד מה שמתאים לרמה כתוב (מומלץ)
-  return '<select id="pAutoN" aria-label="אימונים בשבוע">'+days.map(function(d){ return '<option value="'+d+'"'+(d===n?' selected':'')+'>'+d+' אימונים'+(rec.indexOf(d)>=0?' (מומלץ)':'')+'</option>'; }).join('')+'</select><button class="p" id="pAuto">תוכנית מוכנה</button>'; }
+function autoProgCtl(){ var s=S.psug||{}, lv=(s.levels||[]).filter(function(l){ return l[0]===s.lvl; })[0]||(s.levels||[])[0], rec=lv?lv[1]:[2,3,4], days=[2,3,4,5,6], fq=(String(s.freq||'').match(/[2-6]/g)||[]).map(Number), fr=[]; if(fq.length){ for(var q=Math.min.apply(null,fq);q<=Math.max.apply(null,fq);q++) fr.push(q); } var n=S.pn&&days.indexOf(S.pn)>=0?S.pn:(fr[0]||(days.indexOf(s.n)>=0?s.n:rec[0])); // תמיד 2-6; ליד מה שמתאים לרמה כתוב (מומלץ)
+  return '<select id="pAutoN" aria-label="אימונים בשבוע">'+days.map(function(d){ return '<option value="'+d+'"'+(d===n?' selected':'')+'>'+d+' אימונים'+(fr.indexOf(d)>=0?' (לפי הטופס)':rec.indexOf(d)>=0?' (מתאים לרמה)':'')+'</option>'; }).join('')+'</select><button class="p" id="pAuto">תוכנית מוכנה</button>'; }
 var EXI=null;
 function exNorm(x){ return String(x||'').replace(/[()\[\]'"׳״.,:–—-]/g,' ').replace(/\s+/g,' ').trim(); }
 function exImg(n){ if(!EXI) return null; var m=EXI.map, k=String(n||'').trim(); if(m[k]) return m[k]; if(!EXI._n){ EXI._n={}; Object.keys(m).forEach(function(x){ EXI._n[exNorm(x)]=m[x]; }); } var nk=exNorm(k); if(EXI._n[nk]) return EXI._n[nk];
@@ -382,6 +382,7 @@ function wireProg(){ var P=S.P; if(!P) return; var upd=function(){ saveDraft(); 
   document.querySelectorAll('[data-dmv]').forEach(function(b){ b.onclick=function(){ var p=b.dataset.dmv.split('|').map(Number), j=p[0]+p[1]; if(j<0||j>=P.days.length) return; var t=P.days[p[0]]; P.days[p[0]]=P.days[j]; P.days[j]=t; upd(); }; });
   $('#pAddDay').onclick=function(){ if(P.days.length>=7){ toast('עד 7 אימונים',1); return; } P.days.push({lbl:'אימון '+String.fromCharCode(65+P.days.length),exercises:[]}); upd(); };
   $('#pNotes').onchange=function(){ P.notes=this.value; saveDraft(); };
+  var pan=$('#pAutoN'); if(pan) pan.onchange=function(){ S.pn=+this.value; };
   $('#pAuto').onclick=function(){ var has=P.days.some(function(d){ return d.exercises.length; }); if(has&&!window.confirm('לבנות תוכנית מוכנה? מה שבנית כאן יוחלף.')) return; var s=S.psug||{}, n=+$('#pAutoN').value, lv=(s.levels||[]).filter(function(l){ return l[1].indexOf(n)>=0&&(l[0]===s.lvl); })[0]||(s.levels||[]).filter(function(l){ return l[1].indexOf(n)>=0; })[0];
     var b=this; b.disabled=true; b.textContent='בונה…';
     call('dashboardProgramPreview',S.client,{gender:s.gender||'male',lvl:lv?lv[0]:(s.lvl||'בינוני'),n:n,inj:s.inj||[]}).then(function(r){ S.P={days:(r.days||[]).map(function(d){ return {lbl:d.lbl, exercises:(d.exercises||[]).map(function(e){ return {n:e.n,mu:e.mu||'',s:String(e.s||''),r:String(e.r||''),rest:String(e.rest||''),inc:String(e.inc||''),note:e.note||''}; })}; }), notes:P.notes||''}; upd(); toast('התוכנית מוכנה ('+n+' אימונים'+(lv&&s.lvl&&lv[0]!==s.lvl?', לפי רמת '+lv[0]:'')+'). מחליפים תרגיל בלחיצה על "חלופות"'); }).catch(function(e){ b.disabled=false; b.textContent='תוכנית מוכנה'; toast(e.message,1); }); };
@@ -402,7 +403,7 @@ function refreshMenu(M){ if(!M||!M.meals) return M; M.meals.forEach(function(ml)
 function loadMenuCtx(){ var c=S.client; S.M=refreshMenu(lsg('coach_draft_menu_'+c,null)); S.msug=null;
   call('dashboardMenuSuggest',c).then(function(r){ if(S.client!==c) return; S.msug=r; if(!S.M) S.M=emptyMenu(r.T||1700); if(!S.M.T) S.M.T=r.T||1700; render(); }).catch(function(e){ if(!S.M) S.M=emptyMenu(1700); render(); toast(e.message,1); });
   if(!S.mstore) call('dashboardMenuStoreList').then(function(r){ S.mstore=r; render(); }).catch(function(){}); }
-function loadProgCtx(){ var c=S.client; S.P=lsg('coach_draft_prog_'+c,null); S.psug=null;
+function loadProgCtx(){ var c=S.client; S.P=lsg('coach_draft_prog_'+c,null); S.psug=null; S.pn=0;
   call('dashboardProgramSuggest',c).then(function(r){ if(S.client!==c) return; S.psug=r; if(!S.P) S.P=emptyProg(r.n||3); render(); }).catch(function(e){ if(!S.P) S.P=emptyProg(3); render(); toast(e.message,1); });
   if(!S.pstore) call('dashboardProgStoreList').then(function(r){ S.pstore=r; render(); }).catch(function(){}); }
 function pickClient(n){ S.client=n; lss('coach_c',n); SWAP=null; history.replaceState(null,'','?tab='+S.tab+(n?'&c='+encodeURIComponent(n):'')); S.M=null; S.P=null; if(n){ loadMenuCtx(); loadProgCtx(); } render(); }
