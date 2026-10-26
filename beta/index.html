@@ -2047,6 +2047,17 @@ function wireChatVoice(x){ x.querySelectorAll('.cvp').forEach(function(b){ var i
 /* ===== תשלום (רק כשאביאל מפעיל): יתרה מהלוח וכפתור לדף התשלום הקבוע שלו ===== */
 function payHtml(){ var p=D&&D.pay; if(!p||!(Number(p.bal)>0)||!/^https:\/\//.test(String(p.link||''))) return '';
   return '<div class="news paycard"><div class="row"><b>יתרה לתשלום</b><small class="num">'+Number(p.bal).toLocaleString('he-IL')+' ₪</small></div><p>אפשר לשלם כאן בכרטיס אשראי, בדף התשלום המאובטח. אחרי התשלום אביאל מעדכן את היתרה.</p><a class="vplay" target="_blank" rel="noopener" href="'+esc(p.link)+'">לתשלום</a></div>'; }
+/* ===== חידוש (27.10.26, אביאל אישר): שבוע לפני הסוף — באנר בבית; חודש חסד — תפריט, אימון ויומן מוסתרים מאחורי כרטיס חידוש, השקילה וההתקדמות פתוחות ===== */
+function renewHtml(cls,title,txt,x){ return '<div class="card '+cls+'" style="border-color:var(--gold-d)"><b>'+esc(title)+'</b><div class="sub" style="margin:6px 0 12px;line-height:1.6">'+esc(txt)+'</div><a class="wa" style="background:var(--gold);border-color:var(--gold);color:#120f0a" href="'+esc(x.wa||'https://wa.me/972537718200')+'" target="_blank" rel="noopener">חידוש המנוי בוואטסאפ</a>'+(x.pay?'<a class="wa" style="margin-top:8px" href="'+esc(x.pay)+'" target="_blank" rel="noopener">לתשלום</a>':'')+'</div>'; }
+function renderRenew(){ var g=D&&D.grace, e=D&&D.endsIn; document.body.classList.toggle('grace',!!g);
+  document.querySelectorAll('.renewcard').forEach(function(n){ n.remove(); });
+  var home=document.querySelector('section[data-view="home"]'); if(!home) return;
+  var atHome=function(html){ var w=document.createElement('div'); w.innerHTML=html; var n=w.firstChild, c=home.querySelector('.card'); if(c) c.parentNode.insertBefore(n,c); else home.appendChild(n); };
+  if(g){ atHome(renewHtml('renewcard','הליווי הסתיים',(g.end?'הליווי הסתיים ב-'+g.end+'. ':'')+'עוד '+g.grace+' ימים השקילות וההתקדמות נשארות פתוחות. התפריט והתוכנית חוזרים ברגע שמחדשים.',g));
+    ['menu','train','food'].forEach(function(v){ var s=document.querySelector('section[data-view="'+v+'"]'); if(!s) return; var w=document.createElement('div'); w.innerHTML=renewHtml('renewcard gracecard',v==='menu'?'התפריט חוזר עם החידוש':v==='train'?'התוכנית חוזרת עם החידוש':'היומן חוזר עם החידוש','כל מה שרשמת שמור. מחדשים, וממשיכים בדיוק מאיפה שעצרת.',g); s.insertBefore(w.firstChild,s.firstChild); });
+  } else if(e){ atHome(renewHtml('renewcard',e.days===0?'היום מסתיים הליווי':e.days===1?'מחר מסתיים הליווי':'עוד '+e.days+' ימים מסתיים הליווי','התהליך מסתיים ב-'+e.end+'. כדי להמשיך בלי הפסקה, מחדשים עכשיו.',e)); } }
+var _renderRenew=render; render=function(){ _renderRenew.apply(this,arguments); try{ renderRenew(); }catch(er){} };
+(function(){ var st=document.createElement('style'); st.textContent='body.grace section[data-view="menu"]>:not(.gracecard),body.grace section[data-view="train"]>:not(.gracecard),body.grace section[data-view="food"]>:not(.gracecard){display:none!important}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
