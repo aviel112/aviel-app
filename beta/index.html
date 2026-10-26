@@ -394,6 +394,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .news.guides .gd small{display:block;color:var(--mute);font-size:13px;margin-top:2px}
 .news.guides .gd i{font-style:normal;font-weight:700;font-size:13px;color:var(--gold);white-space:nowrap}
 .askf{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.ciqin{width:100%;font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);margin:4px 0 6px}
 .chat{display:flex;flex-direction:column;gap:6px;margin-top:8px}.chat .cb{max-width:86%;align-self:flex-start;background:var(--soft);border:1px solid var(--line);border-radius:16px 16px 5px 16px;padding:8px 12px;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}.chat .cb.me{align-self:flex-end;background:var(--text);color:var(--ink);border-color:var(--text);border-radius:16px 16px 16px 5px}.chat .cb small{display:block;font-size:12px;opacity:.7;margin-top:2px}.chat .cb i{font-style:normal;opacity:.8}
 .askf textarea{width:100%;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
 .askf button{min-height:40px}
@@ -924,6 +925,7 @@ document.querySelectorAll('.scale,.pct').forEach(function(s){ s.addEventListener
 function picked(q){ var b=document.querySelector('[data-q="'+q+'"] [aria-pressed="true"]'); return b?b.textContent:''; }
 $('#ciForm').addEventListener('submit',function(e){ e.preventDefault();
   var a={energy:picked('energy'),hunger:picked('hunger'),sleep:picked('sleep'),adh:picked('adh'),note:$('#ciNote').value};
+  a.extra=[].map.call(document.querySelectorAll('input[data-ciq]'),function(x){ return {q:x.dataset.ciq,a:String(x.value||'').trim()}; }).filter(function(x){ return x.a; });
   if(!a.energy||!a.hunger||!a.sleep||!a.adh){ toast('מסמנים תשובה בכל שורה',1); return; }
   $('#ciBtn').disabled=true; api('checkin',a).then(function(){ D.checkinDone=true; render(); toast('נשלח לאביאל. התשובה תגיע לשיחה בבית'); }).catch(function(er){ toast(er.message||'לא נשלח, נסו שוב',1); $('#ciBtn').disabled=false; }); });
 
@@ -1332,7 +1334,7 @@ function renderTodayCard(){ try{ applyMode(); }catch(e){}
     '<div class="habits" role="group" aria-label="הרגלים להיום">'+HABITS.map(function(h){ var on=!!hb.map[h.id]; return '<button type="button" class="hb'+(on?' on':'')+'" data-h="'+h.id+'" aria-pressed="'+on+'"><span class="tdc">'+(on?IC_OK:'')+'</span>'+esc(h.t)+'</button>'; }).join('')+'</div>'+
     (n===it.length?'<div class="tdall">הכל סגור להיום. ככה בונים תוצאות.</div>':'');
   el.querySelectorAll('.hb').forEach(function(b){ b.onclick=function(){ habitSet(b.dataset.h,b.getAttribute('aria-pressed')!=='true'); renderTodayCard(); }; });
-  wireInbox(el);
+  wireInbox(el); ciExtraRender();
   el.querySelectorAll('.tdi').forEach(function(b){ b.onclick=function(){ var k=b.dataset.k;
     if(k==='w'){ var w=document.getElementById('wIn'); w.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){ w.focus(); },350); }
     else if(k==='t') show('train'); else if(k==='f') show(P&&P.menu&&P.menu.blocks&&P.menu.blocks.length?'menu':'food');
@@ -1879,6 +1881,11 @@ function renderFreeBox(){ var M=P&&P.menu; if(!M||!M.blocks) return; var cards=d
 
 
 (function(){ var st=document.createElement('style'); st.textContent='.ytl{display:block;text-align:center;margin:10px 0 2px;padding:11px;border-radius:12px;border:1px solid var(--line);color:var(--text,inherit);font-weight:700;text-decoration:none}'; document.head.appendChild(st); })();
+
+/* ===== שאלות נוספות של אביאל בצ׳ק-אין השבועי (מגיעות עם ה-inbox) ===== */
+function ciExtraRender(){ var f=document.getElementById('ciForm'), L=INBOX&&INBOX.ciQ; if(!f||!L||!L.length) return; var key=L.join('|'); if(f.dataset.ciqk===key) return; f.dataset.ciqk=key;
+  f.querySelectorAll('.ciqx').forEach(function(x){ x.remove(); }); var anchor=f.querySelector('label[for="ciNote"]');
+  L.forEach(function(q,i){ var w=document.createElement('div'); w.className='ciqx'; w.innerHTML='<label class="q" for="ciq'+i+'">'+esc(q)+'</label><input id="ciq'+i+'" class="ciqin" data-ciq="'+esc(q)+'" maxlength="300" autocomplete="off">'; f.insertBefore(w,anchor); }); }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
