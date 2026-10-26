@@ -280,19 +280,30 @@ function drawActivity(){ var box=$('section[data-v="today"]'); if(!box||!ACT) re
   box.appendChild(el); el.querySelectorAll('[data-card]').forEach(function(b){ b.onclick=function(){ openCard(b.dataset.card); }; }); tidyToday(); }
 /* פגישות השבוע: מהלוח (פגישה הבאה + שעה), לפי יום, עם תזכורת בוואטסאפ */
 var DAYN=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-function drawMeetings(){ var box=$('section[data-v="today"]'); if(!box||!L) return; var old=box.querySelector('#meetBox'); if(old) old.remove();
-  var t0=new Date(); t0.setHours(0,0,0,0); var list=active().filter(function(c){ return c.nextMeeting; }).map(function(c){ var d=new Date(c.nextMeeting+'T12:00:00'); d.setHours(0,0,0,0); return {c:c,d:d,g:Math.round((d-t0)/864e5)}; }).filter(function(x){ return x.g>=0&&x.g<=7; })
-    .sort(function(a,b){ return a.g-b.g||String(a.c.meetingTime||'').localeCompare(String(b.c.meetingTime||'')); });
+/* פגישות השבוע: מהלוח (פגישה הבאה) + ממערכת הזימון (BKS). אותו אדם באותו יום מוצג פעם אחת, עם הסטטוס מהזימון */
+var BKS=null;
+function drawMeetings(){ var box=$('section[data-v="today"]'); if(!box||!L) return; var old=box.querySelector('#meetBox');
+  var t0=new Date(); t0.setHours(0,0,0,0), ph9=function(p){ return String(p||'').replace(/[^0-9]/g,'').slice(-9); };
+  var byPh={}; active().forEach(function(c){ var k=ph9(c.phone); if(k.length===9) byPh[k]=c; });
+  var list=active().filter(function(c){ return c.nextMeeting; }).map(function(c){ var d=new Date(c.nextMeeting+'T12:00:00'); d.setHours(0,0,0,0); return {c:c,name:c.name,phone:c.phone,time:c.meetingTime||'',d:d,g:Math.round((d-t0)/864e5)}; }).filter(function(x){ return x.g>=0&&x.g<=7; });
+  ((BKS&&BKS.list)||[]).forEach(function(b){ var d=new Date(b.date+'T12:00:00'); d.setHours(0,0,0,0); var g=Math.round((d-t0)/864e5); if(g<0||g>7) return; var c=byPh[ph9(b.phone)]||null;
+    var dup=list.filter(function(x){ return x.g===g&&(c&&x.c===c||ph9(x.phone)===ph9(b.phone)); })[0]; var it=dup||{c:c,name:c?c.name:b.name,phone:b.phone,d:d,g:g}; it.time=b.time||it.time; it.bk=b; if(!dup) list.push(it); });
+  list.sort(function(a,b){ return a.g-b.g||String(a.time||'').localeCompare(String(b.time||'')); });
   var el=document.createElement('div'); el.id='meetBox'; el.className='card';
-  if(!list.length){ el.innerHTML='<div class="gh">פגישות השבוע</div><div class="s" style="font-size:13px;color:var(--mute)">אין פגישות שנקבעו ל-7 הימים הקרובים.</div>'; box.appendChild(el); return; }
-  var lbl=function(x){ return x.g===0?'היום':x.g===1?'מחר':'יום '+DAYN[x.d.getDay()]+' '+('0'+x.d.getDate()).slice(-2)+'/'+('0'+(x.d.getMonth()+1)).slice(-2); }, cur='', h='<div class="gh">פגישות השבוע · '+list.length+'</div>';
+  var src=BKS&&BKS.off?'':BKS&&BKS.err?'<div class="s" style="font-size:12.5px;color:var(--orange);margin-bottom:6px">'+esc(BKS.err)+'</div>':BKS?'':'<div class="s" style="font-size:12.5px;color:var(--mute);margin-bottom:6px">טוען גם ממערכת הזימון…</div>';
+  if(!list.length){ el.innerHTML='<div class="gh">פגישות השבוע</div>'+src+'<div class="s" style="font-size:13px;color:var(--mute)">אין פגישות שנקבעו ל-7 הימים הקרובים.</div>'; if(old) old.replaceWith(el); else box.appendChild(el); return; }
+  var ST={pending:['ממתין לאישור','w'],approved:['מאושר',''],completed:['בוצע','g'],noshow:['לא הגיע/ה','r']};
+  var lbl=function(x){ return x.g===0?'היום':x.g===1?'מחר':'יום '+DAYN[x.d.getDay()]+' '+('0'+x.d.getDate()).slice(-2)+'/'+('0'+(x.d.getMonth()+1)).slice(-2); }, cur='', h='<div class="gh">פגישות השבוע · '+list.length+'</div>'+src;
   list.forEach(function(x){ var L1=lbl(x); if(L1!==cur){ cur=L1; h+='<div class="mday">'+esc(L1)+'</div>'; }
-    var ph=String(x.c.phone||'').replace(/[^0-9]/g,''); if(ph.charAt(0)==='0') ph='972'+ph.slice(1); var g=genderOf(x.c.name), when=(x.g===0?'היום':x.g===1?'מחר':'ביום '+DAYN[x.d.getDay()])+(x.c.meetingTime?' בשעה '+x.c.meetingTime:'');
-    var txt='היי '+first(x.c.name)+', תזכורת לפגישת הסיכום שלנו '+when+'. '+(g==='f'?'תביאי':g==='m'?'תביא':'כדאי להביא')+' את השקילות והשאלות שלך. נתראה!';
-    h+='<div class="item"><div class="t"><div class="n">'+esc(x.c.name)+'</div><div class="s">'+(x.c.meetingTime?esc(x.c.meetingTime):'בלי שעה')+'</div></div>'+(ph?'<button class="wa" data-mrem="'+esc(x.c.name)+'" data-u="'+esc('https://wa.me/'+ph+'?text='+encodeURIComponent(txt))+'">תזכורת</button>':'')+'<button class="btn" data-card="'+esc(x.c.name)+'">כרטיס</button></div>'; });
-  el.innerHTML=h; box.appendChild(el);
+    var ph=String(x.phone||'').replace(/[^0-9]/g,''); if(ph.charAt(0)==='0') ph='972'+ph.slice(1); var g=genderOf(x.name), when=(x.g===0?'היום':x.g===1?'מחר':'ביום '+DAYN[x.d.getDay()])+(x.time?' בשעה '+x.time:'');
+    var txt='היי '+first(x.name)+', תזכורת לפגישה שלנו '+when+'. '+(x.c?(g==='f'?'תביאי':g==='m'?'תביא':'כדאי להביא')+' את השקילות והשאלות שלך. ':'')+'נתראה!';
+    var st=x.bk?(x.bk.status==='approved'&&x.bk.confirmed?['אישר/ה הגעה','g']:ST[x.bk.status]||['','']):null;
+    h+='<div class="item"><div class="t"><div class="n">'+esc(x.name)+(x.c?'':' <span class="tag">לא בלוח</span>')+'</div><div class="s">'+(x.time?esc(x.time):'בלי שעה')+(x.bk&&x.bk.service?' · '+esc(x.bk.service):'')+(st&&st[0]?' · <span class="tag'+(st[1]?' '+st[1]:'')+'">'+esc(st[0])+'</span>':'')+(x.bk?' · <span class="s" style="font-size:11.5px">מהזימון</span>':'')+'</div></div>'+(ph.length>=11?'<button class="wa" data-mrem="'+esc(x.name)+'" data-u="'+esc('https://wa.me/'+ph+'?text='+encodeURIComponent(txt))+'">תזכורת</button>':'')+(x.c?'<button class="btn" data-card="'+esc(x.c.name)+'">כרטיס</button>':'')+'</div>'; });
+  el.innerHTML=h; if(old) old.replaceWith(el); else box.appendChild(el);
   el.querySelectorAll('[data-mrem]').forEach(function(b){ b.onclick=function(){ composeWa(b.dataset.u,b.dataset.mrem); }; });
   el.querySelectorAll('[data-card]').forEach(function(b){ b.onclick=function(){ openCard(b.dataset.card); }; }); }
+function loadBookings(fresh){ try{ google.script.run.withSuccessHandler(function(r){ BKS=r||{list:[]}; try{ drawMeetings(); }catch(e){} }).withFailureHandler(function(){ BKS={err:'מערכת הזימון לא זמינה כרגע',list:[]}; try{ drawMeetings(); }catch(e){} }).dashboardBookings(!!fresh); }catch(e){} }
+setTimeout(function(){ loadBookings(false); },1200); setInterval(function(){ loadBookings(false); },600000);
 /* סדר מסך המשימות: קודם מה שדורש פעולה (מצב בוקר, אדומים, משימות), אחר כך תמונת מצב ופעילות, וכל הכלים בקופסה אחת למטה */
 var TOOLS_OPEN=false;
 function tidyToday(){ var box=$('section[data-v="today"]'); if(!box) return; var kids=[].slice.call(box.children); if(kids.length<3) return;
