@@ -903,12 +903,12 @@ function drawChart(data){
 
 var MLABELS=[];
 function drawMeasures(m){
-  MLABELS = m&&m.labels ? m.labels.filter(function(l){ return l && !/ממוצע/.test(l); }) : [];
+  MLABELS = m&&m.labels ? m.labels.filter(function(l,i,arr){ return l && !/ממוצע/.test(l) && arr.map(function(x){ return String(x).trim(); }).indexOf(String(l).trim())===i; }) : []; // בלי כפילויות ("חזה" פעמיים בקובץ)
   $('#mGrid').innerHTML = MLABELS.map(function(l,i){ return '<label for="mi'+i+'">'+esc(l)+'<input id="mi'+i+'" data-l="'+esc(l)+'" inputmode="decimal"></label>'; }).join('');
   $('#mOpen').hidden = !MLABELS.length;
   if(!m||!m.rows||!m.rows.length){ $('#mTable').innerHTML='<div class="sub" style="padding-top:8px">עוד אין מדידות. המדידה הראשונה נותנת נקודת התחלה.</div>'; return; }
   var f=m.rows[0], l=m.rows[m.rows.length-1], h='<table><thead><tr><th>היקף</th><th>'+esc(f.date)+'</th>'+(m.rows.length>1?'<th>'+esc(l.date)+'</th><th>שינוי</th>':'')+'</tr></thead><tbody>';
-  m.labels.forEach(function(lb,i){ var a=f.vals[i], b=l.vals[i]; if(!lb||(a===''&&b==='')) return; var ch=(m.rows.length>1&&a!==''&&b!=='')?Math.round((b-a)*10)/10:null;
+  var seenL={}; m.labels.forEach(function(lb,i){ var a=f.vals[i], b=l.vals[i]; if(!lb||(a===''&&b==='')||seenL[String(lb).trim()]) return; seenL[String(lb).trim()]=1; var ch=(m.rows.length>1&&a!==''&&b!=='')?Math.round((b-a)*10)/10:null;
     h+='<tr><td>'+esc(lb)+'</td><td class="num">'+esc(a)+'</td>'+(m.rows.length>1?'<td class="num">'+esc(b)+'</td><td class="num '+(ch<0?'good':'')+'">'+(ch==null?'':(ch>0?'+':ch<0?'−':'')+Math.abs(ch))+'</td>':'')+'</tr>'; });
   $('#mTable').innerHTML=h+'</tbody></table>';
 }
@@ -1709,7 +1709,7 @@ function drawTrk(){ var host=document.getElementById('chart'); if(!host||!D) ret
     var mn=Math.min.apply(null,vs), mx=Math.max.apply(null,vs), pad=(mx-mn)*0.15||(TRK.m==='st'?500:0.5); mn-=pad; mx+=pad;
     var X=function(k){ return L+(Wd-L-R)*(pd(k).getTime()-t0)/(t1-t0); }, Y=function(v){ return T+(Hd-T-B)*(mx-v)/(mx-mn); };
     var P=pts.map(function(x){ return [X(x.k),Y(x.v)]; }), line=trkSmooth(P), g='';
-    for(var i=0;i<4;i++){ var gv=mn+(mx-mn)*i/3; g+='<line x1="'+L+'" x2="'+(Wd-R)+'" y1="'+Y(gv).toFixed(1)+'" y2="'+Y(gv).toFixed(1)+'"/><text x="'+(L-6)+'" y="'+(Y(gv)+4).toFixed(1)+'" text-anchor="end">'+(TRK.m==='st'?Math.round(gv/1000*10)/10+'K':Math.round(gv))+'</text>'; }
+    for(var i=0;i<4;i++){ var gv=mn+(mx-mn)*i/3; g+='<line x1="'+L+'" x2="'+(Wd-R)+'" y1="'+Y(gv).toFixed(1)+'" y2="'+Y(gv).toFixed(1)+'"/><text x="'+(L-6)+'" y="'+(Y(gv)+4).toFixed(1)+'" text-anchor="end">'+(TRK.m==='st'?Math.round(gv/1000*10)/10+'K':(mx-mn)<4?gv.toFixed(1):Math.round(gv))+'</text>'; }
     var lp=P[P.length-1], fp=P[0];
     h+='<div class="tchart"><svg viewBox="0 0 '+Wd+' '+Hd+'" role="img" aria-label="'+W.t+': מ-'+trkFmt(vs[0])+' ל-'+trkFmt(last)+' '+unit+'"><defs><linearGradient id="tgf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".32"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><g class="tgrid">'+g+'</g><path class="tarea" d="'+line+' L'+lp[0].toFixed(1)+' '+(Hd-B)+' L'+fp[0].toFixed(1)+' '+(Hd-B)+' Z" fill="url(#tgf)"/><path class="tline" d="'+line+'"/>'+P.map(function(p,i){ return '<circle class="tpt'+(i===P.length-1?' tlast':'')+'" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="'+(i===P.length-1?5:3)+'" data-ti="'+i+'"/>'; }).join('')+'</svg><div class="ttip" id="ttip" hidden></div></div>'; }
   el.innerHTML=h; el.style.color='';
