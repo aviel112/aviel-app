@@ -1,0 +1,14 @@
+// AVIEL ניהול: התראה כשמתאמן/ת שולח/ת שאלה, הודעה קולית או צ׳ק-אין
+const API = 'https://script.google.com/macros/s/AKfycbxSkxJJ1ODs067IOfDkuosXzKX-pVi2W7uTcWKAS-7YFuh8PW9mrjSS8bNC4SaiRTkP/exec';
+const ps = () => caches.open('aviel-coach-ps').then(c => c.match('ps')).then(r => r ? r.text() : '').catch(() => '');
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+self.addEventListener('push', e => {
+  e.waitUntil(ps().then(s => fetch(API + '?api=coachnote&ps=' + encodeURIComponent(s) + '&_=' + Date.now()).then(r => r.json()))
+    .then(j => (j && j.ok && j.r) ? j.r : null).catch(() => null)
+    .then(m => self.registration.showNotification((m && m.title) || 'AVIEL ניהול', { body: (m && m.body) || 'יש עדכון מהמתאמנים', icon: 'icon-192.png', badge: 'icon-192.png', lang: 'he', dir: 'rtl', tag: 'coach-' + Date.now() })));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => ws.length ? ws[0].focus() : clients.openWindow('./')));
+});
