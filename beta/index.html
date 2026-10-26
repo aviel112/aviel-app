@@ -610,7 +610,7 @@ input,select,textarea{font-size:16px}
 @media (prefers-reduced-motion:reduce){.exanim img:nth-child(2){animation:none;opacity:0}}
 @media (prefers-contrast:more){:root{--mute:var(--text)}.card,.news{border-width:2px}}
 
-</style><script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script><script>(function(){var t='light';try{t=localStorage.getItem('aviel_theme')||'light';}catch(e){}document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#f7f3ec':'#0d0d0f';})();</script></head>
+</style><script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script><script>(function(){var t=null;try{t=localStorage.getItem('aviel_theme');}catch(e){}if(t!=='light'&&t!=='dark')t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#f7f3ec':'#0d0d0f';})();</script></head>
 <body>
 <div class="app">
   <header class="top"><div class="brand">AVIEL · ליווי אישי <span class="beta">בטא</span></div><div class="topr"><button type="button" class="thbtn" id="helpBtn" aria-label="הסבר על המסך הזה"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6"/><path d="M12 17.2h.01"/></svg></button><button type="button" class="thbtn" id="thBtn" aria-label="החלפת עיצוב"></button><div class="avatar" id="av" aria-hidden="true"></div></div></header>
@@ -2014,6 +2014,8 @@ function payHtml(){ var p=D&&D.pay; if(!p||!(Number(p.bal)>0)||!/^https:\/\//.te
   function cur(){ return document.documentElement.getAttribute('data-theme')||'light'; }
   function paint(){ var l=cur()==='light'; b.innerHTML=l?MOON:SUN; b.setAttribute('aria-label',l?'מעבר לעיצוב כהה':'מעבר לעיצוב בהיר'); var m=document.querySelector('meta[name=theme-color]'); if(m) m.content=l?'#f7f3ec':'#0d0d0f'; }
   b.onclick=function(){ var n=cur()==='light'?'dark':'light'; document.documentElement.setAttribute('data-theme',n); try{ localStorage.setItem('aviel_theme',n); }catch(e){} paint(); try{ if(typeof drawChart==='function') drawChart(); }catch(e){} };
+  /* בלי בחירה שמורה: עוקבים אחרי הטלפון (בהיר/כהה), גם כשהוא מתחלף בערב */
+  try{ var mq=matchMedia('(prefers-color-scheme: dark)'), on=function(){ var s=null; try{ s=localStorage.getItem('aviel_theme'); }catch(e){} if(s==='light'||s==='dark') return; document.documentElement.setAttribute('data-theme',mq.matches?'dark':'light'); paint(); try{ if(typeof drawChart==='function') drawChart(); }catch(e){} }; if(mq.addEventListener) mq.addEventListener('change',on); else if(mq.addListener) mq.addListener(on); }catch(e){}
   paint(); })();
 </script><script>
 /* הסבר קצר לכל מסך (עד 5 שורות) + מסך פתיחה חד-פעמי */
