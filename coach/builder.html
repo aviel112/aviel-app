@@ -39,6 +39,8 @@ h2{font-size:15px;margin:0 0 10px;font-weight:700}
 .upl input{display:none}
 /* totals */
 .tot .row{display:grid;grid-template-columns:60px 1fr auto;gap:8px;align-items:center;margin:7px 0;font-size:13.5px}
+.tot .mrow{grid-template-columns:56px 1fr auto 62px auto;gap:6px}
+.tgi{width:62px;padding:4px 6px;font-size:14px;text-align:center}
 .track{height:7px;border-radius:9px;background:var(--line2);overflow:hidden}
 .track i{display:block;height:100%;border-radius:9px;background:var(--acc)}
 .tot .big{font-size:26px;font-weight:800}
@@ -168,6 +170,34 @@ document.addEventListener('keydown',function(e){ if(!AC||e.target!==AC.input) re
 
 /* ===== תפריט: מודל ===== */
 function emptyMenu(T){ return {T:T||1700, free:0, notes:'', meals:[['ארוחת בוקר'],['ארוחת ביניים'],['ארוחת צהריים'],['ארוחת ערב']].map(function(t){ return {title:t[0], rows:[{label:'חלבון',opts:[]},{label:'פחמימה',opts:[]}]}; })}; }
+/* יחידות (ביצה, קוטג׳, טונה…): הערכים מחושבים מהכמות שכתובה בטקסט, אף פעם לא "מנופחים" בלי שהטקסט משתנה.
+   ביצה וחלבון ביצה וקוטג׳ לפי מאגר משרד הבריאות (ביצה L: 60 גרם בלי קליפה). השאר: הערכים המאושרים של PDF Studio */
+var UNITS=[ // [יחיד, רבים, כינויים…], חלבון, פחמימה, שומן ליחידה, צעד
+  [['ביצה','ביצים','ביצה שלמה','ביצים שלמות','ביצה L','ביצים L'],7.56,0.42,5.7,1],
+  [['חלבון ביצה','חלבוני ביצה','חלבון','חלבונים'],3.6,0.23,0.07,1],
+  [['גביע קוטג׳ 3%','גביעי קוטג׳ 3%','גביע קוטג','גביעי קוטג','גביע קוטג 3','גביעי קוטג 3','קוטג','קוטג 3'],27.5,3.75,7.5,0.5],
+  [['קופסת טונה','קופסאות טונה','קופסת טונה במים','קופסאות טונה במים','טונה','טונה במים'],26,0,1,1],
+  [['פרוסת צהובה 9%','פרוסות צהובה 9%','פרוסת צהובה','פרוסות צהובה','פרוסת צהובה 9','פרוסות צהובה 9','פרוסת גבינה צהובה','פרוסות גבינה צהובה','פרוסת גבינה צהובה 9','פרוסות גבינה צהובה 9'],7.4,0.2,2.1,1],
+  [['יוגורט חלבון','יוגורטי חלבון','יוגורט חלבון 0'],20,10,1,1],
+  [['מעדן חלבון','מעדני חלבון'],20,11,1,1],
+  [['פרוסת לחם קל','פרוסות לחם קל','פרוסה לחם קל'],2.3,8,0.4,1],
+  [['דף אורז','דפי אורז'],0.6,8.3,0.06,1],
+  [['טורטיה','טורטיות','טורטייה','טורטיות קטנות'],3.6,22.5,3.2,1],
+  [['פרי','פירות','פרי אחד'],1,21,0.3,1]];
+var NUMW={'חצי':0.5,'אחד':1,'אחת':1,'שני':2,'שתי':2,'שתיים':2,'שניים':2,'שלוש':3,'שלושה':3,'ארבע':4,'ארבעה':4,'חמש':5,'חמישה':5};
+function unitKey(x){ return String(x||'').replace(/\([^)]*\)/g,' ').replace(/[׳'"״%.,]/g,'').replace(/\s+/g,' ').trim(); }
+var UIDX=null; function unitIdx(){ if(!UIDX){ UIDX={}; UNITS.forEach(function(u,i){ u[0].forEach(function(n){ UIDX[unitKey(n)]=i; }); }); } return UIDX; }
+function parsePart(x){ x=String(x||'').replace(/\([^)]*\)/g,' ').replace(/\s+/g,' ').trim(); if(!x) return null; var n=1, m;
+  if((m=x.match(/^(\d+(?:\.\d+)?)\s*(?:גרם|גר|ג׳|ג')\s+(.+)$/))){ var f=findFood(m[2]); return f?{g:+m[1],food:f[0],per:[f[1],f[2],f[3]]}:null; }
+  if((m=x.match(/^(\d+(?:\.\d+)?|\d+\/\d+)\s+(.+)$/))){ n=m[1].indexOf('/')>0?(+m[1].split('/')[0])/(+m[1].split('/')[1]):+m[1]; x=m[2]; }
+  else { var w=x.split(' ')[0]; if(NUMW[w]!=null&&x.indexOf(' ')>0){ n=NUMW[w]; x=x.slice(w.length+1); } }
+  var k=unitKey(x), i=unitIdx()[k]; if(i==null){ var w2=k.split(' '); if(NUMW[w2[w2.length-1]]!=null){ n*=NUMW[w2.pop()]; i=unitIdx()[w2.join(' ')]; } } // "פרי אחד"
+  if(i==null) return null; return {n:n,u:i}; }
+function parseCombo(t){ var parts=String(t||'').split('+').map(function(x){ return x.trim(); }).filter(Boolean); if(!parts.length) return null; var out=[];
+  for(var i=0;i<parts.length;i++){ var q=parsePart(parts[i]); if(!q) return null; out.push(q); } return out; }
+function comboM(parts){ var m=[0,0,0]; parts.forEach(function(q){ var v=q.per?q.per.map(function(x){ return x*q.g/100; }):UNITS[q.u].slice(1,4).map(function(x){ return x*q.n; }); for(var i=0;i<3;i++) m[i]+=v[i]; }); return m; }
+function partText(q){ if(q.per) return q.g+' גרם '+q.food; var u=UNITS[q.u][0]; return q.n===1?u[0]:q.n===0.5?'חצי '+u[0]:(q.n%1?q.n:q.n)+' '+u[1]; }
+function comboOpt(t,parts){ return {t:t, parts:parts, m:comboM(parts)}; }
 function optFrom(f,g){ var per=[f[1],f[2],f[3]]; g=Math.max(0,Math.round(+g||0)); return {t:g+' גרם '+f[0], food:f[0], g:g, per:per, m:per.map(function(x){ return x*g/100; }), k100:f[4]}; }
 function setG(o,g){ g=Math.max(0,Math.round(+g||0)); o.g=g; if(o.per){ o.m=o.per.map(function(x){ return x*g/100; }); o.t=g+' גרם '+o.food; } }
 function matchG(base,f){ // גרמים לחלופה: אותן קלוריות (או אותו חלבון)
@@ -180,6 +210,7 @@ function fromStored(M){ // מתפריט שמור/מיובא לפורמט הבו�
   M.meals=(M.meals||[]).map(function(ml){ return {title:ml.title||'', note:ml.note||'', rows:(ml.rows||[]).map(function(r){ return {label:r.label||'', alt:!!r.alt, opts:(r.opts||[]).map(function(o){
     if(o.food&&o.per) return {t:o.t, food:o.food, g:o.g, per:o.per, m:o.per.map(function(x){ return x*o.g/100; })};
     if(o.food&&o.g){ var f=findFood(o.food); if(f) return optFrom(f,o.g); return {t:o.t, raw:o.food, g:o.g, m:[0,0,0], unm:1}; }
+    var pc=parseCombo(o.t); if(pc) return comboOpt(o.t,pc);
     if(o.m&&(o.m[0]||o.m[1]||o.m[2])) return {t:o.t, m:o.m};
     return {t:o.t, raw:o.t, g:0, m:[0,0,0], unm:1}; })}; })}; });
   if(M.free==null) M.free=0; return M; }
@@ -239,7 +270,8 @@ function menuMain(){ var M=S.M; if(!M) return '<div class="card empty">טוען�
   var t=totals(M), T=+M.T||0, k=Math.round((t.lo[0]+t.hi[0])/2), pc=T?Math.min(100,Math.round(k/T*100)):0, mid=function(i){ return Math.round((t.lo[i]+t.hi[i])/2); };
   var unm=0; M.meals.forEach(function(ml){ ml.rows.forEach(function(r){ r.opts.forEach(function(o){ if(o.unm) unm++; }); }); });
   h+='<aside class="side"><div class="card pad tot"><h2>סה״כ ליום</h2><div><span class="big num">'+k.toLocaleString()+'</span> <span class="of">/ <input type="number" id="mT" value="'+T+'" step="50" style="width:78px;padding:3px 6px"> קק״ל יעד</span></div><div class="rng num">טווח לפי הבחירות: '+Math.round(t.lo[0])+'–'+Math.round(t.hi[0])+'</div><div class="track" style="margin-top:8px"><i style="width:'+pc+'%;background:'+(pc>108?'var(--bad)':pc<92?'var(--warn)':'var(--ok)')+'"></i></div>'+(T&&k&&Math.abs(k-T)/T>0.04?'<button id="mFit" style="width:100%;margin-top:10px">התאמה ליעד ('+T.toLocaleString()+')</button>':'')+
-    [['חלבון','p',1,4],['פחמימה','c',2,4],['שומן','f',3,9]].map(function(x){ var g=mid(x[2]), share=k?Math.round(g*x[3]/k*100):0; return '<div class="row"><span>'+x[0]+'</span><div class="track"><i style="width:'+share+'%;background:var(--'+x[1]+')"></i></div><span class="num">'+g+' ג׳ · '+share+'%</span></div>'; }).join('')+'</div>'+
+    '<div class="muted" style="margin:10px 0 2px">יעד בגרמים (אפשר לכתוב, הקלוריות מתעדכנות)</div>'+[['חלבון','p',1,4],['פחמימה','c',2,4],['שומן','f',3,9]].map(function(x){ var g=mid(x[2]), tg=M.tg&&M.tg[x[1]]||0, pcx=tg?Math.min(100,Math.round(g/tg*100)):(k?Math.round(g*x[3]/k*100):0), off=tg&&Math.abs(g-tg)/tg>0.1;
+      return '<div class="row mrow"><span>'+x[0]+'</span><div class="track"><i style="width:'+pcx+'%;background:var(--'+x[1]+')"></i></div><span class="num"'+(off?' style="color:var(--bad)"':'')+'>'+g+' / </span><input type="number" inputmode="numeric" class="tgi num" data-tg="'+x[1]+'" value="'+(tg||'')+'" placeholder="'+g+'" aria-label="יעד '+x[0]+' בגרם"><span class="muted">ג׳</span></div>'; }).join('')+(M.tg?'<button class="g" id="mTgClr" style="margin-top:4px;font-size:12.5px">ניקוי יעד גרמים</button>':'')+'</div>'+
     (unm?'<div class="card pad" style="border-color:#f0c88a;background:var(--warn-l)"><b>'+unm+' מאכלים לבחירה</b><div class="muted">מסומנים בצהוב. מקלידים בשדה ובוחרים מהרשימה.</div></div>':'')+
     '<div class="card pad"><button class="p" id="mCreate" style="width:100%;padding:11px">צור תפריט בתיקייה</button><div class="bar" style="margin:10px 0 0"><input id="mTpl" placeholder="שם לתבנית" style="flex:1"><button id="mTplSave">שמירה כתבנית</button></div><div class="muted" id="mLast"></div><button class="send" data-send="menu">שליחה למתאמן בוואטסאפ (PDF)</button><div class="muted">שולח את התפריט האחרון שבתיקייה</div></div>'+
     '<div class="card pad"><h2>מאכל חדש למאגר שלי</h2><div class="muted" style="margin-bottom:6px">ערכים ל-100 גרם</div><input id="nfN" placeholder="שם" style="width:100%;margin-bottom:6px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"><input id="nfK" type="number" placeholder="קק״ל"><input id="nfP" type="number" placeholder="חלבון"><input id="nfC" type="number" placeholder="פחמ׳"><input id="nfF" type="number" placeholder="שומן"></div><button id="nfSave" style="width:100%;margin-top:8px">שמירה במאגר</button></div></aside>';
@@ -249,7 +281,9 @@ function candHtml(raw,key){ var L=searchFoods(raw,4); if(!L.length) L=searchFood
 function wireMenu(){ var M=S.M; if(!M) return;
   var at=function(key){ var k=key.split('|').map(Number); return {ml:M.meals[k[0]], r:M.meals[k[0]].rows[k[1]], o:k.length>2?M.meals[k[0]].rows[k[1]].opts[k[2]]:null, k:k}; };
   var upd=function(){ saveDraft(); render(); };
-  document.querySelectorAll('[data-fs]').forEach(function(inp){ inp.onfocus=function(){ inp.select(); }; inp.oninput=function(){ if(!AC||AC.input!==inp) openAC(inp,'food',function(f){ var a=at(inp.dataset.fs), first=a.r.opts[0], g=a.k[2]>0&&first&&first.m?matchG(first,f):(a.o&&a.o.g?a.o.g:100); a.r.opts[a.k[2]]=optFrom(f,g); upd(); }); else fillAC(); }; });
+  document.querySelectorAll('[data-fs]').forEach(function(inp){ var orig=at(inp.dataset.fs).o; inp.onfocus=function(){ inp.select(); };
+    inp.onchange=function(){ var a=at(inp.dataset.fs); if(a.o!==orig) return; var v=inp.value.trim(); if(!v||v===(orig.food||orig.raw||orig.t)) return; var pc=parseCombo(v);
+      if(pc){ closeAC(); a.r.opts[a.k[2]]=comboOpt(v,pc); upd(); } }; inp.oninput=function(){ if(!AC||AC.input!==inp) openAC(inp,'food',function(f){ var a=at(inp.dataset.fs), first=a.r.opts[0], g=a.k[2]>0&&first&&first.m?matchG(first,f):(a.o&&a.o.g?a.o.g:100); a.r.opts[a.k[2]]=optFrom(f,g); upd(); }); else fillAC(); }; });
   document.querySelectorAll('[data-cand]').forEach(function(b){ b.onclick=function(){ var p=b.dataset.cand.split('|'), a=at(p.slice(0,3).join('|')), L=searchFoods(a.o.raw,4); if(!L.length) L=searchFoods(String(a.o.raw).split(' ')[0],4); var f=L[+p[3]]; if(f){ a.r.opts[a.k[2]]=optFrom(f,a.o.g||100); upd(); } }; });
   document.querySelectorAll('[data-g]').forEach(function(inp){ inp.onchange=function(){ var a=at(inp.dataset.g); setG(a.o,inp.value); upd(); }; });
   document.querySelectorAll('[data-odel]').forEach(function(b){ b.onclick=function(){ var a=at(b.dataset.odel); a.r.opts.splice(a.k[2],1); upd(); }; });
@@ -263,13 +297,18 @@ function wireMenu(){ var M=S.M; if(!M) return;
   document.querySelectorAll('[data-mmv]').forEach(function(b){ b.onclick=function(){ var p=b.dataset.mmv.split('|').map(Number), j=p[0]+p[1]; if(j<0||j>=M.meals.length) return; var t=M.meals[p[0]]; M.meals[p[0]]=M.meals[j]; M.meals[j]=t; upd(); }; });
   $('#mAddMeal').onclick=function(){ M.meals.push({title:'ארוחה חדשה',rows:[{label:'',opts:[]}]}); upd(); };
   $('#mFree').onchange=function(){ M.free=Math.max(0,Math.round(+this.value||0)); upd(); };
-  $('#mT').onchange=function(){ M.T=Math.round(+this.value||0); upd(); };
+  $('#mT').onchange=function(){ var nt=Math.round(+this.value||0); if(M.tg&&M.T>0&&nt>0){ var r=nt/M.T; ['p','c','f'].forEach(function(x){ M.tg[x]=Math.round(M.tg[x]*r); }); } M.T=nt; upd(); };
+  document.querySelectorAll('[data-tg]').forEach(function(inp){ inp.onchange=function(){ var t=totals(M), mid=function(i){ return Math.round((t.lo[i]+t.hi[i])/2); }, T=+M.T||0;
+    if(!M.tg){ var p=mid(1)||Math.round(T*.3/4), c=mid(2)||Math.round(T*.4/4), f=mid(3)||Math.round(T*.3/9); M.tg={p:p,c:c,f:f}; }
+    var v=Math.round(+inp.value||0); if(v>0) M.tg[inp.dataset.tg]=v; M.T=Math.round((4*M.tg.p+4*M.tg.c+9*M.tg.f)/10)*10; upd(); }; });
+  var tgc=$('#mTgClr'); if(tgc) tgc.onclick=function(){ delete M.tg; upd(); };
   $('#mNotes').onchange=function(){ M.notes=this.value; saveDraft(); };
   $('#mBy').onchange=function(){ S.by=this.value; };
   $('#mAuto').onclick=function(){ var has=M.meals.some(function(ml){ return ml.rows.some(function(r){ return r.opts.length; }); }); if(has&&!window.confirm('לבנות תפריט מוכן? מה שבנית כאן יוחלף.')) return; var b=this; b.disabled=true; b.textContent='בונה…';
     call('dashboardMenuPreview',S.client,Math.round(+M.T||1700),{}).then(function(r){ (r.foods||[]).forEach(function(f){ if(!S.foods.some(function(x){ return x[0]===f[0]; })) S.foods.push(f); }); FOODS_CACHE=null; var X=fromStored(r.M); X.T=M.T; X.notes=M.notes||''; S.M=X; upd(); toast('התפריט מוכן. עוברים ומשנים מה שצריך'); }).catch(function(e){ b.disabled=false; b.textContent='תפריט מוכן לפי היעד'; toast(e.message,1); }); };
   var fit=$('#mFit'); if(fit) fit.onclick=function(){ var t=totals(M), cur=(t.lo[0]+t.hi[0])/2-(+M.free||0), want=(+M.T||0)-(+M.free||0); if(!(cur>0&&want>0)){ toast('אין עדיין מה להתאים',1); return; } var f=want/cur;
-    M.meals.forEach(function(ml){ ml.rows.forEach(function(r){ r.opts.forEach(function(o){ if(o.per&&o.g){ setG(o,Math.max(5,Math.round(o.g*f/5)*5)); } else if(o.m){ o.m=o.m.map(function(x){ return x*f; }); } }); }); }); upd(); toast('כל הכמויות עודכנו ליעד'); };
+    M.meals.forEach(function(ml){ ml.rows.forEach(function(r){ r.opts.forEach(function(o){ if(o.per&&o.g){ setG(o,Math.max(5,Math.round(o.g*f/5)*5)); } else if(o.parts){ var np=o.parts.map(function(q){ if(q.per) return {g:Math.max(5,Math.round(q.g*f/5)*5),food:q.food,per:q.per}; var st=UNITS[q.u][4]; return {n:Math.max(st,Math.round(q.n*f/st)*st),u:q.u}; });
+          if(JSON.stringify(np)!==JSON.stringify(o.parts)){ o.parts=np; o.t=np.map(partText).join(' + '); o.m=comboM(np); } } }); }); }); upd(); toast('הכמויות עודכנו ליעד (ביחידות: ביצים, גביעים, פרוסות)'); };
   $('#mNew').onclick=function(){ if(!window.confirm('להתחיל תפריט ריק? מה שבנית כאן יימחק.')) return; S.M=emptyMenu((S.msug&&S.msug.T)||M.T); upd(); };
   $('#mLoad').onchange=function(){ var v=this.value; if(!v) return; var kd=v.split('|')[0], src=v.split('|').slice(1).join('|'); toast('טוען…'); call('dashboardMenuStoreLoad',S.client,kd,src).then(function(r){ (r.foods||[]).forEach(function(f){ if(!S.foods.some(function(x){ return x[0]===f[0]; })) S.foods.push(f); }); FOODS_CACHE=null; var X=fromStored(r.M); X.T=X.T||M.T; X.notes=M.notes||''; S.M=X; upd(); toast('נטען: '+src); }).catch(function(e){ toast(e.message,1); }); };
   $('#mFile').onchange=function(){ var f=this.files[0]; this.value=''; if(!f) return; if(f.size>9e6){ toast('הקובץ גדול מדי',1); return; } toast('קורא את הקובץ…'); var fr=new FileReader(); fr.onload=function(){ call('dashboardMenuImport',S.client,fr.result,f.type,f.name).then(function(r){ (r.foods||[]).forEach(function(x){ if(!S.foods.some(function(y){ return y[0]===x[0]; })) S.foods.push(x); }); FOODS_CACHE=null; var X=fromStored({meals:r.meals,free:r.free||0}); X.T=M.T; X.notes=M.notes||''; S.M=X; upd(); var u=0; X.meals.forEach(function(ml){ ml.rows.forEach(function(rr){ rr.opts.forEach(function(o){ if(o.unm) u++; }); }); }); toast('נטען מהקובץ'+(u?' · '+u+' מאכלים לבחירה בצהוב':'')); }).catch(function(e){ toast(e.message,1); }); }; fr.readAsDataURL(f); };

@@ -153,6 +153,28 @@ a.wa,a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-c
 .obd{display:flex;gap:4px;margin:10px 0 8px}.obd i{flex:1;height:6px;border-radius:9px;background:var(--line)}.obd i.on{background:var(--green)}.obd i.now{background:var(--blue)}
 .obn{font-weight:700;font-size:16px;margin-bottom:2px}
 .howto{background:var(--blue-l);border-color:transparent}.howto ol{margin:6px 0 0;padding-right:20px;font-size:14.5px;line-height:1.7}
+
+
+/* מסכים (26.10.26): טלפון קטן, טאבלט, מחשב — אותו עיצוב, פריסה שמתאימה לרוחב */
+@media (max-width:360px){html,body{font-size:14px}.top{padding-inline:12px}.kpis{gap:6px;padding:8px 12px}.kpi{padding:8px 4px}.kpi b{font-size:19px}.kpi span{font-size:11px}main{padding-inline:12px}.qbar{grid-template-columns:repeat(2,1fr)}nav button{font-size:12px;padding:8px 2px}}
+@media (min-width:700px) and (max-width:999px){.top,.kpis,main,nav{max-width:760px}.sheet{max-width:680px}html,body{font-size:15.5px}}
+@media (min-width:1000px){
+html,body{font-size:15.5px}
+body{display:flex;flex-direction:column;min-height:100vh}
+.top{order:0}.kpis{order:1}nav{order:2}main{order:3}
+.top,.kpis,main,nav{width:calc(100% - 48px);max-width:1180px;margin-inline:auto}
+.top{padding:26px 4px 6px}.top h1{font-size:27px}#rfBtn{left:4px!important;top:26px!important}
+.kpis{gap:14px;padding:12px 0}.kpi{padding:14px 16px}.kpi b{font-size:28px}.kpi span{font-size:13.5px}
+nav{position:sticky;top:0;bottom:auto;left:auto;right:auto;z-index:8;border:1px solid var(--line);border-radius:14px;padding:6px;margin-block:4px 6px;box-shadow:0 6px 18px -14px rgba(22,32,44,.35)}
+nav button{font-size:14.5px;padding:10px 6px}
+main{padding:6px 0 48px}
+main>section:not([hidden]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px;align-items:start}
+main>section>*{grid-column:1/-1;min-width:0}
+main>section>.card,main>section>details.box{grid-column:auto}main>section>.howto{grid-column:1/-1}
+.toast{bottom:24px;left:50%;right:auto;transform:translateX(-50%);min-width:280px;max-width:520px}
+.ov{align-items:center}.sheet{max-width:680px;border-radius:20px;max-height:88vh}
+}
+@media (min-width:1500px){.top,.kpis,main,nav{max-width:1320px}main>section:not([hidden]){grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style></head><body>
 <div class="top"><h1 id="hi">שלום אביאל</h1><div class="d" id="today"></div><button class="btn x" id="rfBtn" type="button" style="position:absolute;left:16px;top:18px;padding:8px 12px;font-size:13px">רענון</button></div>
 <div class="kpis">
