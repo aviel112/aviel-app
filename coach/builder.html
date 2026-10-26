@@ -383,7 +383,9 @@ function wireProg(){ var P=S.P; if(!P) return; var upd=function(){ saveDraft(); 
 }
 
 /* ===== טעינה ===== */
-function loadMenuCtx(){ var c=S.client; S.M=lsg('coach_draft_menu_'+c,null); S.msug=null;
+// טיוטה שמורה: מחשבים מחדש כל אפשרות מהטקסט, כדי שערכים חדשים (ביצה, קוטג׳…) ייכנסו גם לתפריט שכבר התחלת
+function refreshMenu(M){ if(!M||!M.meals) return M; M.meals.forEach(function(ml){ (ml.rows||[]).forEach(function(r){ r.opts=(r.opts||[]).map(function(o){ if(o.per&&o.food) return o; var pc=parseCombo(o.t||o.raw); return pc?comboOpt(o.t||o.raw,pc):o; }); }); }); return M; }
+function loadMenuCtx(){ var c=S.client; S.M=refreshMenu(lsg('coach_draft_menu_'+c,null)); S.msug=null;
   call('dashboardMenuSuggest',c).then(function(r){ if(S.client!==c) return; S.msug=r; if(!S.M) S.M=emptyMenu(r.T||1700); if(!S.M.T) S.M.T=r.T||1700; render(); }).catch(function(e){ if(!S.M) S.M=emptyMenu(1700); render(); toast(e.message,1); });
   if(!S.mstore) call('dashboardMenuStoreList').then(function(r){ S.mstore=r; render(); }).catch(function(){}); }
 function loadProgCtx(){ var c=S.client; S.P=lsg('coach_draft_prog_'+c,null); S.psug=null;
