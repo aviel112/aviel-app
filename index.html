@@ -398,6 +398,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .chat{display:flex;flex-direction:column;gap:6px;margin-top:8px}.chat .cb{max-width:86%;align-self:flex-start;background:var(--soft);border:1px solid var(--line);border-radius:16px 16px 5px 16px;padding:8px 12px;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}.chat .cb.me{align-self:flex-end;background:var(--text);color:var(--ink);border-color:var(--text);border-radius:16px 16px 16px 5px}.chat .cb small{display:block;font-size:12px;opacity:.7;margin-top:2px}.chat .cb i{font-style:normal;opacity:.8}
 .askf textarea{width:100%;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
 .askf button{min-height:40px}
+.ctl .cti{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.ctl .cti:first-of-type{border-top:0}.ctl .cti .tdc{flex:none;background:transparent;border:2px solid var(--line);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;padding:0;min-height:0;color:var(--good)}.ctl .cti.ok .tdc{border-color:var(--good)}.ctl .ctt{flex:1;min-width:0;display:flex;flex-direction:column}.ctl .ctt small{font-size:12.5px;color:var(--mute)}.ctl .ctt small.late{color:var(--bad);font-weight:700}.ctl .cti.ok b{text-decoration:line-through;opacity:.6}
 .fpend{color:var(--mute);font-size:12px;margin-inline-start:6px}
 .setrow .sundo{background:var(--good)!important;color:#fff!important;border-color:var(--good)!important}.setrow .sundo.arm{background:var(--bad)!important;border-color:var(--bad)!important;font-size:12.5px;font-weight:800;padding:0 6px;white-space:nowrap}
 a.vplay{text-decoration:none}.vmeet .vplay{margin:8px 0 0}
@@ -1539,10 +1540,10 @@ function renderExtras(el){ var x=document.getElementById('extras'), wf=document.
   if(!x){ x=document.createElement('div'); x.id='extras'; } if(x.previousSibling!==at) at.parentNode.insertBefore(x,at.nextSibling);
   var x2=document.getElementById('extras2'); if(!x2){ x2=document.createElement('div'); x2.id='extras2'; } if(x2.parentNode!==at.parentNode||x2.nextSibling) at.parentNode.appendChild(x2);
   /* למעלה: רק מה שדורש פעולה עכשיו. השקילה מעליהם. למטה: שבועי, אתגר, מדריכים ושאלה */
-  x.innerHTML=videoMeetHtml()+firstWeekHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+photoDueHtml()+reportHtml();
+  x.innerHTML=videoMeetHtml()+ctasksHtml()+firstWeekHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+photoDueHtml()+reportHtml();
   x2.innerHTML=recapHtml()+boardHtml()+guidesHtml()+askHtml();
   wireAsk(x2);
-  wireMonthly(x);
+  wireMonthly(x); wireCtasks(x);
   wireBlood(x); var sx=x.querySelector('#suppX'); if(sx) sx.onclick=function(){ lsSet('aviel_supp_seen',INBOX.supp.at); renderExtras(document.getElementById('todayCard')); };
   if(!BOARD_TRIED&&typeof api==='function'){ BOARD_TRIED=true; api('board',{}).then(function(r){ BOARD=r; renderExtras(el); }).catch(function(){}); } }
 
@@ -1955,6 +1956,21 @@ function wireUndo(f,e){ var b=f.querySelector('.sundo'); if(!b) return; var arme
     clearTimeout(tmr); var ins=f.querySelectorAll('input'), kg=parseFloat(String(ins[0].value).replace(',','.')), reps=parseInt(ins[1].value,10); b.disabled=true; b.textContent='מבטל…';
     api('liftdel',{ex:e.ex,kg:kg,reps:reps}).then(function(r){ P.lifts=normLifts(r); toast('הסט בוטל'); var y=window.scrollY; renderTrain(); window.scrollTo(0,y); drawStrength(); })
     .catch(function(er){ armed=0; b.disabled=false; b.classList.remove('arm'); b.innerHTML=html; toast(er.message||'לא בוטל, נסו שוב',1); }); }; }
+
+/* ===== משימות מאביאל: מה לעשות ועד מתי, סימון "בוצע", וקיצור לפעולה עצמה ===== */
+var CTASKS=null, CT_TRIED=false;
+function ctasksHtml(){ if(!CT_TRIED&&typeof api==='function'){ CT_TRIED=true; api('ctasks',{}).then(function(r){ CTASKS=r||[]; renderExtras(document.getElementById('todayCard')); }).catch(function(){}); }
+  var L=(CTASKS||[]).filter(function(x){ return !x.done||String(x.done).slice(0,10)===TODAY; }); if(!L.length) return '';
+  var GO={photo:'לצילום',measure:'למדידה',checkin:'לצ׳ק-אין',guide:'למדריכים'}, dd=function(s){ return s.slice(8,10)+'/'+s.slice(5,7); };
+  return '<div class="news ctl"><div class="row"><b>משימות מאביאל</b><small>'+(function(n){ return n===0?'הכל בוצע':n===1?'אחת פתוחה':n+' פתוחות'; })(L.filter(function(x){ return !x.done; }).length)+'</small></div>'+L.map(function(x){ var late=!x.done&&x.due&&x.due<TODAY, today=!x.done&&x.due===TODAY;
+    return '<div class="cti'+(x.done?' ok':'')+'"><button type="button" class="tdc" data-ctid="'+esc(x.id)+'" aria-pressed="'+(!!x.done)+'" aria-label="'+(x.done?'ביטול סימון':'סימון בוצע')+'">'+(x.done?IC_OK:'')+'</button><span class="ctt"><b>'+esc(x.t)+'</b>'+(x.done?'<small>בוצע היום</small>':x.due?'<small class="'+(late?'late':'')+'">'+(late?'באיחור · ':'')+(today?'היום':'עד '+dd(x.due))+'</small>':'')+'</span>'+(!x.done&&GO[x.kind]?'<button type="button" class="linkbtn" data-ctgo="'+x.kind+'">'+GO[x.kind]+'</button>':'')+'</div>'; }).join('')+'</div>'; }
+function wireCtasks(x){ x.querySelectorAll('[data-ctid]').forEach(function(b){ b.onclick=function(){ var id=b.dataset.ctid, it=(CTASKS||[]).filter(function(t){ return t.id===id; })[0]; if(!it) return; var undo=!!it.done; it.done=undo?'':new Date().toISOString(); renderExtras(document.getElementById('todayCard')); if(!undo) toast('כל הכבוד. אביאל רואה שסיימת');
+      api('ctaskdone',{id:id,undo:undo?1:0}).then(function(r){ CTASKS=r||CTASKS; }).catch(function(er){ it.done=undo?new Date().toISOString():''; renderExtras(document.getElementById('todayCard')); toast(er.message||'לא נשמר',1); }); }; });
+  x.querySelectorAll('[data-ctgo]').forEach(function(b){ b.onclick=function(){ var k=b.dataset.ctgo;
+    if(k==='photo'){ show('prog'); setTimeout(function(){ var i=document.getElementById('phIn'); if(i) i.click(); },300); }
+    else if(k==='measure'){ show('prog'); setTimeout(function(){ var f=document.getElementById('mForm'); if(f){ f.hidden=false; f.scrollIntoView({behavior:'smooth',block:'center'}); } },300); }
+    else if(k==='checkin'){ var c=document.getElementById('ciForm')||document.getElementById('ciDone'); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); }
+    else if(k==='guide'){ var g=document.querySelector('.news.guides'); if(g) g.scrollIntoView({behavior:'smooth',block:'center'}); } }; }); }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
