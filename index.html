@@ -398,6 +398,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .chat{display:flex;flex-direction:column;gap:6px;margin-top:8px}.chat .cb{max-width:86%;align-self:flex-start;background:var(--soft);border:1px solid var(--line);border-radius:16px 16px 5px 16px;padding:8px 12px;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}.chat .cb.me{align-self:flex-end;background:var(--text);color:var(--ink);border-color:var(--text);border-radius:16px 16px 16px 5px}.chat .cb small{display:block;font-size:12px;opacity:.7;margin-top:2px}.chat .cb i{font-style:normal;opacity:.8}
 .askf textarea{width:100%;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
 .askf button{min-height:40px}
+.setrow .sundo{background:var(--good)!important;color:#fff!important;border-color:var(--good)!important}.setrow .sundo.arm{background:var(--bad)!important;border-color:var(--bad)!important;font-size:12.5px;font-weight:800;padding:0 6px;white-space:nowrap}
 a.vplay{text-decoration:none}.vmeet .vplay{margin:8px 0 0}
 .askrow{display:flex;gap:8px}.askrow button[type=submit]{flex:1}.mic{display:inline-flex;align-items:center;gap:6px;flex:none;padding:0 14px;background:transparent!important;color:var(--text)!important;border:1px solid var(--line)!important}.mic.rec{border-color:var(--bad)!important;color:var(--bad)!important;animation:micp 1.2s ease-in-out infinite}@keyframes micp{50%{opacity:.6}}@media (prefers-reduced-motion:reduce){.mic.rec{animation:none}}
 .projgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
@@ -1229,7 +1230,7 @@ function renderTrain(){
       for(var k=0;k<Math.max(n,today.length);k++){
         var dn=today[k], pv=ps[k]||ps[ps.length-1], li=LASTIN[e.ex]||{};
         var kg=dn?dn.kg:(li.kg!=null?li.kg:(sg?sg.kg:(pv?pv.kg:''))), rp=dn?dn.reps:(li.reps!=null?li.reps:(sg?sg.reps:(R?R[1]:(pv?pv.reps:''))));
-        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal"'+(sg&&sg.up&&!dn?' class="upk"':'')+' value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select aria-label="כמה חזרות עוד יכולת לעשות בסט '+(k+1)+'"'+(dn?' disabled':'')+'>'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):''; return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+(o===''?'—':(o==='4'?'4+':o))+'</option>'; }).join('')+'</select><button type="submit"'+(dn?' disabled':'')+' aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button></form>';
+        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal"'+(sg&&sg.up&&!dn?' class="upk"':'')+' value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select aria-label="כמה חזרות עוד יכולת לעשות בסט '+(k+1)+'"'+(dn?' disabled':'')+'>'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):''; return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+(o===''?'—':(o==='4'?'4+':o))+'</option>'; }).join('')+'</select>'+(dn?'<button type="button" class="sundo" aria-label="ביטול סט '+(k+1)+' שסומן">'+IC_CHECK+'</button>':'<button type="submit" aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button>')+'</form>';
       }
       h+='</div>';
       if(!ls('aviel_rir_seen',0)&&!rirHelp&&(rirHelp=1)) h+='<div class="rirhelp">RIR = כמה חזרות עוד יכולת לעשות בסוף הסט (0 = כשל). לא חובה, אבל ככה ההמלצה מדויקת יותר</div>';
@@ -1243,18 +1244,23 @@ function renderTrain(){
     var sets=0, vol=0, prs=0, rdy=0; d.ex.forEach(function(e){ var L=P.lifts&&P.lifts[e.ex]; if(!L||!L.hist) return; var td=L.hist.filter(function(x){ return x.d===TODAY; }); if(!td.length) return; var pb=L.hist.filter(function(x){ return x.d&&x.d<TODAY; }).reduce(function(a,x){ return Math.max(a,x.kg); },0), tt=Math.max.apply(null,td.map(function(x){ return x.kg; }));
       sets+=td.length; td.forEach(function(x){ vol+=x.kg*x.reps; }); if(pb&&tt>pb) prs++; var R3=/כשל/.test(e.r)?null:rng(e.r), at=td.filter(function(x){ return x.kg===tt; }), ns=parseInt(e.s,10)||1; if(R3&&at.length>=ns&&at.every(function(x){ return x.reps>=R3[1]; })) rdy++; });
     if(sets) showFinish(DAY+1,sets,vol,prs,rdy); else toast('כל הכבוד! אימון '+(DAY+1)+' הושלם'); var dm=doneMap(); for(var q=0;q<days.length;q++){ if(!dm[q]){ DAY=q; break; } } renderTrain(); window.scrollTo(0,0); };
-  box.querySelectorAll('form.setrow').forEach(function(f){ f.onsubmit=function(ev){ ev.preventDefault();
+  box.querySelectorAll('form.setrow').forEach(function(f){ if(f.querySelector('.sundo')) wireUndo(f,d.ex[+f.dataset.i]); });
+  box.querySelectorAll('form.setrow').forEach(function(f){ f.onsubmit=function(ev){ ev.preventDefault(); if(f.classList.contains('ok')) return;
     var e=d.ex[+f.dataset.i], ins=f.querySelectorAll('input'), kg=parseFloat(String(ins[0].value).replace(',','.')), reps=parseInt(ins[1].value,10), rs=f.querySelector('select'), rir=rs&&rs.value!==''?+rs.value:null;
     if(!(kg>=0&&kg<500)||!(reps>=1&&reps<=100)){ toast('ממלאים משקל וחזרות',1); return; }
     var L0=P.lifts&&P.lifts[e.ex], best=L0&&L0.hist.length?L0.best:null, btn=f.querySelector('button'); btn.disabled=true; f.classList.add('ok'); LASTIN[e.ex]={kg:kg,reps:reps};
     // המשקל עובר מיד לסטים הבאים שעוד לא בוצעו — בלי לחכות לשמירה
     var nx=f.nextElementSibling; while(nx&&nx.classList.contains('setrow')){ if(!nx.classList.contains('ok')){ var ni=nx.querySelectorAll('input'); if(ni[0]&&!ni[0].value) ni[0].value=kg; } nx=nx.nextElementSibling; }
     if(rir!=null) lsSet('aviel_rir_seen',1);
+    ins.forEach(function(x){ x.disabled=true; }); if(rs) rs.disabled=true; restStart(restMin(e.rest));
     api('lift',{ex:e.ex,mu:e.mu,kg:kg,reps:reps,rir:rir}).then(function(r){ P.lifts=normLifts(r); LASTIN[e.ex]={kg:kg,reps:reps};
       var R2=/כשל/.test(e.r)?null:rng(e.r), L2=P.lifts&&P.lifts[e.ex], td=L2?L2.hist.filter(function(x){ return x.d===TODAY&&x.kg===kg; }):[], ns=parseInt(e.s,10)||0;
       var done=R2&&ns&&td.length>=ns&&td.every(function(x){ return x.reps>=R2[1]; });
-      toast(done?'הגעת ל-'+R2[1]+' חזרות בכל הסטים! בפעם הבאה עולים '+incFor(e,kg)+' ק״ג':(best!=null&&kg>best?'שיא חדש! '+kg+' ק״ג':'סט נשמר · '+kg+'×'+reps)); var y=window.scrollY; renderTrain(); window.scrollTo(0,y); drawStrength(); restStart(restMin(e.rest)); })
-    .catch(function(er){ toast(er.message||'לא נשמר',1); btn.disabled=false; f.classList.remove('ok'); });
+      toast(done?'הגעת ל-'+R2[1]+' חזרות בכל הסטים! בפעם הבאה עולים '+incFor(e,kg)+' ק״ג':(best!=null&&kg>best?'שיא חדש! '+kg+' ק״ג':'סט נשמר · '+kg+'×'+reps));
+      var ae=document.activeElement, typing=ae&&ae.closest&&ae.closest('form.setrow')&&ae.closest('form.setrow')!==f;
+      if(typing){ btn.type='button'; btn.classList.add('sundo'); btn.disabled=false; wireUndo(f,e); } else { var y=window.scrollY; renderTrain(); window.scrollTo(0,y); }
+      drawStrength(); })
+    .catch(function(er){ toast(er.message||'לא נשמר',1); btn.disabled=false; f.classList.remove('ok'); ins.forEach(function(x){ x.disabled=false; }); if(rs) rs.disabled=false; });
   }; });
 }
 /* תפריט: לוחצים על האפשרות שבחרת — ההחלפה נשמרת להיום */
@@ -1913,6 +1919,13 @@ function wireMic(x){ var b=x.querySelector('#askMic'); if(!b) return; var lbl=b.
 /* ===== פגישת וידאו עם אביאל (למתאמנים אונליין): מופיע ביום הפגישה ויום לפניה ===== */
 function videoMeetHtml(){ if(!INBOX||!INBOX.video||!D||!D.meeting||!D.meeting.date) return ''; var g=Math.round((new Date(D.meeting.date+'T12:00:00')-new Date(TODAY+'T12:00:00'))/864e5); if(g<0||g>1) return '';
   return '<div class="news vmeet"><div class="row"><b>פגישת וידאו עם אביאל</b><small>'+(g===0?'היום':'מחר')+(D.meeting.time?' · '+esc(D.meeting.time):'')+'</small></div><p>'+(g===0?'נכנסים כמה דקות לפני, עם השקילות והשאלות שלך.':'מחר נפגשים בווידאו. אפשר לשמור את הכפתור הזה, הוא יחכה כאן.')+'</p><a class="vplay" target="_blank" rel="noopener" href="'+esc(INBOX.video)+'">הצטרפות לפגישה</a></div>'; }
+
+/* ===== ביטול סט שסומן בטעות: לחיצה על הווי → "ביטול?" (3 שניות) → לחיצה שנייה מוחקת את הרישום ===== */
+function wireUndo(f,e){ var b=f.querySelector('.sundo'); if(!b) return; var armed=0, tmr=null, html=b.innerHTML;
+  b.onclick=function(){ if(!armed){ armed=1; b.classList.add('arm'); b.textContent='ביטול?'; tmr=setTimeout(function(){ armed=0; b.classList.remove('arm'); b.innerHTML=html; },3000); return; }
+    clearTimeout(tmr); var ins=f.querySelectorAll('input'), kg=parseFloat(String(ins[0].value).replace(',','.')), reps=parseInt(ins[1].value,10); b.disabled=true; b.textContent='מבטל…';
+    api('liftdel',{ex:e.ex,kg:kg,reps:reps}).then(function(r){ P.lifts=normLifts(r); toast('הסט בוטל'); var y=window.scrollY; renderTrain(); window.scrollTo(0,y); drawStrength(); })
+    .catch(function(er){ armed=0; b.disabled=false; b.classList.remove('arm'); b.innerHTML=html; toast(er.message||'לא בוטל, נסו שוב',1); }); }; }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
