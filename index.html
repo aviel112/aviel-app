@@ -766,7 +766,9 @@ function fileBlock(f, what){
   var pv=previewUrl(f.url);
   return (pv?'<iframe class="doc" src="'+pv+'" title="'+esc(f.name)+'" loading="lazy"></iframe>':'')+'<a class="open" href="'+esc(f.url)+'" target="_blank" rel="noopener">לפתוח את ה'+what+' במסך מלא</a>';
 }
-function emptyBlock(what){ return '<div class="card"><div class="sub">ה'+what+' שלך עוד בהכנה. אביאל יעדכן כאן ברגע שהוא מוכן.</div></div>'; }
+function emptyBlock(what){ var fem=/תוכנית/.test(what); /* "התוכנית... ברגע שהיא מוכנה", "התפריט... ברגע שהוא מוכן" */
+  return '<div class="card"><div class="sub">ה'+what+' שלך עוד בהכנה. אביאל יעדכן כאן ברגע ש'+(fem?'היא מוכנה':'הוא מוכן')+'.</div>'+
+    '<div class="sub" style="margin-top:8px">בינתיים: שקילה כל בוקר לפני אוכל ושתייה, וצעדים כל יום. ככה כשה'+what+' '+(fem?'תגיע':'יגיע')+', כבר יש נתונים לכוון לפיהם.</div></div>'; }
 
 /* ---------- עזרים ---------- */
 var TODAY=(function(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); })();
