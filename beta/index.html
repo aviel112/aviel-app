@@ -361,7 +361,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .fstats b{font-size:22px;font-weight:800}
 .fstats span{font-size:12.5px;color:var(--mute)}
 .fin .fbig{animation:fup .6s cubic-bezier(.16,1,.3,1)}
-.fin .fshare{width:100%;margin-top:16px;min-height:48px;border-color:var(--gold-d);color:var(--gold)}
+.fin .fshare{width:100%;margin-top:16px;min-height:48px}.fin .fshare.ghost{border-color:var(--gold-d);color:var(--gold)} /* אחרי שיא: כפתור מלא עם טקסט כהה; בלי שיא: מסגרת זהב */
 .fin .fclose{margin-top:10px}
 @keyframes fup{from{transform:translateY(10px);opacity:0}}
 .ba{position:relative;margin-top:12px;border-radius:16px;overflow:hidden;aspect-ratio:3/4;background:var(--panel2);user-select:none;-webkit-user-select:none;touch-action:pan-y}
@@ -1397,9 +1397,9 @@ function showFinish(day,sets,vol,prs,rdy){
   s.innerHTML='<div class="sheet-in fin"><div class="label" id="fnT">אימון '+day+' הושלם</div><div class="fbig num">'+Math.round(vol).toLocaleString('he-IL')+'<small> ק״ג</small></div>'+
     (like?'<div class="flike">הרמת היום בערך כמו <b>'+esc(like)+'</b></div>':'')+
     '<div class="fstats"><div><b class="num">'+sets+'</b><span>סטים</span></div><div><b class="num">'+prs+'</b><span>שיאים חדשים</span></div><div><b class="num">'+rdy+'</b><span>מוכנים להעלאה</span></div></div>'+
-    (prs>0?'<div class="fpr">שיא חדש. שווה סטורי: לשתף ולתייג את <b>@avielife1</b>, ואני משתף בחזרה.</div>':'')+
+    (prs>0?'<div class="fpr">שיא חדש. שווה סטורי: לשתף ולתייג את <b dir="ltr">@avielife1</b>, ואני משתף בחזרה.</div>':'')+
     '<div class="wfeel" role="group" aria-label="איך היה האימון"><span>איך היה?</span>'+[[1,'קל מדי'],[2,'בדיוק'],[3,'קשה מדי']].map(function(o){ return '<button type="button" class="chip" data-wf="'+o[0]+'" aria-pressed="false">'+o[1]+'</button>'; }).join('')+'</div>'+
-    '<button type="button" class="'+(prs>0?'fshare':'ghost fshare')+'">שיתוף לסטורי</button><button type="button" class="fclose">סגירה</button></div>';
+    '<button type="button" class="'+(prs>0?'fshare':'ghost fshare')+'">שיתוף לסטורי</button><button type="button" class="'+(prs>0?'ghost fclose':'fclose')+'">סגירה</button></div>'; /* כפתור ראשי אחד בכל פעם */
   var close=function(){ s.remove(); document.removeEventListener('keydown',onk); }, onk=function(e){ if(e.key==='Escape') close(); };
   s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('.fclose').onclick=close;
   s.querySelectorAll('[data-wf]').forEach(function(b){ b.onclick=function(){ var f=+b.dataset.wf, prev=s.querySelector('[data-wf][aria-pressed="true"]'); s.querySelectorAll('[data-wf]').forEach(function(x){ x.setAttribute('aria-pressed',x===b?'true':'false'); });
