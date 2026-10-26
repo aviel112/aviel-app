@@ -359,7 +359,8 @@ function renderToday(){
 }
 function dots(p){ var sp=(p&&p.spark)||[]; var h=''; for(var i=0;i<7;i++) h+='<i class="'+(sp[i]!=null?'on':'')+'"></i>'; return '<div class="dots" aria-label="שקילות ב-7 הימים האחרונים">'+h+'</div>'; }
 /* תגיות: מסמנים מתאמנים (מתאמן איתי, אונליין, VIP...) ומסננים לפיהן ברשימה */
-var TAGS={}, TAG_DEF=['מתאמן איתי','אונליין','פרונטלי','VIP'];
+var TAGS={}, TAG_DEF=['מתאמן איתי','אונליין','פרונטלי','VIP','בדיקה'];
+function isTest(n){ return (TAGS[n]||[]).indexOf('בדיקה')>=0; } /* תגית "בדיקה" = לקוח פיקטיבי: לא בטבלת השבוע ולא בתור ההזמנות */
 function tagAll(){ var all=[]; Object.keys(TAGS).forEach(function(k){ (TAGS[k]||[]).forEach(function(t){ if(all.indexOf(t)<0) all.push(t); }); }); TAG_DEF.forEach(function(t){ if(all.indexOf(t)<0) all.push(t); }); return all; }
 function tagFilters(){ var used=[]; Object.keys(TAGS).forEach(function(k){ (TAGS[k]||[]).forEach(function(t){ if(used.indexOf(t)<0) used.push(t); }); }); return used.map(function(t){ return ['t:'+t,t,function(c){ return (TAGS[c.name]||[]).indexOf(t)>=0; }]; }); }
 function tagBox(d){ var cur=TAGS[d.name]||[];
@@ -384,13 +385,13 @@ document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&
 /* השבוע במבט: שורה לכל מתאמן/ת — שקילות ב-7 ימים, ימי אימון מיום ראשון, צ׳ק-אין, כניסה אחרונה. ירוק = בסדר, אדום = דורש פנייה */
 function weekTable(list){ if(!PU) return ''; var dow=new Date().getDay(), t0=new Date(new Date().toDateString());
   var ago=function(p,n){ if(!p.app) return '<td class="mu">'+(MODE?'בלי אפליקציה':'<button class="qrc" data-appinv="'+esc(n)+'">הזמנה לאפליקציה</button>')+'</td>'; if(!p.seen) return '<td class="bad">לא נכנס/ה</td>'; var g=Math.round((t0-new Date(p.seen+'T00:00:00'))/864e5); return '<td class="'+(g<=1?'ok':g>=5?'bad':'')+'">'+(g<=0?'היום':g===1?'אתמול':'לפני '+g+' ימים')+'</td>'; };
-  var rows=list.map(function(c){ var p=PU[c.name]; if(!p||p.err) return ''; var lv=p.risk?p.risk.lvl:'green';
+  var rows=list.map(function(c){ var p=PU[c.name]; if(!p||p.err||isTest(c.name)) return ''; var lv=p.risk?p.risk.lvl:'green';
     return '<tr data-wkc="'+esc(c.name)+'"><th scope="row"><i class="wkd '+lv+'"></i>'+esc(c.name)+'</th><td class="'+(p.n7>=5?'ok':p.n7<=2?'bad':'')+'">'+(p.n7==null?'–':p.n7+'/7')+'</td><td class="'+(p.lw>=2?'ok':!p.lw&&dow>=4?'bad':'')+'">'+(p.lw==null?'–':p.lw)+'</td><td class="'+(p.ci?'ok':dow>=3&&p.app?'bad':'')+'">'+(p.ci==null?'–':p.ci?'נשלח':'עוד לא')+'</td>'+ago(p,c.name)+'</tr>'; }).join('');
-  if(!rows) return ''; var noApp=list.filter(function(c){ var p=PU[c.name]; return p&&!p.err&&!p.app; }).length;
+  if(!rows) return ''; var noApp=list.filter(function(c){ var p=PU[c.name]; return p&&!p.err&&!p.app&&!isTest(c.name); }).length;
   return '<details class="box wk"'+(window.innerWidth>=1000?' open':'')+'><summary>השבוע במבט'+(noApp?' · '+noApp+' בלי אפליקציה':'')+'</summary>'+(!MODE&&noApp>1?'<button class="btn p" data-appinvall="1" style="margin-top:8px">הזמנה לכל מי שבלי אפליקציה ('+noApp+')</button><div class="s" style="font-size:12.5px;color:var(--mute);margin-top:4px">נפתחת הודעה אחת בכל פעם. שולחים, והבאה נפתחת. סגירה עוצרת.</div>':'')+'<div class="wkt"><table><thead><tr><th scope="col">מתאמן/ת</th><th scope="col">שקילות</th><th scope="col">ימי אימון</th><th scope="col">צ׳ק-אין</th><th scope="col">באפליקציה</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="s" style="font-size:12.5px;color:var(--mute);margin-top:6px">שקילות ב-7 הימים האחרונים, אימונים וצ׳ק-אין מיום ראשון. לחיצה על שורה פותחת את הכרטיס.</div></details>'; }
 document.addEventListener('click',function(e){ if(!(e.target&&e.target.closest)) return; var iv=e.target.closest('[data-appinv]');
   if(iv){ var n=iv.dataset.appinv; iv.disabled=true; iv.textContent='מכין…'; google.script.run.withSuccessHandler(function(r){ iv.disabled=false; iv.textContent='הזמנה לאפליקציה'; if(r&&r.wa) composeWa(r.wa,n); else toast('אין טלפון בכרטיס'); }).withFailureHandler(function(er){ iv.disabled=false; iv.textContent='הזמנה לאפליקציה'; toast(er.message); }).dashboardAppLink(n); return; }
-  if(e.target.closest('[data-appinvall]')){ var Q=active().filter(function(c){ var p=PU&&PU[c.name]; return p&&!p.err&&!p.app; }).map(function(c){ return c.name; }), nx=function(i){ if(i>=Q.length){ toast('סיימנו את התור'); return; }
+  if(e.target.closest('[data-appinvall]')){ var Q=active().filter(function(c){ var p=PU&&PU[c.name]; return p&&!p.err&&!p.app&&!isTest(c.name); }).map(function(c){ return c.name; }), nx=function(i){ if(i>=Q.length){ toast('סיימנו את התור'); return; }
       google.script.run.withSuccessHandler(function(r){ if(!r||!r.wa){ nx(i+1); return; } composeWa(r.wa,Q[i],function(){ if(i+1<Q.length) toast('נשארו '+(Q.length-i-1)); setTimeout(function(){ nx(i+1); },500); }); }).withFailureHandler(function(er){ toast(er.message); }).dashboardAppLink(Q[i]); }; nx(0); return; }
   var r=e.target.closest('[data-wkc]'); if(r) openCard(r.dataset.wkc); });
 function renderClients(){
