@@ -94,6 +94,8 @@ h2{font-size:15px;margin:0 0 10px;font-weight:700}
 .ex .mv button{padding:0 4px;line-height:1;font-size:11px;border:0;background:transparent;color:var(--mute)}
 .ex .mv button:hover{color:var(--acc)}
 .exn{padding:0 14px 6px 50px}
+.qchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:4px 14px 2px}.qchips .muted{font-size:12.5px}
+.qc{font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px dashed var(--line);background:#fff;color:var(--ink);min-height:0}.qc:hover{border-color:var(--ok);color:var(--ok)}
 .ex .mu{display:flex;align-items:center;gap:6px}
 .exi{width:34px;height:34px;border-radius:8px;object-fit:cover;border:1px solid var(--line);flex:none;background:#fff}
 .exn input{width:100%;font-size:13px;border-style:dashed}
@@ -227,6 +229,18 @@ function leadSig(r){ var o=r.opts[0]; return o&&o.m?(o.food||o.t||'')+'|'+Math.r
 function syncRows(M){ if(!M) return; M.meals.forEach(function(ml){ ml.rows.forEach(function(r){ var sig=leadSig(r);
   if(S.auto&&r._lk!=null&&sig&&sig!==r._lk){ var tgt=optVal(r.opts[0]); r.opts.slice(1).forEach(function(o){ fitOpt(o,tgt); }); }
   r._lk=sig; }); }); }
+/* הוספה מהירה: צ׳יפים לפי סוג השורה. לחיצה מוסיפה חלופה בכמות ששווה לראשונה (קלוריות/חלבון) */
+var QUICK={p:[['u','ביצה'],['u','קופסת טונה'],['g','קוטג׳ 5%'],['g','גבינה לבנה 5%'],['u','יוגורט חלבון'],['g','חזה עוף'],['g','חזה הודו'],['g','אמנון'],['g','סלמון'],['g','טופו']],
+  c:[['u','פרוסת לחם קל'],['g','אורז'],['g','תפוח אדמה / בטטה'],['g','שיבולת שועל (יבש)'],['g','פסטה'],['g','בורגול'],['g','קינואה'],['u','טורטיה'],['u','דף אורז'],['u','פרי']],
+  f:[['g','טחינה גולמית'],['g','אבוקדו'],['g','חמאת בוטנים'],['g','אגוזי פקאן']]};
+function rowKind(r){ var l=String(r.label||''); if(/חלבון/.test(l)) return 'p'; if(/פחמ/.test(l)) return 'c'; if(/שומן|חופשי/.test(l)) return 'f'; var o=r.opts[0]; if(o&&o.m){ var P=o.m[0]*4,C=o.m[1]*4,F=o.m[2]*9; return P>=C&&P>=F?'p':C>=F?'c':'f'; } return ''; }
+function quickOpt(q,r){ var first=r.opts.filter(function(o){ return o.m&&kc(o.m)>0; })[0], tgt=first?optVal(first):0;
+  if(q[0]==='g'){ var f=findFood(q[1])||searchFoods(q[1],1)[0]; if(!f) return null; return optFrom(f, first?matchG(first,f):100); }
+  var i=unitIdx()[unitKey(q[1])]; if(i==null) return null; var u=UNITS[i], per=S.by==='p'?u[1]:kc([u[1],u[2],u[3]]), st=u[4], n=tgt&&per>0?Math.max(st,Math.round(tgt/per/st)*st):(st<1?1:1);
+  var parts=[{n:n,u:i}]; return comboOpt(partText(parts[0]),parts); }
+function quickChips(r,key){ var k=rowKind(r); if(!k) return ''; var have=r.opts.map(function(o){ return String(o.food||o.t||''); }).join(' | ');
+  var L=QUICK[k].filter(function(q){ return have.indexOf(q[1].replace(/ \(.*$/,'').split(' / ')[0])<0; }).slice(0,7); if(!L.length) return '';
+  return '<div class="qchips"><span class="muted">הוספה מהירה:</span>'+L.map(function(q,j){ return '<button class="qc" data-qadd="'+key+'|'+QUICK[k].indexOf(q)+'">'+esc(q[1].replace(' (יבש)','').replace(' / בטטה',''))+'</button>'; }).join('')+'</div>'; }
 function rowRange(r){ var o=r.opts.filter(function(x){ return x.m&&(x.m[0]||x.m[1]||x.m[2]); }); if(!o.length) return null; var ks=o.map(function(x){ return [kc(x.m),x.m[0],x.m[1],x.m[2]]; }); var lo=[0,1,2,3].map(function(i){ return Math.min.apply(null,ks.map(function(z){ return z[i]; })); }), hi=[0,1,2,3].map(function(i){ return Math.max.apply(null,ks.map(function(z){ return z[i]; })); }); return {lo:lo,hi:hi}; }
 function totals(M){ var lo=[0,0,0,0], hi=[0,0,0,0]; M.meals.forEach(function(ml){ ml.rows.forEach(function(r){ var R=rowRange(r); if(R) for(var i=0;i<4;i++){ lo[i]+=R.lo[i]; hi[i]+=R.hi[i]; } }); }); lo[0]+=+M.free||0; hi[0]+=+M.free||0; return {lo:lo,hi:hi}; }
 function mealK(ml){ var lo=0,hi=0; ml.rows.forEach(function(r){ var R=rowRange(r); if(R){ lo+=R.lo[0]; hi+=R.hi[0]; } }); return lo===hi?String(Math.round(lo)):Math.round(lo)+'–'+Math.round(hi); }
@@ -303,7 +317,7 @@ function menuMain(){ var M=S.M; if(!M) return '<div class="card empty">טוען�
       r.opts.forEach(function(o,oi){ var key=mi+'|'+ri+'|'+oi;
         h+='<div class="op'+(oi?' alt':'')+(o.unm?' unm':'')+'"><span class="ix">'+(oi?'או':'●')+'</span><div class="fs"><input data-fs="'+key+'" value="'+esc(o.food||o.raw||o.t||'')+'" placeholder="מאכל, או למשל: ביצה + קופסת טונה" autocomplete="off"></div><div class="g"><input type="number" inputmode="numeric" min="0" step="5" data-g="'+key+'" value="'+(o.g||'')+'" '+(o.per?'':'disabled')+' aria-label="גרם"></div><span class="u">גרם</span>'+
           (o.m&&(o.m[0]||o.m[1]||o.m[2])?'<span class="mac num"><b>'+kc(o.m)+'</b> קק״ל <span class="p">ח '+r1(o.m[0])+'</span><span class="c">פ '+r1(o.m[1])+'</span><span class="f">ש '+r1(o.m[2])+'</span></span>':'<span class="mac"><span class="chip w">'+(o.unm?'לבחור מאכל מהמאגר':'בלי ערכים')+'</span></span>')+'<button class="g" data-odel="'+key+'" title="הסרה">✕</button></div>'+(o.unm&&o.raw?candHtml(o.raw,key):''); });
-      h+='<div class="rwf"><button data-oadd="'+mi+'|'+ri+'">'+(r.opts.length?'+ חלופה':'+ מאכל')+'</button></div></div>'; });
+      h+=quickChips(r,mi+'|'+ri)+'<div class="rwf"><button data-oadd="'+mi+'|'+ri+'">'+(r.opts.length?'+ חלופה':'+ מאכל')+'</button></div></div>'; });
     h+='<div class="mf"><button data-radd="'+mi+'">+ שורה</button><input data-mn="'+mi+'" value="'+esc(ml.note||'')+'" placeholder="הערה לארוחה (תופיע בתפריט)" style="flex:1"></div></section>'; });
   h+='<div class="bar"><button id="mAddMeal">+ ארוחה</button><label class="muted">קלוריות חופשיות <input type="number" id="mFree" value="'+(M.free||0)+'" step="50" min="0" style="width:80px"></label></div>';
   h+='<div class="card pad"><h2>הערות אישיות (בראש התפריט)</h2><textarea id="mNotes" rows="2" style="width:100%" placeholder="למשל: אוכל בחוץ בימי שלישי, מתאמן בערב">'+esc(M.notes||'')+'</textarea></div></div>';
@@ -327,6 +341,7 @@ function wireMenu(){ var M=S.M; if(!M) return; M.meals.forEach(function(ml){ ml.
   document.querySelectorAll('[data-cand]').forEach(function(b){ b.onclick=function(){ var p=b.dataset.cand.split('|'), a=at(p.slice(0,3).join('|')), L=searchFoods(a.o.raw,4); if(!L.length) L=searchFoods(String(a.o.raw).split(' ')[0],4); var f=L[+p[3]]; if(f){ a.r.opts[a.k[2]]=optFrom(f,a.o.g||100); upd(); } }; });
   document.querySelectorAll('[data-g]').forEach(function(inp){ inp.onchange=function(){ var a=at(inp.dataset.g); setG(a.o,inp.value); upd(); }; });
   document.querySelectorAll('[data-odel]').forEach(function(b){ b.onclick=function(){ var a=at(b.dataset.odel); a.r.opts.splice(a.k[2],1); upd(); }; });
+  document.querySelectorAll('[data-qadd]').forEach(function(b){ b.onclick=function(){ var k=b.dataset.qadd.split('|'), r=M.meals[+k[0]].rows[+k[1]], q=QUICK[rowKind(r)][+k[2]], o=q&&quickOpt(q,r); if(!o){ toast('לא נמצא במאגר',1); return; } r.opts.push(o); r._lk=leadSig(r); upd(); }; });
   document.querySelectorAll('[data-oadd]').forEach(function(b){ b.onclick=function(){ var a=at(b.dataset.oadd); a.r.opts.push({t:'',raw:'',g:0,m:[0,0,0]}); render(); var ins=document.querySelectorAll('[data-fs^="'+a.k[0]+'|'+a.k[1]+'|"]'); var last=ins[ins.length-1]; if(last) last.focus(); }; });
   document.querySelectorAll('[data-rdel]').forEach(function(b){ b.onclick=function(){ var a=at(b.dataset.rdel); a.ml.rows.splice(a.k[1],1); upd(); }; });
   document.querySelectorAll('[data-rl]').forEach(function(i){ i.onchange=function(){ at(i.dataset.rl).r.label=i.value; saveDraft(); }; });
