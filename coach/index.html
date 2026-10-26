@@ -47,6 +47,7 @@ main{padding:4px 16px 96px}
 .item .t{flex:1;min-width:0}
 .item .n{font-weight:700}
 .item .s{font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item.mtg .s{white-space:normal;overflow:visible;line-height:1.7}.item.mtg .s .tag{white-space:nowrap;display:inline-block} /* פגישות: שעה · סוג · סטטוס יורדים שורה במקום להיחתך */
 button{font-family:inherit;cursor:pointer}
 .wa{background:var(--green-l);color:var(--wa);border:1px solid var(--green-b);border-radius:10px;padding:8px 12px;font-weight:700;font-size:13.5px;white-space:nowrap}
 .btn{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:600;font-size:13.5px;color:var(--ink);white-space:nowrap;text-decoration:none;display:inline-block}
@@ -307,7 +308,7 @@ function drawMeetings(){ var box=$('section[data-v="today"]'); if(!box||!L) retu
     var ph=String(x.phone||'').replace(/[^0-9]/g,''); if(ph.charAt(0)==='0') ph='972'+ph.slice(1); var g=genderOf(x.name), when=(x.g===0?'היום':x.g===1?'מחר':'ביום '+DAYN[x.d.getDay()])+(x.time?' בשעה '+x.time:'');
     var txt='היי '+first(x.name)+', תזכורת לפגישה שלנו '+when+'. '+(x.c?(g==='f'?'תביאי':g==='m'?'תביא':'כדאי להביא')+' את השקילות והשאלות שלך. ':'')+'נתראה!';
     var st=x.bk?(x.bk.status==='approved'&&x.bk.confirmed?['אישר/ה הגעה','g']:ST[x.bk.status]||['','']):null;
-    h+='<div class="item"><div class="t"><div class="n">'+esc(x.name)+(x.c?'':' <span class="tag">לא בלוח</span>')+'</div><div class="s">'+(x.time?esc(x.time):'בלי שעה')+(x.bk&&x.bk.service?' · '+esc(x.bk.service):'')+(st&&st[0]?' · <span class="tag'+(st[1]?' '+st[1]:'')+'">'+esc(st[0])+'</span>':'')+(x.bk?' · <span class="s" style="font-size:11.5px">מהזימון</span>':'')+'</div></div>'+(ph.length>=11?'<button class="wa" data-mrem="'+esc(x.name)+'" data-u="'+esc('https://wa.me/'+ph+'?text='+encodeURIComponent(txt))+'">תזכורת</button>':'')+(x.c?'<button class="btn" data-card="'+esc(x.c.name)+'">כרטיס</button>':'')+'</div>'; });
+    h+='<div class="item mtg"><div class="t"><div class="n">'+esc(x.name)+(x.c?'':' <span class="tag">לא בלוח</span>')+'</div><div class="s">'+(x.time?esc(x.time):'בלי שעה')+(x.bk&&x.bk.service?' · '+esc(x.bk.service):'')+(st&&st[0]?' · <span class="tag'+(st[1]?' '+st[1]:'')+'">'+esc(st[0])+'</span>':'')+(x.bk?' · <span class="s" style="font-size:11.5px">מהזימון</span>':'')+'</div></div>'+(ph.length>=11?'<button class="wa" data-mrem="'+esc(x.name)+'" data-u="'+esc('https://wa.me/'+ph+'?text='+encodeURIComponent(txt))+'">תזכורת</button>':'')+(x.c?'<button class="btn" data-card="'+esc(x.c.name)+'">כרטיס</button>':'')+'</div>'; });
   el.innerHTML=h; if(old) old.replaceWith(el); else box.appendChild(el);
   el.querySelectorAll('[data-mrem]').forEach(function(b){ b.onclick=function(){ composeWa(b.dataset.u,b.dataset.mrem); }; });
   el.querySelectorAll('[data-card]').forEach(function(b){ b.onclick=function(){ openCard(b.dataset.card); }; }); }
