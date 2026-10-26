@@ -808,6 +808,14 @@ function renderOnb(){ var box=$('section[data-v="onb"]'); if(!box) return; if(!O
 function renderAll(){ if(L) $('#kAct').textContent=active().length; renderOnb(); renderToday(); renderClients(); renderLeads(); }
 swr('list',function(d){ L=d; renderAll(); }); swr('pulse',function(d){ PU=d; }); swr('tasks',function(d){ TK=d; }); swr('leads',function(d){ LEADS=d.slice().reverse(); }); swr('onb',function(d){ ONB=d; }); swr('tm',function(d){ TM=d; }); swr('wap',function(d){ WAP=d; }); if(L) renderAll();
 try{ var lt=localStorage.getItem('m_tab'); if(MODE) show('onb'); else if(lt) show(lt); }catch(e){}
+/* חזרה לדשבורד אחרי 3 דקות ומעלה: משימות, רשימה, לידים, דופק שמור, פעילות וזימונים מתרעננים לבד (בלי החישוב הכבד של "רענון") */
+var DASH_HID=Date.now(), nof=function(){};
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden'){ DASH_HID=Date.now(); return; } if(Date.now()-DASH_HID<180000) return;
+  google.script.run.withSuccessHandler(function(d){ L=d; swrSave('list',d); renderAll(); stampUp(); }).withFailureHandler(nof).dashboardList();
+  google.script.run.withSuccessHandler(function(d){ TK=d; swrSave('tasks',d); renderToday(); }).withFailureHandler(nof).dashboardTasks();
+  google.script.run.withSuccessHandler(function(d){ swrSave('leads',d||[]); LEADS=(d||[]).slice().reverse(); renderLeads(); }).withFailureHandler(nof).dashboardLeads();
+  google.script.run.withSuccessHandler(function(d){ PU=d||{}; swrSave('pulse',PU); renderAll(); }).withFailureHandler(nof).dashboardPulseC();
+  try{ loadActivity(); loadBookings(false); loadOnb(); }catch(e){} });
 loadOnb(); reloadWap(); loadSys(); setInterval(loadSys,5*60000); setTimeout(loadActivity,1500); setInterval(loadActivity,3*60000); (function(){ var _rtA=renderToday; renderToday=function(){ var r=_rtA.apply(this,arguments); try{ drawActivity(); }catch(e){} try{ drawMeetings(); }catch(e){} try{ tidyToday(); }catch(e){} return r; }; })(); swr('hebn',function(d){ HEBN=d||{}; }); setTimeout(loadHeb,3000);
 /* קופסה פתוחה במסך המשימות לא נסגרת כשהנתונים מתעדכנים ברקע */
 (function(){ var _rt=renderToday; renderToday=function(){ var keep={}; document.querySelectorAll('section[data-v="today"] details[id]').forEach(function(d){ if(d.open) keep[d.id]=d.innerHTML; }); _rt.apply(this,arguments); Object.keys(keep).forEach(function(id){ var el=document.getElementById(id); if(el){ el.innerHTML=keep[id]; el.open=true; } }); }; })();
