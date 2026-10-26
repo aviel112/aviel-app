@@ -165,6 +165,7 @@ nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
 #fMeals{margin-top:4px}
 #fList:empty,#fUnits:empty,#fRecent:empty{display:none}
 .fpr{font-size:14px;line-height:1.5;margin:4px 0 10px;color:var(--gold)}
+.wfeel{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 4px}.wfeel span{font-size:14px;color:var(--mute);margin-inline-end:2px;flex-basis:100%}.sheet-in .wfeel .chip{width:auto;flex:1;margin:0;min-height:40px;padding:6px 8px;font-size:14px}
 .fpr b{color:var(--text)}
 .eo h3{margin:0;font-size:16px}
 .eo .chips{margin-top:8px}
@@ -1386,9 +1387,12 @@ function showFinish(day,sets,vol,prs,rdy){
     (like?'<div class="flike">הרמת היום בערך כמו <b>'+esc(like)+'</b></div>':'')+
     '<div class="fstats"><div><b class="num">'+sets+'</b><span>סטים</span></div><div><b class="num">'+prs+'</b><span>שיאים חדשים</span></div><div><b class="num">'+rdy+'</b><span>מוכנים להעלאה</span></div></div>'+
     (prs>0?'<div class="fpr">שיא חדש. שווה סטורי: לשתף ולתייג את <b>@avielife1</b>, ואני משתף בחזרה.</div>':'')+
+    '<div class="wfeel" role="group" aria-label="איך היה האימון"><span>איך היה?</span>'+[[1,'קל מדי'],[2,'בדיוק'],[3,'קשה מדי']].map(function(o){ return '<button type="button" class="chip" data-wf="'+o[0]+'" aria-pressed="false">'+o[1]+'</button>'; }).join('')+'</div>'+
     '<button type="button" class="'+(prs>0?'fshare':'ghost fshare')+'">שיתוף לסטורי</button><button type="button" class="fclose">סגירה</button></div>';
   var close=function(){ s.remove(); document.removeEventListener('keydown',onk); }, onk=function(e){ if(e.key==='Escape') close(); };
-  s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('.fclose').onclick=close; s.querySelector('.fshare').onclick=function(){ shareStory(this,{day:day,sets:sets,vol:vol,prs:prs,like:like}); }; document.addEventListener('keydown',onk);
+  s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('.fclose').onclick=close;
+  s.querySelectorAll('[data-wf]').forEach(function(b){ b.onclick=function(){ var f=+b.dataset.wf, prev=s.querySelector('[data-wf][aria-pressed="true"]'); s.querySelectorAll('[data-wf]').forEach(function(x){ x.setAttribute('aria-pressed',x===b?'true':'false'); });
+    toast(f===2?'מעולה. ככה זה אמור להרגיש':'נשמר. אביאל יראה ויכוון את האימון'); api('wfeel',{day:day,f:f}).catch(function(er){ s.querySelectorAll('[data-wf]').forEach(function(x){ x.setAttribute('aria-pressed',x===prev?'true':'false'); }); toast((er&&er.message)||'לא נשמר',1); }); }; }); s.querySelector('.fshare').onclick=function(){ shareStory(this,{day:day,sets:sets,vol:vol,prs:prs,like:like}); }; document.addEventListener('keydown',onk);
   document.body.appendChild(s); s.querySelector('.fclose').focus();
   try{ if(navigator.vibrate) navigator.vibrate([30,40,60]); }catch(e){}
 }
