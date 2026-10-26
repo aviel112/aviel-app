@@ -557,6 +557,8 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .vplay svg{width:18px;height:18px}
 .nmrow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .exbtns{display:flex;gap:6px;flex:none}
+/* טלפון צר: שם התרגיל מקבל את כל השורה, הכפתורים יורדים מתחת (לא נמעך ל-3 שורות) */
+@media (max-width:440px){.nmrow{flex-wrap:wrap}.nmrow .nm{flex:1 1 calc(100% - 80px);min-width:0}.nmrow .exbtns{flex:1 1 100%;margin-inline-start:68px}}
 .swapbtn.tech{color:var(--mute);border-color:var(--line)}
 .swapbtn{display:inline-flex;align-items:center;gap:5px;background:transparent;color:var(--gold);border:1px solid var(--gold-d);border-radius:999px;padding:5px 10px;font-size:12.5px;font-weight:700;flex:none;min-height:0}
 .swapbtn svg{width:15px;height:15px}
