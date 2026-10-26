@@ -4,7 +4,7 @@ const ps = () => caches.open('aviel-coach-ps').then(c => c.match('ps')).then(r =
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 // פתיחת הדשבורד: תמיד בודקים מול השרת (304 אם לא השתנה) — עדכון מגיע מיד ולא אחרי 10 דק׳ מטמון של GitHub Pages
-self.addEventListener('fetch', e => { if (e.request.mode === 'navigate') e.respondWith(fetch(new Request(e.request.url, { cache: 'no-cache', credentials: 'same-origin' })).catch(() => fetch(e.request))); });
+self.addEventListener('fetch', e => { if (e.request.mode === 'navigate') e.respondWith(fetch(new Request(e.request.url, { cache: 'no-cache', credentials: 'same-origin', redirect: 'manual' })).catch(() => fetch(e.request))); });
 self.addEventListener('push', e => {
   e.waitUntil(ps().then(s => fetch(API + '?api=coachnote&ps=' + encodeURIComponent(s) + '&_=' + Date.now()).then(r => r.json()))
     .then(j => (j && j.ok && j.r) ? j.r : null).catch(() => null)
