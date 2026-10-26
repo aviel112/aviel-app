@@ -1840,6 +1840,31 @@ function addExImgs(){ if(!EXIMG){ if(!EXIMG_TRIED){ EXIMG_TRIED=true; fetch('dat
   document.querySelectorAll('#progBox .card.ex .nmrow').forEach(function(row){ if(row.querySelector('.exthumb')) return; var nm=row.querySelector('.nm'); if(!nm) return; var id=exImgFor(nm.textContent); if(!id) return;
     var b=document.createElement('button'); b.type='button'; b.className='exthumb'; b.setAttribute('aria-label','איך עושים: '+nm.textContent); b.innerHTML='<img loading="lazy" alt="" src="'+EXIMG.base+id+'/0.jpg">'; b.onclick=function(){ openExImg(nm.textContent,id); }; row.insertBefore(b,row.firstChild); }); }
 (function(){ if(typeof renderTrain!=='function') return; var _rtImg=renderTrain; renderTrain=function(){ var r=_rtImg.apply(this,arguments); try{ addExImgs(); }catch(e){} return r; }; })();
+
+/* ===== קלוריות חופשיות כמו יומן (26.10.26): סורקים / מחפשים / כותבים ידנית, ורואים כמה נשאר מהתקציב החופשי ===== */
+if(typeof MEALS!=='undefined'&&MEALS.indexOf('חופשי')<0) MEALS.push('חופשי');
+var FREE_TRIED=false;
+function freeBudget(b){ var m=String((b.title||'')+' '+(b.lines||[]).join(' ')).match(/([\d,]{2,5})\s*קלוריות חופשיות/); return m?+m[1].replace(/,/g,''):0; }
+function freeUsed(){ return ((typeof FDAY!=='undefined'&&FDAY&&FDAY.d===TODAY&&FDAY.items)||[]).filter(function(x){ return x.m==='חופשי'; }); }
+function freeGo(scan){ FMEAL='חופשי'; show('food'); try{ FVIEW=null; api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){}); }catch(e){}
+  setTimeout(function(){ if(scan&&typeof scanStart==='function') scanStart(); else { var q=$('#fQ'); if(q){ q.scrollIntoView({block:'center',behavior:'smooth'}); q.focus(); } } if(typeof drawMealChips==='function') drawMealChips(); },250); }
+function renderFreeBox(){ var M=P&&P.menu; if(!M||!M.blocks) return; var cards=document.querySelectorAll('#menuBox .meal');
+  M.blocks.forEach(function(b,i){ var Y=freeBudget(b), card=cards[i]; if(!Y||!card) return;
+    if((typeof FDAY==='undefined'||!FDAY||FDAY.d!==TODAY)&&!FREE_TRIED&&typeof api==='function'){ FREE_TRIED=true; api('foodday',{}).then(function(r){ FDAY=r; renderMenu(); }).catch(function(){}); }
+    var xs=freeUsed(), used=Math.round(xs.reduce(function(a,x){ return a+(+x.k||0); },0)), left=Y-used, pc=Math.min(100,Math.round(used/Y*100));
+    var old=card.querySelector('.freebox'); if(old) old.remove();
+    var h='<div class="freebox" style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><b>'+(left>=0?'נשארו '+left:'עברת ב-'+(-left))+' מתוך '+Y+'</b><span class="sub num">'+used+' נרשמו היום</span></div>'+
+      '<div class="bar" style="margin:6px 0 8px"><i class="'+(left<0?'over':'')+'" style="width:'+pc+'%"></i></div>'+
+      (xs.length?'<div class="sub" style="margin-bottom:8px">'+xs.map(function(x){ return esc(x.f)+' · '+esc(x.k); }).join(' | ')+'</div>':'')+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="ghost sm" data-free="scan">סריקת ברקוד</button><button type="button" class="ghost sm" data-free="search">חיפוש מאכל</button></div>'+
+      '<form class="freeq" style="display:flex;gap:6px;margin-top:8px"><input name="f" placeholder="מה אכלת, למשל: חטיף" aria-label="מה אכלת" style="flex:1;min-width:0;font-size:16px"><input name="k" inputmode="numeric" placeholder="קלוריות" aria-label="קלוריות" style="width:84px;font-size:16px"><button type="submit">הוספה</button></form></div>';
+    card.insertAdjacentHTML('beforeend',h); var box=card.querySelector('.freebox');
+    box.querySelectorAll('[data-free]').forEach(function(bt){ bt.onclick=function(){ freeGo(bt.dataset.free==='scan'); }; });
+    box.querySelector('.freeq').addEventListener('submit',function(e){ e.preventDefault(); var f=this.f.value.trim(), k=Math.round(+this.k.value); if(!f||!(k>0&&k<3000)){ toast('כותבים מה אכלת וכמה קלוריות',1); return; }
+      var btn=this.querySelector('button'); btn.disabled=true; api('food',{f:f.slice(0,80),g:0,k:k,p:0,c:0,fat:0,m:'חופשי'}).then(function(r){ FDAY=r; renderMenu(); toast('נרשם · '+k+' קק״ל מהחופשיות'); }).catch(function(er){ toast(er.message||'לא נשמר',1); btn.disabled=false; }); });
+  }); }
+(function(){ var _rmFree=renderMenu; renderMenu=function(){ var r=_rmFree.apply(this,arguments); try{ renderFreeBox(); }catch(e){} return r; }; })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
