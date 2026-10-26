@@ -394,6 +394,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .news.guides .gd small{display:block;color:var(--mute);font-size:13px;margin-top:2px}
 .news.guides .gd i{font-style:normal;font-weight:700;font-size:13px;color:var(--gold);white-space:nowrap}
 .askf{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.chat{display:flex;flex-direction:column;gap:6px;margin-top:8px}.chat .cb{max-width:86%;align-self:flex-start;background:var(--soft);border:1px solid var(--line);border-radius:16px 16px 5px 16px;padding:8px 12px;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}.chat .cb.me{align-self:flex-end;background:var(--text);color:var(--ink);border-color:var(--text);border-radius:16px 16px 16px 5px}.chat .cb small{display:block;font-size:12px;opacity:.7;margin-top:2px}.chat .cb i{font-style:normal;opacity:.8}
 .askf textarea{width:100%;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
 .askf button{min-height:40px}
 .projgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
@@ -1653,10 +1654,17 @@ var GUIDES=null, GUIDES_TRIED=false;
 function guidesHtml(){ if(!GUIDES_TRIED&&typeof api==='function'){ GUIDES_TRIED=true; api('guides',{}).then(function(r){ GUIDES=r||[]; if(GUIDES.length) renderExtras(document.getElementById('todayCard')); }).catch(function(){}); }
   if(!GUIDES||!GUIDES.length) return '';
   return '<div class="news guides"><div class="row"><b>המדריכים של אביאל</b><small>'+GUIDES.length+' מדריכים</small></div>'+GUIDES.map(function(g){ return '<a class="gd" target="_blank" rel="noopener" href="'+esc(g.u)+'"><span><b>'+esc(g.t)+'</b>'+(g.d?'<small>'+esc(g.d)+'</small>':'')+'</span><i>פתיחה</i></a>'; }).join('')+'</div>'; }
-/* ===== שאלה לאביאל מתוך האפליקציה (במקום לחפש בוואטסאפ) ===== */
-function askHtml(){ return '<div class="news ask"><div class="row"><b>שאלה לאביאל</b><small>מגיע ישר אליו</small></div><form id="askF" class="askf"><textarea id="askQ" rows="2" placeholder="למשל: אפשר להחליף את האורז בצהריים בפסטה?"></textarea><button type="submit">שליחה</button></form></div>'; }
-function wireAsk(x){ var f=x.querySelector('#askF'); if(!f) return; f.onsubmit=function(e){ e.preventDefault(); var q=x.querySelector('#askQ').value.trim(); if(q.length<3){ toast('כותבים שאלה',1); return; } var b=f.querySelector('button'); b.disabled=true;
-  api('question',{q:q}).then(function(){ x.querySelector('#askQ').value=''; b.disabled=false; toast('נשלח לאביאל. התשובה תגיע אליך כאן או בוואטסאפ'); }).catch(function(er){ b.disabled=false; toast(er.message||'לא נשלח',1); }); }; }
+/* ===== השיחה עם אביאל: שאלה מתוך האפליקציה והתשובות שלו באותו שרשור (במקום לחפש בוואטסאפ) ===== */
+var CHAT=null, CHAT_TRIED=false, ASKD='';
+function chatAgo(at){ var t=Date.parse(at); if(isNaN(t)) return ''; var m=Math.round((Date.now()-t)/60000); if(m<2) return 'עכשיו'; if(m<60) return 'לפני '+m+' דק׳'; var h=Math.round(m/60); if(h<24) return 'לפני '+h+' שע׳'; var d=Math.round(h/24); return d===1?'אתמול':'לפני '+d+' ימים'; }
+function askHtml(){ if(!CHAT_TRIED&&typeof api==='function'){ CHAT_TRIED=true; api('chat',{}).then(function(r){ CHAT=(r&&r.list)||[]; if(CHAT.length) renderExtras(document.getElementById('todayCard')); }).catch(function(){}); }
+  var L=(CHAT||[]).slice(-6), has=L.length>0;
+  return '<div class="news ask"><div class="row"><b>'+(has?'השיחה עם אביאל':'שאלה לאביאל')+'</b><small>מגיע ישר אליו</small></div>'+
+    (has?'<div class="chat" role="log" aria-label="השיחה עם אביאל">'+L.map(function(x){ var me=x.f==='c'; return '<div class="cb'+(me?' me':'')+'"><div>'+esc(x.t||'')+(x.v?' <i>(הודעה קולית)</i>':'')+'</div><small>'+(me?'את/ה':'אביאל')+' · '+chatAgo(x.at)+'</small></div>'; }).join('')+'</div>':'')+
+    '<form id="askF" class="askf"><textarea id="askQ" rows="2" placeholder="'+(has?'כותבים לאביאל':'למשל: אפשר להחליף את האורז בצהריים בפסטה?')+'">'+esc(ASKD)+'</textarea><button type="submit">שליחה</button></form></div>'; }
+function wireAsk(x){ var f=x.querySelector('#askF'); if(!f) return; var ta=x.querySelector('#askQ'); ta.oninput=function(){ ASKD=ta.value; };
+  f.onsubmit=function(e){ e.preventDefault(); var q=ta.value.trim(); if(q.length<3){ toast('כותבים שאלה',1); return; } var b=f.querySelector('button'); b.disabled=true;
+  api('question',{q:q}).then(function(){ ASKD=''; CHAT=(CHAT||[]).concat([{at:new Date().toISOString(),f:'c',t:q}]); renderExtras(document.getElementById('todayCard')); toast('נשלח לאביאל. התשובה תגיע לכאן ותקפוץ לך בטלפון'); }).catch(function(er){ b.disabled=false; toast(er.message||'לא נשלח',1); }); }; }
 
 /* ===== מטרות והתקדמות: פס יעד, משקל/צעדים/היקפים, שבועי/חודשי/הכל, גרף חלק ===== */
 var MONF=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
