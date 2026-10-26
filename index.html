@@ -1293,6 +1293,7 @@ function renderTrain(){
 /* תפריט: לוחצים על האפשרות שבחרת — ההחלפה נשמרת להיום */
 var _renderMenuBase=renderMenu;
 var MEAL_RE=/ארוח|בוקר|צהר|ערב|ביניים|נשנוש|אימון|לילה|שייק/;
+function splitOr(l){ var out=[], d=0, cur=''; for(var i=0;i<l.length;i++){ var ch=l[i]; if(ch==='(') d++; else if(ch===')'&&d) d--; if(!d&&l.substr(i,4)===' או '){ out.push(cur.trim()); cur=''; i+=3; continue; } cur+=ch; } out.push(cur.trim()); return out.filter(Boolean); } /* "א או ב או ג" — בלי לפצל בתוך סוגריים */
 function tidyMenu(m){
   if(!m||!m.blocks||m._tidy) return; m._tidy=1;
   m.blocks.forEach(function(b){
@@ -1300,8 +1301,11 @@ function tidyMenu(m){
     if(b.title&&!MEAL_RE.test(b.title)){ b.lines.unshift(b.title); b.title=''; b.note=1; }
     // "ארוחת צהריים(לשים דגש...)" — ההערה בסוגריים יורדת לשורה מתחת לכותרת
     var mm=b.title&&b.title.match(/^([^()]+?)\s*\(([^)]+)\)\s*$/); if(mm){ b.title=mm[1].trim(); b.hint=mm[2].trim(); }
+    // שורה שמתחילה ב"או" ממשיכה את החלופות של השורה שמעליה
+    var L2=[]; b.lines.forEach(function(l){ var t=String(l).trim(), pv=L2.length?String(L2[L2.length-1]):''; if(/^או\s/.test(t)&&pv&&pv.trim()!=='+'&&pv.indexOf(': ')<0&&!/^ערכי הארוחה/.test(pv)) L2[L2.length-1]=pv+' '+t; else L2.push(l); }); b.lines=L2;
     // "200 גרם בורגול/200 גרם תפוח אדמה/..." — רשימת אפשרויות לבחירה
     b.lines=b.lines.map(function(l){ var parts=l.split('/').map(function(x){ return x.trim(); });
+      if(l.indexOf(': ')<0&&l.indexOf(' / ')<0){ var ors=splitOr(l); if(ors.length>=3&&ors.every(function(x){ return x.length>=4; })) return 'לבחירה: '+ors.join(' / '); } /* שורה ארוכה של חלופות ב"או" → בחירה אחת בכל פעם */
       return (l.indexOf(': ')<0&&!/ או /.test(l)&&parts.length>=3&&parts.every(function(x){ return /^\d/.test(x)&&x.length>=4; }))?'לבחירה: '+parts.join(' / '):l; });
   });
 }
@@ -1316,9 +1320,9 @@ renderMenu=function(){
   var pick=ls('aviel_pick_'+TODAY,{});
   wireAteLog(M); renderEatOut(M); renderShopBtn(M);
   document.querySelectorAll('#menuBox .meal').forEach(function(card){
-    var meal=(card.querySelector('h3')||{}).textContent||'';
+    var meal=(card.querySelector('h3')||{}).textContent||'', seen={};
     card.querySelectorAll('.opt').forEach(function(o){
-      var lab=(o.querySelector('b')||{}).textContent||'', key=meal+'|'+lab, lis=o.querySelectorAll('li');
+      var lab=(o.querySelector('b')||{}).textContent||'', nth=seen[lab]=(seen[lab]||0)+1, key=meal+'|'+lab+(nth>1?'#'+nth:''), lis=o.querySelectorAll('li'); /* אותה כותרת פעמיים בארוחה = מפתח נפרד */
       if(lis.length<2) return;
       if(!o.querySelector('.swaphint')) o.insertAdjacentHTML('beforeend','<div class="swaphint">מחליפים עם החצים ולוחצים על מה שאכלת. כל האפשרויות שוות בערך.</div>');
       lis.forEach(function(li,i){ li.classList.toggle('picked',pick[key]===i); li.onclick=function(){ var p2=ls('aviel_pick_'+TODAY,{}); if(p2[key]===i) delete p2[key]; else p2[key]=i; lsSet('aviel_pick_'+TODAY,p2); renderMenu(); }; });
@@ -1645,8 +1649,8 @@ function consentHtml(){ if(!INBOX||!INBOX.consentAsk) return ''; return '<div cl
 /* ===== רשימת קניות לשבוע מהתפריט (לפי מה שבחרת, או האפשרות הראשונה) ===== */
 function renderShopBtn(M){ var box=document.getElementById('menuBox'); if(!box||document.getElementById('shopCard')||!M||!M.blocks) return; var el=document.createElement('div'); el.id='shopCard'; el.className='card'; el.innerHTML='<div class="row"><h3 style="margin:0;font-size:16px">רשימת קניות לשבוע</h3></div><p class="sub" style="margin:6px 0 10px">לפי האפשרויות שבחרת בתפריט (או הראשונה בכל ארוחה), כפול 7 ימים.</p><button type="button" id="shopBtn">יצירת רשימה</button>'; box.appendChild(el); el.querySelector('#shopBtn').onclick=function(){ openShop(M); }; }
 function shopItems(M){ var pick=ls('aviel_pick_'+TODAY,{}), learn=ls('aviel_menu_learn',{}), raw=[];
-  M.blocks.forEach(function(b){ if(!b.title) return; (b.lines||[]).forEach(function(l){ if(/^(ערכ|קלוריות|חלבון|פחמימות|שומן)/.test(l)) return; var k=l.indexOf(': ');
-    if(k>0&&k<40){ var lab=l.slice(0,k), opts=l.slice(k+2).split(' / '), key=b.title+'|'+lab, idx=pick[key]; if(idx==null){ var L=learn[key]||{}, best=0; idx=0; opts.forEach(function(o,i){ if((L[o]||0)>best){ best=L[o]; idx=i; } }); } raw.push(opts[idx]||opts[0]); }
+  M.blocks.forEach(function(b){ if(!b.title) return; var seen={}; (b.lines||[]).forEach(function(l){ if(/^(ערכ|קלוריות|חלבון|פחמימות|שומן)/.test(l)) return; var k=l.indexOf(': ');
+    if(k>0&&k<40){ var lab=l.slice(0,k), opts=l.slice(k+2).split(' / '), nth=opts.length>1?(seen[lab]=(seen[lab]||0)+1):1, key=b.title+'|'+lab+(nth>1?'#'+nth:''), idx=pick[key]; /* כמו במסך התפריט */ if(idx==null){ var L=learn[key]||{}, best=0; idx=0; opts.forEach(function(o,i){ if((L[o]||0)>best){ best=L[o]; idx=i; } }); } raw.push(opts[idx]||opts[0]); }
     else if(/^\d/.test(l)) raw.push(l); }); });
   var agg={}, order=[]; raw.forEach(function(s){ s=String(s).replace(/\([^)]*\)/g,' ').replace(/\s+/g,' ').trim().split(' או ')[0].trim(); var m=s.match(/^(\d+(?:[.,]\d+)?)\s*(גרם|ג׳|יח׳|יח'|יחידות|כפות|כפיות|כף|כפית|פרוסות|פרוסה|כוסות|כוס)?\s*(.+)$/);
     var q=m?parseFloat(m[1].replace(',','.')):1, u=m&&m[2]?m[2].replace('ג׳','גרם').replace("יח'",'יח׳'):'', n=(m?m[3]:s).replace(/^(של|מ)\s+/,'').trim(); var key=u+'|'+n; if(!agg[key]){ agg[key]={q:0,u:u,n:n}; order.push(key); } agg[key].q+=q*7; });
