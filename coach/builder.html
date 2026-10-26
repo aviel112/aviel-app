@@ -140,8 +140,10 @@ function toast(t,err){ var e=document.createElement('div'); e.className='toast'+
 function call(fn){ var args=[].slice.call(arguments,1); return fetch(API,{method:'POST',body:JSON.stringify({api:'coach',k:K,fn:fn,args:args})}).then(function(r){ return r.json(); }).then(function(j){ if(!j.ok) throw new Error(j.error||'שגיאה'); return j.r; }); }
 
 /* ===== מאגרי מזון ותרגילים ===== */
+var AV_FOODS=[ // ערכים שאביאל אישר (26.10.26), ל-100 גרם: חלבון, פחמימה, שומן, קק״ל
+  ['קוטג׳ 3%',11,1.5,3,77],['קוטג׳ 5%',11,1.5,5,95],['גבינה לבנה 3%',9.1,3.5,3,77],['גבינה לבנה 5%',8.7,3.8,5,95]];
 function allFoods(){ // [name,p,c,f,kcal,src]
-  var seen={}, out=[]; S.coach.forEach(function(f){ if(!seen[f[0]]){ seen[f[0]]=1; out.push([f[0],+f[1]||0,+f[2]||0,+f[3]||0,+f[4]||kc([f[1],f[2],f[3]]),'שלי']); } });
+  var seen={}, out=[]; AV_FOODS.forEach(function(f){ seen[f[0]]=1; out.push([f[0],f[1],f[2],f[3],f[4],'אביאל']); }); S.coach.forEach(function(f){ if(!seen[f[0]]){ seen[f[0]]=1; out.push([f[0],+f[1]||0,+f[2]||0,+f[3]||0,+f[4]||kc([f[1],f[2],f[3]]),'שלי']); } });
   S.foods.forEach(function(f){ if(!seen[f[0]]){ seen[f[0]]=1; out.push([f[0],+f[1]||0,+f[2]||0,+f[3]||0,kc([f[1],f[2],f[3]]),'בסיס']); } });
   S.moh.forEach(function(f){ if(!seen[f[0]]){ seen[f[0]]=1; out.push([f[0],+f[1]||0,+f[2]||0,+f[3]||0,Math.round(+f[4]||kc([f[1],f[2],f[3]])),'']); } });
   return out; }
@@ -173,9 +175,8 @@ function emptyMenu(T){ return {T:T||1700, free:0, notes:'', meals:[['ארוחת 
 /* יחידות (ביצה, קוטג׳, טונה…): הערכים מחושבים מהכמות שכתובה בטקסט, אף פעם לא "מנופחים" בלי שהטקסט משתנה.
    ביצה וחלבון ביצה וקוטג׳ לפי מאגר משרד הבריאות (ביצה L: 60 גרם בלי קליפה). השאר: הערכים המאושרים של PDF Studio */
 var UNITS=[ // [יחיד, רבים, כינויים…], חלבון, פחמימה, שומן ליחידה, צעד
-  [['ביצה','ביצים','ביצה שלמה','ביצים שלמות','ביצה L','ביצים L'],7.56,0.42,5.7,1],
-  [['חלבון ביצה','חלבוני ביצה','חלבון','חלבונים'],3.6,0.23,0.07,1],
-  [['גביע קוטג׳ 3%','גביעי קוטג׳ 3%','גביע קוטג','גביעי קוטג','גביע קוטג 3','גביעי קוטג 3','קוטג','קוטג 3'],27.5,3.75,7.5,0.5],
+  [['ביצה','ביצים','ביצה שלמה','ביצים שלמות','ביצה L','ביצים L'],8.6,0.5,6.7,1],
+  [['חלבון ביצה','חלבוני ביצה','חלבון','חלבונים'],3.8,0.3,0.1,1],
   [['קופסת טונה','קופסאות טונה','קופסת טונה במים','קופסאות טונה במים','טונה','טונה במים'],26,0,1,1],
   [['פרוסת צהובה 9%','פרוסות צהובה 9%','פרוסת צהובה','פרוסות צהובה','פרוסת צהובה 9','פרוסות צהובה 9','פרוסת גבינה צהובה','פרוסות גבינה צהובה','פרוסת גבינה צהובה 9','פרוסות גבינה צהובה 9'],7.4,0.2,2.1,1],
   [['יוגורט חלבון','יוגורטי חלבון','יוגורט חלבון 0'],20,10,1,1],
@@ -187,7 +188,12 @@ var UNITS=[ // [יחיד, רבים, כינויים…], חלבון, פחמימה
 var NUMW={'חצי':0.5,'אחד':1,'אחת':1,'שני':2,'שתי':2,'שתיים':2,'שניים':2,'שלוש':3,'שלושה':3,'ארבע':4,'ארבעה':4,'חמש':5,'חמישה':5};
 function unitKey(x){ return String(x||'').replace(/\([^)]*\)/g,' ').replace(/[׳'"״%.,]/g,'').replace(/\s+/g,' ').trim(); }
 var UIDX=null; function unitIdx(){ if(!UIDX){ UIDX={}; UNITS.forEach(function(u,i){ u[0].forEach(function(n){ UIDX[unitKey(n)]=i; }); }); } return UIDX; }
-function parsePart(x){ x=String(x||'').replace(/\([^)]*\)/g,' ').replace(/\s+/g,' ').trim(); if(!x) return null; var n=1, m;
+// קוטג׳ / גבינה לבנה: תמיד בגרמים ועם אחוז (גביע = 250 גרם). בלי אחוז — 3%
+var CUPS={'גביע':250,'גביעי':250,'קופסת':250,'קופסאות':250};
+function cheesePart(x){ var m=String(x).replace(/[׳'"״]/g,'').match(/^(?:(\d+(?:\.\d+)?|חצי|אחד|שני|שתי|שלוש)\s+)?(?:(גביע|גביעי|קופסת|קופסאות)\s+)?(?:(\d+)\s*(?:גרם|גר|ג)\s+)?(קוטג|גבינה לבנה|גבינת קוטג)\s*(\d+(?:\.\d+)?)?\s*%?$/);
+  if(!m) return null; var n=m[1]?(NUMW[m[1]]!=null?NUMW[m[1]]:+m[1]):1, g=m[3]?+m[3]:(m[2]?n*CUPS[m[2]]:(m[1]?n*250:250)); if(m[3]&&m[1]&&!m[2]) g=+m[3];
+  var pct=m[5]==='5'?'5%':'3%', nm=(/לבנה/.test(m[4])?'גבינה לבנה ':'קוטג׳ ')+pct, f=AV_FOODS.filter(function(z){ return z[0]===nm; })[0]; return {g:Math.round(g),food:f[0],per:[f[1],f[2],f[3]]}; }
+function parsePart(x){ x=String(x||'').replace(/\([^)]*\)/g,' ').replace(/\s+/g,' ').trim(); if(!x) return null; var n=1, m; var ch=cheesePart(x); if(ch) return ch;
   if((m=x.match(/^(\d+(?:\.\d+)?)\s*(?:גרם|גר|ג׳|ג')\s+(.+)$/))){ var f=findFood(m[2]); return f?{g:+m[1],food:f[0],per:[f[1],f[2],f[3]]}:null; }
   if((m=x.match(/^(\d+(?:\.\d+)?|\d+\/\d+)\s+(.+)$/))){ n=m[1].indexOf('/')>0?(+m[1].split('/')[0])/(+m[1].split('/')[1]):+m[1]; x=m[2]; }
   else { var w=x.split(' ')[0]; if(NUMW[w]!=null&&x.indexOf(' ')>0){ n=NUMW[w]; x=x.slice(w.length+1); } }
@@ -197,7 +203,7 @@ function parseCombo(t){ var parts=String(t||'').split('+').map(function(x){ retu
   for(var i=0;i<parts.length;i++){ var q=parsePart(parts[i]); if(!q) return null; out.push(q); } return out; }
 function comboM(parts){ var m=[0,0,0]; parts.forEach(function(q){ var v=q.per?q.per.map(function(x){ return x*q.g/100; }):UNITS[q.u].slice(1,4).map(function(x){ return x*q.n; }); for(var i=0;i<3;i++) m[i]+=v[i]; }); return m; }
 function partText(q){ if(q.per) return q.g+' גרם '+q.food; var u=UNITS[q.u][0]; return q.n===1?u[0]:q.n===0.5?'חצי '+u[0]:(q.n%1?q.n:q.n)+' '+u[1]; }
-function comboOpt(t,parts){ return {t:t, parts:parts, m:comboM(parts)}; }
+function comboOpt(t,parts){ if(parts.some(function(q){ return q.per&&/קוטג|גבינה לבנה/.test(q.food); })) t=parts.map(partText).join(' + '); return {t:t, parts:parts, m:comboM(parts)}; }
 function optFrom(f,g){ var per=[f[1],f[2],f[3]]; g=Math.max(0,Math.round(+g||0)); return {t:g+' גרם '+f[0], food:f[0], g:g, per:per, m:per.map(function(x){ return x*g/100; }), k100:f[4]}; }
 function setG(o,g){ g=Math.max(0,Math.round(+g||0)); o.g=g; if(o.per){ o.m=o.per.map(function(x){ return x*g/100; }); o.t=g+' גרם '+o.food; } }
 function matchG(base,f){ // גרמים לחלופה: אותן קלוריות (או אותו חלבון)
