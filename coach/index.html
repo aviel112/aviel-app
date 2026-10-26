@@ -192,6 +192,7 @@ main>section>.card,main>section>details.box{grid-column:auto}main>section>.howto
 .wkt{overflow-x:auto;margin-top:8px}.wkt table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:420px}.wkt th,.wkt td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}.wkt thead th{font-size:12px;color:var(--mute);font-weight:600}.wkt tbody th{text-align:start;font-weight:600}.wkt tbody tr{cursor:pointer}.wkt tbody tr:hover{background:var(--bg)}.wkt td.ok{color:var(--green);font-weight:700}.wkt td.bad{color:var(--red);font-weight:700}.wkt td.mu{color:var(--mute);font-size:12px}.wkd{display:inline-block;width:8px;height:8px;border-radius:50%;margin-inline-end:7px;background:var(--green);vertical-align:middle}.wkd.yellow{background:var(--orange)}.wkd.red{background:var(--red)}
 #plEd[hidden],.kv[hidden]{display:none}
 .fc30{background:var(--bg);border-radius:12px;padding:10px 12px;margin:4px 0 8px;font-size:14px}.fc30 b{font-size:17px}.fc30 span{display:block;font-size:12.5px;color:var(--mute);margin-top:2px}
+.tgs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.tag.ct{background:rgba(37,99,235,.1);color:var(--blue)}.tgnew[hidden]{display:none}
 </style></head><body>
 <div class="top"><h1 id="hi">שלום אביאל</h1><div class="d" id="today"></div><button class="btn x" id="rfBtn" type="button" style="position:absolute;left:16px;top:18px;padding:8px 12px;font-size:13px">רענון</button></div>
 <div class="kpis">
@@ -351,6 +352,19 @@ function renderToday(){
   wireWa(box);
 }
 function dots(p){ var sp=(p&&p.spark)||[]; var h=''; for(var i=0;i<7;i++) h+='<i class="'+(sp[i]!=null?'on':'')+'"></i>'; return '<div class="dots" aria-label="שקילות ב-7 הימים האחרונים">'+h+'</div>'; }
+/* תגיות: מסמנים מתאמנים (מתאמן איתי, אונליין, VIP...) ומסננים לפיהן ברשימה */
+var TAGS={}, TAG_DEF=['מתאמן איתי','אונליין','פרונטלי','VIP'];
+function tagAll(){ var all=[]; Object.keys(TAGS).forEach(function(k){ (TAGS[k]||[]).forEach(function(t){ if(all.indexOf(t)<0) all.push(t); }); }); TAG_DEF.forEach(function(t){ if(all.indexOf(t)<0) all.push(t); }); return all; }
+function tagFilters(){ var used=[]; Object.keys(TAGS).forEach(function(k){ (TAGS[k]||[]).forEach(function(t){ if(used.indexOf(t)<0) used.push(t); }); }); return used.map(function(t){ return ['t:'+t,t,function(c){ return (TAGS[c.name]||[]).indexOf(t)>=0; }]; }); }
+function tagBox(d){ var cur=TAGS[d.name]||[];
+  return '<div class="card tagc" data-tgn="'+esc(d.name)+'"><div class="gh">תגיות</div><div class="tgs">'+tagAll().map(function(t){ var on=cur.indexOf(t)>=0; return '<button class="qrc'+(on?' mine':'')+'" data-tg="'+esc(t)+'" aria-pressed="'+on+'">'+(on?'✓ ':'')+esc(t)+'</button>'; }).join('')+'<button class="qrc add" data-tgnew="1">+ תגית חדשה</button></div>'+
+    '<div class="kv tgnew" style="gap:8px;margin-top:8px" hidden><input class="tgin" maxlength="24" placeholder="שם התגית" style="padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:16px;flex:1;min-width:0"><button class="btn p" data-tgadd="1" style="flex:none">הוספה</button></div></div>'; }
+function tagSave(box,list){ var n=box.dataset.tgn; box.style.opacity='.6'; google.script.run.withSuccessHandler(function(r){ TAGS[n]=r||[]; var nb=document.createElement('div'); nb.innerHTML=tagBox({name:n}); box.replaceWith(nb.firstChild); try{ renderClients(); }catch(e){} }).withFailureHandler(function(er){ box.style.opacity=''; toast(er.message); }).dashboardSetTags(n,list); }
+document.addEventListener('click',function(e){ var t=e.target&&e.target.closest&&e.target.closest('.tagc'); if(!t) return; var b=e.target.closest('button'); if(!b) return; var cur=(TAGS[t.dataset.tgn]||[]).slice();
+  if(b.dataset.tgnew){ var f=t.querySelector('.tgnew'); f.hidden=!f.hidden; if(!f.hidden) t.querySelector('.tgin').focus(); return; }
+  if(b.dataset.tgadd){ var v=t.querySelector('.tgin').value.trim(); if(!v){ toast('כותבים שם לתגית'); return; } if(cur.indexOf(v)<0) cur.push(v); tagSave(t,cur); return; }
+  if(b.dataset.tg!=null){ var x=b.dataset.tg, i=cur.indexOf(x); if(i>=0) cur.splice(i,1); else cur.push(x); tagSave(t,cur); } });
+try{ google.script.run.withSuccessHandler(function(x){ TAGS=x||{}; try{ renderClients(); }catch(e){} }).dashboardTagsAll(); }catch(e){}
 /* מסננים מהירים ברשימת המתאמנים */
 var FCL='';
 function clFilters(){ var P=function(c){ return PU&&PU[c.name]; };
@@ -359,7 +373,7 @@ function clFilters(){ var P=function(c){ return PU&&PU[c.name]; };
     ['nw','לא נשקלו 3+ ימים',function(c){ var p=P(c); return !!(p&&!p.err&&(p.never||p.gap>=3)); }],
     ['nt','בלי אימון השבוע',function(c){ var p=P(c); return !!(p&&p.lw===0); }],
     ['bal','יתרה פתוחה',function(c){ return c.balance>0; }],
-    ['end','מסיימים ב-14 יום',function(c){ return c.daysLeft!=null&&c.daysLeft>=0&&c.daysLeft<=14; }]]; }
+    ['end','מסיימים ב-14 יום',function(c){ return c.daysLeft!=null&&c.daysLeft>=0&&c.daysLeft<=14; }]].concat(tagFilters()); }
 document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('[data-fcl]'); if(!b) return; FCL=FCL===b.dataset.fcl?'':b.dataset.fcl; renderClients(); });
 /* השבוע במבט: שורה לכל מתאמן/ת — שקילות ב-7 ימים, ימי אימון מיום ראשון, צ׳ק-אין, כניסה אחרונה. ירוק = בסדר, אדום = דורש פנייה */
 function weekTable(list){ if(!PU) return ''; var dow=new Date().getDay(), t0=new Date(new Date().toDateString());
@@ -385,7 +399,7 @@ function renderClients(){
   if(TM){ var un=active().filter(function(c){ return !TM[c.name]; }); h+='<details class="box"'+(un.length?' open':'')+'><summary>סיווג: תפריט או ערכים'+(un.length?' · '+un.length+' לא מסווגים':' · כולם מסווגים')+'</summary>'+active().map(function(c){ var m=TM[c.name]||''; return '<div class="item"><div class="t"><div class="n">'+esc(c.name)+'</div></div><button class="btn'+(m==='תפריט'?' p':'')+'" data-tmn="'+esc(c.name)+'" data-tmv="תפריט">תפריט</button><button class="btn'+(m==='ערכים'?' p':'')+'" data-tmn="'+esc(c.name)+'" data-tmv="ערכים">ערכים</button></div>'; }).join('')+'<div class="s" style="font-size:13px;color:var(--mute);margin-top:8px">מתאמן/ת "ערכים": קובעים קלוריות בכרטיס שלו/ה, והאפליקציה מראה כמה נשאר להיום.</div></details>'; }
   if(!q&&!FCL) h+=weekTable(list);
   h+='<div class="sec"><span>'+list.length+((FCL||q)?' מתוך '+active().length:'')+' פעילים</span><span>לחיצה פותחת פעולות</span></div>';
-  h+=list.map(function(c){ var p=PU&&PU[c.name], tags=[];
+  h+=list.map(function(c){ var p=PU&&PU[c.name], tags=[]; (TAGS[c.name]||[]).forEach(function(t){ tags.push('<span class="tag ct">'+esc(t)+'</span>'); });
     if(p&&p.risk) tags.push('<span class="tag'+(p.risk.lvl==='red'?' r':p.risk.lvl==='yellow'?' w':' g')+'">'+(p.risk.lvl==='red'?'אדום':p.risk.lvl==='yellow'?'צהוב':'ירוק')+'</span>');
     if(p&&!p.err){ if(p.never) tags.push('<span class="tag w">לא נשקל/ה</span>'); else if(p.gap>=3) tags.push('<span class="tag w">לא נשקל/ה '+p.gap+' ימים</span>');
       tags.push('<span class="tag'+(p.lw?' g':'')+'">אימונים השבוע: '+(p.lw==null?'–':p.lw)+'</span>'); }
@@ -538,7 +552,7 @@ document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&
 document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('[data-renew]'); if(!b) return; var n=b.dataset.renew, pd={payDate:$('#rnD').value,months:$('#rnM').value,price:$('#rnP').value,paid:$('#rnPaid').value}; if(!pd.payDate){ toast('בוחרים תאריך תשלום'); return; } b.disabled=true; b.textContent='מעדכן…';
   google.script.run.withSuccessHandler(function(r){ toast(r.mode==='extend'?'הליווי הוארך'+(r.end?' עד '+r.end:''):'נפתח תהליך חדש. קובץ המעקב מתחיל מ-'+r.start); google.script.run.withSuccessHandler(function(d){ L=d; swrSave('list',d); renderAll(); delete CARD[n]; google.script.run.withSuccessHandler(function(x){ CARD[n]=x; renderCard(x); }).dashboardClientCard(n); }).dashboardList(); })
   .withFailureHandler(function(er){ b.disabled=false; b.textContent='חידוש: הוספת חודשים לליווי'; toast(er.message); }).dashboardRenewExtend(n,pd); });
-function renderCard(d){ var h=quickBar(d)+nextCard(d)+renewBox(d)+detailsBox(d)+trackCard(d)+habitsBox(d), diff=d.first!=null&&d.last!=null?Math.round((d.last-d.first)*10)/10:null;
+function renderCard(d){ var h=quickBar(d)+nextCard(d)+renewBox(d)+detailsBox(d)+tagBox(d)+trackCard(d)+habitsBox(d), diff=d.first!=null&&d.last!=null?Math.round((d.last-d.first)*10)/10:null;
   h+='<div class="card"><div class="big"><b>'+(d.last!=null?d.last:'–')+'</b><small>ק״ג'+(diff!=null?' · '+sg(diff)+' מההתחלה':'')+(d.weekNo?' · שבוע '+d.weekNo:'')+'</small></div>'+(d.status?'<div class="s" style="font-size:13px;color:var(--mute)">'+esc(d.status)+'</div>':'')+trendSvg(d.spark,d.goal,d.rate)+
     '<div class="kv">'+(d.gap!=null&&d.gap>=2?'<span class="tag w">לא נשקל/ה '+d.gap+' ימים</span>':'')+(d.steps!=null?'<span class="tag">צעדים: '+d.steps.toLocaleString('he-IL')+' ליום</span>':'')+'<span class="tag'+(d.checkin?' g':' w')+'">צ׳ק-אין השבוע: '+(d.checkin?'נשלח':'עוד לא')+'</span>'+(d.weeks?'<span class="tag">'+d.weeks+' שבועות אימון</span>':'')+'</div>'+(d.note?'<div style="margin-top:8px;font-size:13.5px">'+esc(d.note)+'</div>':'')+'</div>';
   if(d.weekly&&d.weekly.length>1){ var hm=d.height>100?d.height/100:0; h+='<details class="box"><summary>היסטוריית שקילות לפי שבוע</summary><table class="wtab"><tr><th>שבוע</th><th>ממוצע</th><th>שינוי</th>'+(hm?'<th>BMI</th>':'')+'</tr>'+d.weekly.map(function(w,i){ var ch=i?Math.round((w-d.weekly[i-1])*10)/10:null; return '<tr><td>'+(i+1)+'</td><td class="num">'+w+'</td><td class="num">'+(ch==null?'–':'<span class="'+(ch<0?'up':ch>0?'dn':'')+'">'+sg(ch)+'</span>')+'</td>'+(hm?'<td class="num">'+(w/(hm*hm)).toFixed(1)+'</td>':'')+'</tr>'; }).reverse().join('')+'</table></details>'; }
