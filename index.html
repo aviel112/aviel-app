@@ -1849,7 +1849,10 @@ function oqLifts(add,del){ var o=JSON.parse(JSON.stringify(P&&P.lifts||{})), ex=
   if(add){ var e={d:TODAY,kg:add.kg,reps:add.reps}; if(add.rir!=null) e.rir=add.rir; L.hist.push(e); if(!L.first) L.first=e; L.best=Math.max(L.best||0,add.kg); }
   else { for(var i=L.hist.length-1;i>=0;i--){ var h=L.hist[i]; if(h.d===TODAY&&h.kg===del.kg&&h.reps===del.reps){ L.hist.splice(i,1); break; } } }
   return o; }
-api=function(a,p){ return _apiO(a,p).catch(function(e){ var off=/אין חיבור/.test(e&&e.message||'');
+/* סטים נשלחים לשרת אחד אחרי השני (גם כשמסמנים כמה סטים מהר), כדי ששום סט לא יידרס */
+var LQ=Promise.resolve();
+api=function(a,p){ var call; if(a==='lift'||a==='liftdel'){ call=LQ.then(function(){ return _apiO(a,p); }); LQ=call.then(function(){},function(){}); } else call=_apiO(a,p);
+  return call.catch(function(e){ var off=/אין חיבור/.test(e&&e.message||'');
   if(off&&a==='lift'&&P){ var q0=ls(OQ_KEY,[]); q0.push({a:'lift',p:p,d:trkYmd(new Date())}); lsSet(OQ_KEY,q0); setTimeout(function(){ toast('אין קליטה. הסט נשמר בטלפון ויישלח לבד כשיחזור חיבור.'); },60); return oqLifts(p,null); }
   if(off&&a==='liftdel'&&P){ var q1=ls(OQ_KEY,[]), k=-1; q1.forEach(function(x,i){ if(x.a==='lift'&&x.p.ex===p.ex&&+x.p.kg===+p.kg&&+x.p.reps===+p.reps) k=i; }); if(k>=0){ q1.splice(k,1); lsSet(OQ_KEY,q1); return oqLifts(null,p); } }
   if((a==='weigh'||a==='steps')&&off&&D){
