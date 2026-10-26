@@ -1597,6 +1597,7 @@ function eoTargets(M){ var out=[]; (M&&M.blocks||[]).forEach(function(b){ if(!b.
   return out; }
 function renderEatOut(M){ var box=document.getElementById('menuBox'); if(!box||document.getElementById('eatout')) return; var tg=eoTargets(M); if(!tg.length) return;
   var el=document.createElement('div'); el.id='eatout'; el.className='card eo'; box.appendChild(el); drawEatOut(tg); }
+function eoPortion(v){ var m=String(v||'').match(/^(\d+(?:\.\d+)?)\s*g$/i); return m?Math.round(+m[1])+' ג׳':String(v||''); } /* "591.6g" → "592 ג׳" */
 function drawEatOut(tg){ var el=document.getElementById('eatout'); if(!el) return; if(!EO.meal) EO.meal=tg[0].t;
   var cur=tg.filter(function(x){ return x.t===EO.meal; })[0]||tg[0];
   var h='<div class="row"><h3>אוכלים בחוץ היום?</h3><span class="sub">מנות שמתאימות לערכי הארוחה</span></div>'+
@@ -1606,7 +1607,7 @@ function drawEatOut(tg){ var el=document.getElementById('eatout'); if(!el) retur
   h+='<div class="chips" style="margin-top:6px">'+chains.map(function(c){ return '<button type="button" class="chip" data-eoc="'+esc(c)+'" aria-pressed="'+(c===EO.chain)+'">'+esc(c)+'</button>'; }).join('')+'</div>';
   var tk=cur.v.k, tp=cur.v.p||0;
   var list=EATOUT.filter(function(x){ return x[0]===EO.chain&&x[4]>0; }).map(function(x){ var dk=Math.abs(x[4]-tk)/tk, dp=tp?Math.max(0,(tp-x[5])/tp):0; return {x:x,sc:dk+dp*0.8}; }).sort(function(a,b){ return a.sc-b.sc; }).slice(0,6);
-  h+='<div class="sub" style="margin:8px 0 4px">היעד לארוחה: כ-'+tk+' קק״ל'+(tp?' ו-'+tp+' גרם חלבון':'')+'. הכי קרוב קודם:</div>'+list.map(function(o,i){ var x=o.x, over=x[4]>tk*1.15; return '<div class="eorow"><div class="eon"><b>'+esc(x[2])+'</b><small>'+esc(x[1])+(x[3]?' · '+esc(x[3]):'')+'</small></div><div class="eov'+(over?' over':'')+'"><b class="num">'+x[4]+'</b><small>קק״ל · '+x[5]+' חלבון</small></div><button type="button" class="ghost sm" data-eoeat="'+i+'">אכלתי</button></div>'; }).join('')+
+  h+='<div class="sub" style="margin:8px 0 4px">היעד לארוחה: כ-'+tk+' קק״ל'+(tp?' ו-'+tp+' גרם חלבון':'')+'. הכי קרוב קודם:</div>'+list.map(function(o,i){ var x=o.x, over=x[4]>tk*1.15; return '<div class="eorow"><div class="eon"><b>'+esc(x[2])+'</b><small>'+esc(x[1])+(x[3]?' · '+esc(eoPortion(x[3])):'')+'</small></div><div class="eov'+(over?' over':'')+'"><b class="num">'+x[4]+'</b><small>קק״ל · '+Math.round(x[5])+' ג׳ חלבון</small></div><button type="button" class="ghost sm" data-eoeat="'+i+'">אכלתי</button></div>'; }).join('')+
     '<div class="swaphint">מנה שחורגת ביותר מ-15% מסומנת באדום. תמיד עדיף חלבון גבוה ורוטב בצד.</div>';
   el.innerHTML=h; wireEo(el,tg,list,cur); }
 function wireEo(el,tg,list,cur){ el.querySelectorAll('[data-eom]').forEach(function(b){ b.onclick=function(){ EO.meal=b.dataset.eom; drawEatOut(tg); }; });
