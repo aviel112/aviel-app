@@ -742,9 +742,19 @@ var $=function(s){ return document.querySelector(s); };
 function ltr(h){ return String(h).replace(/(\d[\d,.]*)\s*[–-]\s*(\d[\d,.]*)/g,'<span dir="ltr">$1–$2</span>'); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function toast(t,bad){ var el=$('#toast'); el.textContent=t; el.className='toast'+(bad?' e':''); el.hidden=false; clearTimeout(window._t); window._t=setTimeout(function(){el.hidden=true;},2600); }
+/* המנוי הסתיים: מסך חידוש מעל הכל (השרת מחזיר exp בכל בקשה). הנתונים נשמרים; אחרי חידוש בלוח האפליקציה נפתחת כרגיל */
+var LOCKED=false;
+function showExpired(x){ if(LOCKED) return; LOCKED=true; x=x||{}; var d=document.createElement('div'); d.id='lockScr'; d.setAttribute('role','dialog'); d.setAttribute('aria-modal','true'); d.setAttribute('aria-labelledby','lockT');
+  d.style.cssText='position:fixed;inset:0;z-index:10000;background:var(--ink);display:flex;align-items:center;justify-content:center;padding:24px max(20px,env(safe-area-inset-right,0px)) 24px max(20px,env(safe-area-inset-left,0px));overflow:auto';
+  d.innerHTML='<div class="card" style="max-width:420px;width:100%;text-align:center"><div class="label">AVIEL · ליווי אישי</div><h2 id="lockT" style="margin:10px 0 8px">'+esc(x.first?x.first+', ':'')+'המנוי הסתיים</h2>'+
+    '<div class="sub" style="line-height:1.6">'+(x.end?'הליווי שלך הסתיים ב-'+esc(x.end)+'. ':'')+'כדי להמשיך עם התפריט, התוכנית והליווי האישי, מחדשים את המנוי.</div>'+
+    '<div class="sub" style="margin-top:8px;line-height:1.6">כל הנתונים שלך שמורים: שקילות, אימונים ויומן. הכל חוזר ברגע שמחדשים.</div>'+
+    '<a class="wa" style="margin-top:16px;background:var(--gold);border-color:var(--gold);color:#120f0a" href="'+esc(x.wa||'https://wa.me/972537718200')+'" target="_blank" rel="noopener">חידוש המנוי בוואטסאפ</a>'+
+    (x.pay?'<a class="wa" style="margin-top:10px" href="'+esc(x.pay)+'" target="_blank" rel="noopener">לתשלום</a>':'')+'</div>';
+  document.body.appendChild(d); var tb=document.getElementById('tabs'); if(tb) tb.hidden=true; try{ d.querySelector('a').focus(); }catch(e){} }
 function api(a,p){
   var u=API+'?api='+a+'&t='+encodeURIComponent(T)+(p?'&p='+encodeURIComponent(JSON.stringify(p)):'')+'&_='+Date.now();
-  return fetch(u).then(function(r){ return r.json().catch(function(){ throw new Error('השרת לא זמין כרגע. נסו שוב בעוד רגע.'); }); }).then(function(j){ if(!j.ok) throw new Error(j.error||'שגיאה'); return j.r; }, function(e){ if(e&&e.name!=='TypeError'&&e.message&&!/fetch|network|load failed|internet|offline/i.test(e.message)) throw e; throw new Error('אין חיבור לאינטרנט. נסו שוב בעוד רגע.'); }); /* TypeError = הבקשה לא יצאה (באייפון: Load failed) */
+  return fetch(u).then(function(r){ return r.json().catch(function(){ throw new Error('השרת לא זמין כרגע. נסו שוב בעוד רגע.'); }); }).then(function(j){ if(!j.ok){ if(j.exp) showExpired(j.exp); throw new Error(j.error||'שגיאה'); } return j.r; }, function(e){ if(e&&e.name!=='TypeError'&&e.message&&!/fetch|network|load failed|internet|offline/i.test(e.message)) throw e; throw new Error('אין חיבור לאינטרנט. נסו שוב בעוד רגע.'); }); /* TypeError = הבקשה לא יצאה (באייפון: Load failed) */
 }
 var DAYS=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'], MON=['ינו׳','פבר׳','מרץ','אפר׳','מאי','יוני','יולי','אוג׳','ספט׳','אוק׳','נוב׳','דצמ׳'];
 function pd(s){ var p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
@@ -1000,7 +1010,7 @@ else {
   var FRESH=false;
   if(CACHED){ var fromCache=function(){ if(FRESH) return; D=CACHED.D; if(CACHED.P&&!P) P=CACHED.P; bootUI(); drawAll(); }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fromCache); else setTimeout(fromCache,0); }
   api('data').then(function(r){ FRESH=true; D=r; bootUI(); drawAll(); saveC(); })
-    .catch(function(er){ if(/הקישור לא בתוקף/.test(er&&er.message||'')){ try{ localStorage.removeItem('aviel_tb'); localStorage.removeItem(CK); }catch(e){} document.querySelectorAll('section[data-view]').forEach(function(s){ s.hidden=true; }); showLogin(); } else if(BOOTED) toast(/אין חיבור/.test(er&&er.message||'')?'אין חיבור כרגע. מוצג המידע האחרון ששמור בטלפון':er.message,1); else fatal(er.message); });
+    .catch(function(er){ if(/הקישור לא בתוקף/.test(er&&er.message||'')){ try{ localStorage.removeItem('aviel_tb'); localStorage.removeItem(CK); }catch(e){} document.querySelectorAll('section[data-view]').forEach(function(s){ s.hidden=true; }); showLogin(); } else if(LOCKED){} else if(BOOTED) toast(/אין חיבור/.test(er&&er.message||'')?'אין חיבור כרגע. מוצג המידע האחרון ששמור בטלפון':er.message,1); else fatal(er.message); });
   api('plan').then(function(r){ P=r; P.lifts=normLifts(P.lifts); if(D){ renderMenu(); renderTrain(); drawStrength(); } saveC(); }).catch(function(){ if(!P) P={menu:null,program:null,lifts:{}}; if(D){ renderMenu(); renderTrain(); } });
   document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') saveC(); });
 }
