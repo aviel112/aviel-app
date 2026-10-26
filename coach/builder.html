@@ -245,7 +245,14 @@ function quickChips(r,key){ var k=rowKind(r); if(!k) return ''; var have=r.opts.
 function rowRange(r){ var o=r.opts.filter(function(x){ return x.m&&(x.m[0]||x.m[1]||x.m[2]); }); if(!o.length) return null; var ks=o.map(function(x){ return [kc(x.m),x.m[0],x.m[1],x.m[2]]; }); var lo=[0,1,2,3].map(function(i){ return Math.min.apply(null,ks.map(function(z){ return z[i]; })); }), hi=[0,1,2,3].map(function(i){ return Math.max.apply(null,ks.map(function(z){ return z[i]; })); }); return {lo:lo,hi:hi}; }
 function totals(M){ var lo=[0,0,0,0], hi=[0,0,0,0]; M.meals.forEach(function(ml){ ml.rows.forEach(function(r){ var R=rowRange(r); if(R) for(var i=0;i<4;i++){ lo[i]+=R.lo[i]; hi[i]+=R.hi[i]; } }); }); lo[0]+=+M.free||0; hi[0]+=+M.free||0; return {lo:lo,hi:hi}; }
 function mealK(ml){ var lo=0,hi=0; ml.rows.forEach(function(r){ var R=rowRange(r); if(R){ lo+=R.lo[0]; hi+=R.hi[0]; } }); return lo===hi?String(Math.round(lo)):Math.round(lo)+'–'+Math.round(hi); }
-function saveDraft(){ if(S.client&&S.M) lss('coach_draft_menu_'+S.client,S.M); if(S.client&&S.P) lss('coach_draft_prog_'+S.client,S.P); }
+function saveDraft(){ var now=Date.now(); if(S.client&&S.M){ S.M._ts=now; lss('coach_draft_menu_'+S.client,S.M); } if(S.client&&S.P){ S.P._ts=now; lss('coach_draft_prog_'+S.client,S.P); } clearTimeout(CLT); CLT=setTimeout(cloudSave,2500); }
+/* טיוטה בענן: נשמרת כמה שניות אחרי כל שינוי, ונטענת אם היא חדשה מהמקומית (עבודה מהמחשב ומהטלפון) */
+var CLT=null, CLSENT={};
+function cloudSave(){ var c=S.client; if(!c) return; [['menu',S.M],['prog',S.P]].forEach(function(x){ if(!x[1]) return; var j=JSON.stringify(x[1]); if(CLSENT[c+x[0]]===j) return; CLSENT[c+x[0]]=j; call('dashboardDraftSave',c,x[0],j).catch(function(){ CLSENT[c+x[0]]=''; }); }); }
+function cloudLoad(c){ var t0=Date.now(); call('dashboardDraftLoad',c).then(function(r){ if(S.client!==c||!r) return; var used=[];
+  [['menu','M'],['prog','P']].forEach(function(x){ if(!r[x[0]]) return; var d; try{ d=JSON.parse(r[x[0]]); }catch(e){ return; } var loc=S[x[1]], lts=loc&&loc._ts||0; if(lts>t0) return; // התחלת לערוך בינתיים
+    if((d._ts||0)>lts){ S[x[1]]=x[1]==='M'?refreshMenu(d):d; lss((x[1]==='M'?'coach_draft_menu_':'coach_draft_prog_')+c,S[x[1]]); CLSENT[c+x[0]]=r[x[0]]; used.push(x[0]==='menu'?'התפריט':'התוכנית'); } });
+  if(used.length){ render(); toast('נטענה הטיוטה העדכנית ('+used.join(' ו')+') מהמכשיר השני'); } }).catch(function(){}); }
 function fromStored(M){ // מתפריט שמור/מיובא לפורמט הבונה
   M.meals=(M.meals||[]).map(function(ml){ return {title:ml.title||'', note:ml.note||'', rows:(ml.rows||[]).map(function(r){ return {label:r.label||'', alt:!!r.alt, opts:(r.opts||[]).map(function(o){
     if(o.food&&o.per) return {t:o.t, food:o.food, g:o.g, per:o.per, m:o.per.map(function(x){ return x*o.g/100; })};
@@ -466,7 +473,7 @@ function wireProg(){ var P=S.P; if(!P) return; var upd=function(){ saveDraft(); 
 /* ===== טעינה ===== */
 // טיוטה שמורה: מחשבים מחדש כל אפשרות מהטקסט, כדי שערכים חדשים (ביצה, קוטג׳…) ייכנסו גם לתפריט שכבר התחלת
 function refreshMenu(M){ if(!M||!M.meals) return M; M.meals.forEach(function(ml){ (ml.rows||[]).forEach(function(r){ r.opts=(r.opts||[]).map(function(o){ if(o.per&&o.food) return o; var pc=parseCombo(o.t||o.raw); return pc?comboOpt(o.t||o.raw,pc):o; }); }); }); return M; }
-function loadMenuCtx(){ var c=S.client; S.M=refreshMenu(lsg('coach_draft_menu_'+c,null)); S.msug=null;
+function loadMenuCtx(){ var c=S.client; S.M=refreshMenu(lsg('coach_draft_menu_'+c,null)); S.msug=null; cloudLoad(c);
   call('dashboardMenuSuggest',c).then(function(r){ if(S.client!==c) return; S.msug=r; if(!S.M) S.M=emptyMenu(r.T||1700); if(!S.M.T) S.M.T=r.T||1700; render(); }).catch(function(e){ if(!S.M) S.M=emptyMenu(1700); render(); toast(e.message,1); });
   if(!S.mstore) call('dashboardMenuStoreList').then(function(r){ S.mstore=r; render(); }).catch(function(){}); }
 function loadProgCtx(){ var c=S.client; S.P=lsg('coach_draft_prog_'+c,null); S.psug=null; S.pn=0;
