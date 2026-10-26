@@ -6,9 +6,9 @@ self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', e => {
   e.waitUntil(ps().then(s => fetch(API + '?api=coachnote&ps=' + encodeURIComponent(s) + '&_=' + Date.now()).then(r => r.json()))
     .then(j => (j && j.ok && j.r) ? j.r : null).catch(() => null)
-    .then(m => self.registration.showNotification((m && m.title) || 'AVIEL ניהול', { body: (m && m.body) || 'יש עדכון מהמתאמנים', icon: 'icon-192.png', badge: 'icon-192.png', lang: 'he', dir: 'rtl', tag: 'coach-' + Date.now() })));
+    .then(m => self.registration.showNotification((m && m.title) || 'AVIEL ניהול', { body: (m && m.body) || 'יש עדכון מהמתאמנים', icon: 'icon-192.png', badge: 'icon-192.png', lang: 'he', dir: 'rtl', tag: 'coach-' + Date.now(), data: { url: (m && m.url) || '' } })));
 });
 self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => ws.length ? ws[0].focus() : clients.openWindow('./')));
+  e.notification.close(); const u = String((e.notification.data && e.notification.data.url) || '');
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(ws => { if (ws.length) { if (u) ws[0].postMessage({ go: u }); return ws[0].focus(); } return clients.openWindow('./' + u.replace(/^\.\//, '')); }));
 });
