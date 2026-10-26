@@ -180,6 +180,8 @@ main>section>.card,main>section>details.box{grid-column:auto}main>section>.howto
 .spark.trend{height:104px}.spark.trend path{stroke-width:2.6}.spark .rawd{fill:var(--mute);opacity:.45;stroke:none}.spark .goall{stroke:var(--green);stroke-width:1.6;stroke-dasharray:5 4;opacity:.8}
 .trw{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--mute);margin-top:6px}.trw .lg{display:inline-flex;align-items:center;gap:4px}.trw .lt{display:inline-block;width:14px;height:3px;background:var(--blue);border-radius:2px}.trw .lg2{display:inline-block;width:14px;border-top:2px dashed var(--green);margin-right:6px}
 .fbars2{position:relative;display:flex;align-items:flex-end;gap:4px;height:120px;margin-top:10px;direction:ltr}.fbars2 .fb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}.fbars2 .fp{height:86px;width:100%;display:flex;align-items:flex-end}.fbars2 .fb i{display:block;width:100%;background:var(--blue);border-radius:5px 5px 2px 2px}.fbars2 .fb i.over{background:var(--orange)}.fbars2 .fk{font-size:10px;color:var(--mute);height:16px;line-height:16px}.fbars2 .fd{font-size:10.5px;color:var(--mute);height:18px;line-height:18px}.ftg{position:absolute;left:0;right:0;border-top:2px dashed var(--green);z-index:1;pointer-events:none}.ftg span{position:absolute;right:0;top:-17px;font-size:11px;color:var(--green);background:var(--card);padding:0 4px}
+.mday{font-size:12.5px;font-weight:700;color:var(--blue);margin:10px 0 2px}
+.fchips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}.fchips::-webkit-scrollbar{display:none}.fchip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink)}.fchip b{color:var(--mute);font-weight:700;margin-right:2px}.fchip.on{background:var(--ink);color:#fff;border-color:var(--ink)}.fchip.on b{color:#fff}
 </style></head><body>
 <div class="top"><h1 id="hi">שלום אביאל</h1><div class="d" id="today"></div><button class="btn x" id="rfBtn" type="button" style="position:absolute;left:16px;top:18px;padding:8px 12px;font-size:13px">רענון</button></div>
 <div class="kpis">
@@ -263,15 +265,30 @@ function drawActivity(){ var box=$('section[data-v="today"]'); if(!box||!ACT) re
   var row=function(x){ return '<div class="item" data-card="'+esc(x.name)+'" style="cursor:pointer"><div class="t"><div class="n">'+esc(x.name)+' <span style="font-weight:400;color:var(--mute)">· '+esc(x.what)+(x.c>1?' ×'+x.c:'')+'</span></div><div class="s">'+esc(x.d||'')+'</div></div><span class="s num" style="flex:none">'+agoT(x.at)+'</span></div>'; };
   var el=document.createElement('div'); el.id='actBox'; el.className='card'; el.innerHTML='<div class="gh">מה המתאמנים עשו לאחרונה</div>'+ACT.slice(0,5).map(row).join('')+(ACT.length>5?'<details><summary style="font-size:13px;color:var(--blue);cursor:pointer;padding-top:6px">עוד '+(Math.min(ACT.length,25)-5)+'</summary>'+ACT.slice(5,25).map(row).join('')+'</details>':'');
   box.appendChild(el); el.querySelectorAll('[data-card]').forEach(function(b){ b.onclick=function(){ openCard(b.dataset.card); }; }); tidyToday(); }
+/* פגישות השבוע: מהלוח (פגישה הבאה + שעה), לפי יום, עם תזכורת בוואטסאפ */
+var DAYN=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+function drawMeetings(){ var box=$('section[data-v="today"]'); if(!box||!L) return; var old=box.querySelector('#meetBox'); if(old) old.remove();
+  var t0=new Date(); t0.setHours(0,0,0,0); var list=active().filter(function(c){ return c.nextMeeting; }).map(function(c){ var d=new Date(c.nextMeeting+'T12:00:00'); d.setHours(0,0,0,0); return {c:c,d:d,g:Math.round((d-t0)/864e5)}; }).filter(function(x){ return x.g>=0&&x.g<=7; })
+    .sort(function(a,b){ return a.g-b.g||String(a.c.meetingTime||'').localeCompare(String(b.c.meetingTime||'')); });
+  var el=document.createElement('div'); el.id='meetBox'; el.className='card';
+  if(!list.length){ el.innerHTML='<div class="gh">פגישות השבוע</div><div class="s" style="font-size:13px;color:var(--mute)">אין פגישות שנקבעו ל-7 הימים הקרובים.</div>'; box.appendChild(el); return; }
+  var lbl=function(x){ return x.g===0?'היום':x.g===1?'מחר':'יום '+DAYN[x.d.getDay()]+' '+('0'+x.d.getDate()).slice(-2)+'/'+('0'+(x.d.getMonth()+1)).slice(-2); }, cur='', h='<div class="gh">פגישות השבוע · '+list.length+'</div>';
+  list.forEach(function(x){ var L1=lbl(x); if(L1!==cur){ cur=L1; h+='<div class="mday">'+esc(L1)+'</div>'; }
+    var ph=String(x.c.phone||'').replace(/[^0-9]/g,''); if(ph.charAt(0)==='0') ph='972'+ph.slice(1); var g=genderOf(x.c.name), when=(x.g===0?'היום':x.g===1?'מחר':'ביום '+DAYN[x.d.getDay()])+(x.c.meetingTime?' בשעה '+x.c.meetingTime:'');
+    var txt='היי '+first(x.c.name)+', תזכורת לפגישת הסיכום שלנו '+when+'. '+(g==='f'?'תביאי':g==='m'?'תביא':'כדאי להביא')+' את השקילות והשאלות שלך. נתראה!';
+    h+='<div class="item"><div class="t"><div class="n">'+esc(x.c.name)+'</div><div class="s">'+(x.c.meetingTime?esc(x.c.meetingTime):'בלי שעה')+'</div></div>'+(ph?'<button class="wa" data-mrem="'+esc(x.c.name)+'" data-u="'+esc('https://wa.me/'+ph+'?text='+encodeURIComponent(txt))+'">תזכורת</button>':'')+'<button class="btn" data-card="'+esc(x.c.name)+'">כרטיס</button></div>'; });
+  el.innerHTML=h; box.appendChild(el);
+  el.querySelectorAll('[data-mrem]').forEach(function(b){ b.onclick=function(){ composeWa(b.dataset.u,b.dataset.mrem); }; });
+  el.querySelectorAll('[data-card]').forEach(function(b){ b.onclick=function(){ openCard(b.dataset.card); }; }); }
 /* סדר מסך המשימות: קודם מה שדורש פעולה (מצב בוקר, אדומים, משימות), אחר כך תמונת מצב ופעילות, וכל הכלים בקופסה אחת למטה */
 var TOOLS_OPEN=false;
 function tidyToday(){ var box=$('section[data-v="today"]'); if(!box) return; var kids=[].slice.call(box.children); if(kids.length<3) return;
   var has=function(el,t){ return (el.textContent||'').indexOf(t)>=0; }, used=[], take=function(fn){ var r=kids.filter(function(el){ return used.indexOf(el)<0&&fn(el); }); used=used.concat(r); return r; };
   var oldT=box.querySelector('#toolsBox'); if(oldT){ TOOLS_OPEN=oldT.open; [].slice.call(oldT.querySelector('.tin').children).forEach(function(x){ box.appendChild(x); }); oldT.remove(); kids=[].slice.call(box.children); }
   var banner=take(function(el){ return el.matches('.card')&&/red-l/.test(el.getAttribute('style')||''); }), morn=take(function(el){ return el.id==='mornBtn'; }), red=take(function(el){ return el.matches('.card')&&has(el,'באדום'); }),
-      head=take(function(el){ return el.matches('.thead'); }), tasks=take(function(el){ return el.matches('.task'); }), stats=take(function(el){ return el.matches('.card')&&has(el,'נשקלו היום'); }), act=take(function(el){ return el.id==='actBox'; }),
+      head=take(function(el){ return el.matches('.thead'); }), tasks=take(function(el){ return el.matches('.task'); }), stats=take(function(el){ return el.matches('.card')&&has(el,'נשקלו היום'); }), act=take(function(el){ return el.id==='actBox'; }), meet=take(function(el){ return el.id==='meetBox'; }),
       tools=take(function(el){ return el.matches('details.box')||el.matches('a.btn'); }), rest=kids.filter(function(el){ return used.indexOf(el)<0; });
-  [].concat(banner,morn,red,head,tasks,rest,stats,act).forEach(function(el){ box.appendChild(el); });
+  [].concat(banner,morn,red,head,tasks,meet,rest,stats,act).forEach(function(el){ box.appendChild(el); });
   if(tools.length){ var tb=document.createElement('details'); tb.className='box'; tb.id='toolsBox'; tb.open=TOOLS_OPEN; tb.innerHTML='<summary>כלים: בונה, הכנסות, הודעות, מדריכים והגדרות</summary><div class="tin" style="display:grid;gap:10px;margin-top:10px"></div>'; tools.forEach(function(el){ tb.querySelector('.tin').appendChild(el); }); tb.addEventListener('toggle',function(){ TOOLS_OPEN=tb.open; }); box.appendChild(tb); } }
 function loadActivity(){ google.script.run.withSuccessHandler(function(a){ ACT=a||[]; drawActivity(); }).withFailureHandler(function(){}).dashboardActivity(); }
 document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('[data-mlsave]'); if(!b) return; var ta=$('#mlT'), v=ta?ta.value.trim():''; if(!v){ toast('כותבים מה היה בפגישה'); return; } b.disabled=true;
@@ -321,16 +338,27 @@ function renderToday(){
   wireWa(box);
 }
 function dots(p){ var sp=(p&&p.spark)||[]; var h=''; for(var i=0;i<7;i++) h+='<i class="'+(sp[i]!=null?'on':'')+'"></i>'; return '<div class="dots" aria-label="שקילות ב-7 הימים האחרונים">'+h+'</div>'; }
+/* מסננים מהירים ברשימת המתאמנים */
+var FCL='';
+function clFilters(){ var P=function(c){ return PU&&PU[c.name]; };
+  return [['','הכל',function(){ return true; }],
+    ['att','דורשים תשומת לב',function(c){ var p=P(c); return !!(p&&p.risk&&(p.risk.lvl==='red'||p.risk.lvl==='yellow')); }],
+    ['nw','לא נשקלו 3+ ימים',function(c){ var p=P(c); return !!(p&&!p.err&&(p.never||p.gap>=3)); }],
+    ['nt','בלי אימון השבוע',function(c){ var p=P(c); return !!(p&&p.lw===0); }],
+    ['bal','יתרה פתוחה',function(c){ return c.balance>0; }],
+    ['end','מסיימים ב-14 יום',function(c){ return c.daysLeft!=null&&c.daysLeft>=0&&c.daysLeft<=14; }]]; }
+document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('[data-fcl]'); if(!b) return; FCL=FCL===b.dataset.fcl?'':b.dataset.fcl; renderClients(); });
 function renderClients(){
   var box=$('section[data-v="clients"]'); if(!L){ box.innerHTML='<div class="skel"></div><div class="skel"></div>'; return; }
-  var q=Q.trim(), list=active().filter(function(c){ return !q||c.name.indexOf(q)>=0||String(c.phone).indexOf(q)>=0; });
+  var q=Q.trim(), FD=clFilters(), fd=FD.filter(function(f){ return f[0]===FCL; })[0], list=active().filter(function(c){ return (!q||c.name.indexOf(q)>=0||String(c.phone).indexOf(q)>=0)&&(!fd||fd[2](c)); });
   var score=function(c){ var p=PU&&PU[c.name]; return (p&&p.risk?(p.risk.lvl==='red'?4:p.risk.lvl==='yellow'?2:0):(p&&(p.never||p.gap>=3)?2:0))+(c.balance>0?1:0); };
   list.sort(function(a,b){ return score(b)-score(a)||a.name.localeCompare(b.name,'he'); });
   var h='<input class="search" id="q" type="search" placeholder="חיפוש לפי שם או טלפון" value="'+esc(Q)+'" aria-label="חיפוש מתאמן">';
+  h+='<div class="fchips" role="group" aria-label="סינון">'+FD.map(function(f){ var n=f[0]?active().filter(f[2]).length:active().length; return (f[0]&&!n)?'':'<button type="button" class="fchip'+(FCL===f[0]?' on':'')+'" data-fcl="'+f[0]+'">'+f[1]+' <b>'+n+'</b></button>'; }).join('')+'</div>';
   if(SB&&SB.length) h+='<details class="box"><summary>אתגר הצעדים השבועי · '+SB.length+' רושמים</summary>'+SB.slice(0,10).map(function(x,i){ return '<div class="item"><span class="badge'+(i===0?' auto':'')+'">'+(i+1)+'</span><div class="t"><div class="n">'+esc(x.n)+'</div><div class="s">'+x.days+' ימים נרשמו</div></div><b style="direction:ltr">'+x.avg.toLocaleString('he-IL')+'</b></div>'; }).join('')+'</details>';
   try{ var rc=JSON.parse(localStorage.getItem('m_recent')||'[]').filter(function(n){ return active().some(function(c){ return c.name===n; }); }); if(rc.length&&!q) h+='<div class="rcnt">'+rc.map(function(n){ return '<button class="btn" data-card="'+esc(n)+'">'+esc(n.split(' ')[0])+'</button>'; }).join('')+'</div>'; }catch(e){}
   if(TM){ var un=active().filter(function(c){ return !TM[c.name]; }); h+='<details class="box"'+(un.length?' open':'')+'><summary>סיווג: תפריט או ערכים'+(un.length?' · '+un.length+' לא מסווגים':' · כולם מסווגים')+'</summary>'+active().map(function(c){ var m=TM[c.name]||''; return '<div class="item"><div class="t"><div class="n">'+esc(c.name)+'</div></div><button class="btn'+(m==='תפריט'?' p':'')+'" data-tmn="'+esc(c.name)+'" data-tmv="תפריט">תפריט</button><button class="btn'+(m==='ערכים'?' p':'')+'" data-tmn="'+esc(c.name)+'" data-tmv="ערכים">ערכים</button></div>'; }).join('')+'<div class="s" style="font-size:13px;color:var(--mute);margin-top:8px">מתאמן/ת "ערכים": קובעים קלוריות בכרטיס שלו/ה, והאפליקציה מראה כמה נשאר להיום.</div></details>'; }
-  h+='<div class="sec"><span>'+list.length+' פעילים</span><span>לחיצה פותחת פעולות</span></div>';
+  h+='<div class="sec"><span>'+list.length+((FCL||q)?' מתוך '+active().length:'')+' פעילים</span><span>לחיצה פותחת פעולות</span></div>';
   h+=list.map(function(c){ var p=PU&&PU[c.name], tags=[];
     if(p&&p.risk) tags.push('<span class="tag'+(p.risk.lvl==='red'?' r':p.risk.lvl==='yellow'?' w':' g')+'">'+(p.risk.lvl==='red'?'אדום':p.risk.lvl==='yellow'?'צהוב':'ירוק')+'</span>');
     if(p&&!p.err){ if(p.never) tags.push('<span class="tag w">לא נשקל/ה</span>'); else if(p.gap>=3) tags.push('<span class="tag w">לא נשקל/ה '+p.gap+' ימים</span>');
@@ -592,7 +620,7 @@ function renderOnb(){ var box=$('section[data-v="onb"]'); if(!box) return; if(!O
 function renderAll(){ if(L) $('#kAct').textContent=active().length; renderOnb(); renderToday(); renderClients(); renderLeads(); }
 swr('list',function(d){ L=d; renderAll(); }); swr('pulse',function(d){ PU=d; }); swr('tasks',function(d){ TK=d; }); swr('leads',function(d){ LEADS=d.slice().reverse(); }); swr('onb',function(d){ ONB=d; }); swr('tm',function(d){ TM=d; }); swr('wap',function(d){ WAP=d; }); if(L) renderAll();
 try{ var lt=localStorage.getItem('m_tab'); if(MODE) show('onb'); else if(lt) show(lt); }catch(e){}
-loadOnb(); reloadWap(); loadSys(); setInterval(loadSys,5*60000); setTimeout(loadActivity,1500); setInterval(loadActivity,3*60000); (function(){ var _rtA=renderToday; renderToday=function(){ var r=_rtA.apply(this,arguments); try{ drawActivity(); }catch(e){} try{ tidyToday(); }catch(e){} return r; }; })(); swr('hebn',function(d){ HEBN=d||{}; }); setTimeout(loadHeb,3000);
+loadOnb(); reloadWap(); loadSys(); setInterval(loadSys,5*60000); setTimeout(loadActivity,1500); setInterval(loadActivity,3*60000); (function(){ var _rtA=renderToday; renderToday=function(){ var r=_rtA.apply(this,arguments); try{ drawActivity(); }catch(e){} try{ drawMeetings(); }catch(e){} try{ tidyToday(); }catch(e){} return r; }; })(); swr('hebn',function(d){ HEBN=d||{}; }); setTimeout(loadHeb,3000);
 /* קופסה פתוחה במסך המשימות לא נסגרת כשהנתונים מתעדכנים ברקע */
 (function(){ var _rt=renderToday; renderToday=function(){ var keep={}; document.querySelectorAll('section[data-v="today"] details[id]').forEach(function(d){ if(d.open) keep[d.id]=d.innerHTML; }); _rt.apply(this,arguments); Object.keys(keep).forEach(function(id){ var el=document.getElementById(id); if(el){ el.innerHTML=keep[id]; el.open=true; } }); }; })();
 google.script.run.withSuccessHandler(function(d){ TM=d||{}; swrSave('tm',TM); renderClients(); }).withFailureHandler(function(){}).dashboardTrackModes();
