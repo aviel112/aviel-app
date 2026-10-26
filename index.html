@@ -636,7 +636,7 @@ input,select,textarea{font-size:16px}
           <textarea id="ciNote" rows="2" placeholder="אירוע בסוף השבוע, כאב, שאלה על התפריט…"></textarea>
           <button type="submit" id="ciBtn">שליחה לאביאל</button>
         </form>
-        <div class="sent" id="ciDone" hidden>✓ הצ׳ק-אין של השבוע נשלח. אביאל יחזור אליך.</div>
+        <div class="sent" id="ciDone" hidden>✓ הצ׳ק-אין של השבוע נשלח. התשובה של אביאל תגיע לשיחה בבית ותקפוץ לך בטלפון.</div>
       </div>
       <div class="card" id="install" hidden>
         <div class="row"><span class="label">להוסיף למסך הבית</span><button class="ghost sm" type="button" id="instX" aria-label="סגירה"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
@@ -925,7 +925,7 @@ function picked(q){ var b=document.querySelector('[data-q="'+q+'"] [aria-pressed
 $('#ciForm').addEventListener('submit',function(e){ e.preventDefault();
   var a={energy:picked('energy'),hunger:picked('hunger'),sleep:picked('sleep'),adh:picked('adh'),note:$('#ciNote').value};
   if(!a.energy||!a.hunger||!a.sleep||!a.adh){ toast('מסמנים תשובה בכל שורה',1); return; }
-  $('#ciBtn').disabled=true; api('checkin',a).then(function(){ D.checkinDone=true; render(); toast('נשלח לאביאל'); }).catch(function(er){ toast(er.message||'לא נשלח, נסו שוב',1); $('#ciBtn').disabled=false; }); });
+  $('#ciBtn').disabled=true; api('checkin',a).then(function(){ D.checkinDone=true; render(); toast('נשלח לאביאל. התשובה תגיע לשיחה בבית'); }).catch(function(er){ toast(er.message||'לא נשלח, נסו שוב',1); $('#ciBtn').disabled=false; }); });
 
 $('#mOpen').addEventListener('click',function(){ $('#mForm').hidden=!$('#mForm').hidden; });
 $('#mForm').addEventListener('submit',function(e){ e.preventDefault(); var vals={}, cnt=0;
