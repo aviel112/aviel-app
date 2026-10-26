@@ -403,7 +403,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .ctl .cti{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.ctl .cti:first-of-type{border-top:0}.ctl .cti .tdc{flex:none;background:transparent;border:2px solid var(--line);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;padding:0;min-height:0;color:var(--good)}.ctl .cti.ok .tdc{border-color:var(--good)}.ctl .ctt{flex:1;min-width:0;display:flex;flex-direction:column}.ctl .ctt small{font-size:12.5px;color:var(--mute)}.ctl .ctt small.late{color:var(--bad);font-weight:700}.ctl .cti.ok b{text-decoration:line-through;opacity:.6}
 .fpend{color:var(--mute);font-size:12px;margin-inline-start:6px}
 .setrow .sundo{background:var(--good)!important;color:#fff!important;border-color:var(--good)!important}.setrow .sundo.arm{background:var(--bad)!important;border-color:var(--bad)!important;font-size:12.5px;font-weight:800;padding:0 6px;white-space:nowrap}
-a.vplay{text-decoration:none}.vmeet .vplay{margin:8px 0 0}
+a.vplay{text-decoration:none}.vmeet .vplay{margin:8px 0 0}.paycard .vplay{margin:8px 0 0}
 .askrow{display:flex;gap:8px}.askrow button[type=submit]{flex:1}.mic{display:inline-flex;align-items:center;gap:6px;flex:none;padding:0 14px;background:transparent!important;color:var(--text)!important;border:1px solid var(--line)!important}.mic.rec{border-color:var(--bad)!important;color:var(--bad)!important;animation:micp 1.2s ease-in-out infinite}@keyframes micp{50%{opacity:.6}}@media (prefers-reduced-motion:reduce){.mic.rec{animation:none}}
 .projgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .projgrid>div{background:var(--panel2);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
@@ -1545,7 +1545,7 @@ function renderExtras(el){ var x=document.getElementById('extras'), wf=document.
   if(!x){ x=document.createElement('div'); x.id='extras'; } if(x.previousSibling!==at) at.parentNode.insertBefore(x,at.nextSibling);
   var x2=document.getElementById('extras2'); if(!x2){ x2=document.createElement('div'); x2.id='extras2'; } if(x2.parentNode!==at.parentNode||x2.nextSibling) at.parentNode.appendChild(x2);
   /* למעלה: רק מה שדורש פעולה עכשיו. השקילה מעליהם. למטה: שבועי, אתגר, מדריכים ושאלה */
-  x.innerHTML=videoMeetHtml()+ctasksHtml()+firstWeekHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+photoDueHtml()+reportHtml();
+  x.innerHTML=videoMeetHtml()+payHtml()+ctasksHtml()+firstWeekHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+photoDueHtml()+reportHtml();
   x2.innerHTML=recapHtml()+boardHtml()+guidesHtml()+askHtml();
   wireAsk(x2);
   wireMonthly(x); wireCtasks(x);
@@ -2003,6 +2003,10 @@ function wireChatVoice(x){ x.querySelectorAll('.cvp').forEach(function(b){ b.onc
   b.disabled=true; b.textContent='טוען…'; api('voice',{id:id}).then(function(r){ b.disabled=false; if(!r||!r.b64){ b.textContent='השמעה'; toast('ההודעה לא נמצאה',1); return; }
     a=CVA[id]=new Audio('data:'+(r.mime||'audio/mp4')+';base64,'+r.b64); a.onended=function(){ b.textContent='שוב'; }; CVP=a;
     a.play().then(function(){ b.textContent='עצירה'; }).catch(function(){ b.textContent='השמעה'; }); }).catch(function(e){ b.disabled=false; b.textContent='השמעה'; toast(e.message||'לא נטען',1); }); }; }); }
+
+/* ===== תשלום (רק כשאביאל מפעיל): יתרה מהלוח וכפתור לדף התשלום הקבוע שלו ===== */
+function payHtml(){ var p=D&&D.pay; if(!p||!(Number(p.bal)>0)||!/^https:\/\//.test(String(p.link||''))) return '';
+  return '<div class="news paycard"><div class="row"><b>יתרה לתשלום</b><small class="num">'+Number(p.bal).toLocaleString('he-IL')+' ₪</small></div><p>אפשר לשלם כאן בכרטיס אשראי, בדף התשלום המאובטח. אחרי התשלום אביאל מעדכן את היתרה.</p><a class="vplay" target="_blank" rel="noopener" href="'+esc(p.link)+'">לתשלום</a></div>'; }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
