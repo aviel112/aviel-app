@@ -1843,8 +1843,16 @@ var _drawChartL=drawChart; drawChart=function(){ _drawChartL.apply(this,argument
 var OQ_KEY='aviel_offq', _apiO=api;
 function oqFlush(){ var q=ls(OQ_KEY,[]); if(!q.length||!navigator.onLine) return; var today=trkYmd(new Date()), keep=q.filter(function(x){ return x.d===today; }), lost=q.length-keep.length; lsSet(OQ_KEY,[]);
   if(lost) toast('שקילה מיום קודם לא נשלחה. כדאי לעדכן את אביאל.',1);
-  keep.reduce(function(p,x){ return p.then(function(){ return _apiO(x.a,x.p).then(function(r){ D=r; }); }); },Promise.resolve()).then(function(){ if(keep.length){ render(); toast('נשלח מהטלפון · '+keep.length+' עדכונים'); } }).catch(function(){ lsSet(OQ_KEY,keep.concat(ls(OQ_KEY,[]))); }); }
-api=function(a,p){ return _apiO(a,p).catch(function(e){ if((a==='weigh'||a==='steps')&&/אין חיבור/.test(e&&e.message||'')&&D){
+  var sent=0; keep.reduce(function(p,x){ return p.then(function(){ return _apiO(x.a,x.p).then(function(r){ sent++; if(x.a==='lift') P.lifts=normLifts(r); else D=r; }); }); },Promise.resolve()).then(function(){ if(keep.length){ render(); try{ renderTrain(); drawStrength(); }catch(e){} toast('נשלח מהטלפון · '+keep.length+' עדכונים'); } }).catch(function(){ lsSet(OQ_KEY,keep.slice(sent).concat(ls(OQ_KEY,[]))); }); }
+/* סטים בלי קליטה: נשמרים בתור ונשלחים כשחוזר חיבור. ההיסטוריה המקומית מתעדכנת כדי שההמלצות והסימון יעבדו */
+function oqLifts(add,del){ var o=JSON.parse(JSON.stringify(P&&P.lifts||{})), ex=(add||del).ex, L=o[ex]||(o[ex]={first:null,best:0,hist:[]});
+  if(add){ var e={d:TODAY,kg:add.kg,reps:add.reps}; if(add.rir!=null) e.rir=add.rir; L.hist.push(e); if(!L.first) L.first=e; L.best=Math.max(L.best||0,add.kg); }
+  else { for(var i=L.hist.length-1;i>=0;i--){ var h=L.hist[i]; if(h.d===TODAY&&h.kg===del.kg&&h.reps===del.reps){ L.hist.splice(i,1); break; } } }
+  return o; }
+api=function(a,p){ return _apiO(a,p).catch(function(e){ var off=/אין חיבור/.test(e&&e.message||'');
+  if(off&&a==='lift'&&P){ var q0=ls(OQ_KEY,[]); q0.push({a:'lift',p:p,d:trkYmd(new Date())}); lsSet(OQ_KEY,q0); setTimeout(function(){ toast('אין קליטה. הסט נשמר בטלפון ויישלח לבד כשיחזור חיבור.'); },60); return oqLifts(p,null); }
+  if(off&&a==='liftdel'&&P){ var q1=ls(OQ_KEY,[]), k=-1; q1.forEach(function(x,i){ if(x.a==='lift'&&x.p.ex===p.ex&&+x.p.kg===+p.kg&&+x.p.reps===+p.reps) k=i; }); if(k>=0){ q1.splice(k,1); lsSet(OQ_KEY,q1); return oqLifts(null,p); } }
+  if((a==='weigh'||a==='steps')&&off&&D){
     var q=ls(OQ_KEY,[]).filter(function(x){ return x.a!==a; }); q.push({a:a,p:p,d:trkYmd(new Date())}); lsSet(OQ_KEY,q);
     var wk=D.week||[], t=wk[wk.length-1]; if(t){ if(a==='weigh') t.kg=p.kg; else t.steps=p.n; }
     setTimeout(function(){ toast('אין קליטה. נשמר בטלפון ויישלח לבד כשיחזור חיבור.'); },60); return D; } throw e; }); };
