@@ -222,7 +222,7 @@ main>section>.card,main>section>details.box{grid-column:auto}main>section>.howto
 </nav>
 <div class="toast" id="toast" hidden></div>
 <script>
-if(!window.__AUTH){ document.body.innerHTML='<div style="max-width:420px;margin:18vh auto;padding:24px;text-align:center;font-family:Heebo,Arial,sans-serif"><h1 style="font-size:22px">AVIEL ניהול</h1><p style="color:#667085;line-height:1.6">פותחים פעם אחת את הקישור האישי (מהדשבורד הישן, או מאביאל), ומאז הטלפון זוכר.</p></div>'; throw new Error('no key'); }
+if(!window.__AUTH){ window.addEventListener('error',function(e){ e.preventDefault(); }); /* בלי מפתח: עוצרים את הדשבורד בשקט (בלי שגיאות בקונסול מהסקריפטים שאחרי) */ document.body.innerHTML='<div style="max-width:420px;margin:18vh auto;padding:24px;text-align:center;font-family:Heebo,Arial,sans-serif"><h1 style="font-size:22px">AVIEL ניהול</h1><p style="color:#667085;line-height:1.6">פותחים פעם אחת את הקישור האישי (מהדשבורד הישן, או מאביאל), ומאז הטלפון זוכר.</p></div>'; throw new Error('no key'); }
 </script>
 <script>
 var MODE=window.__MODE||'', ONB=null, TM=null; if(MODE) document.body.classList.add('w');
