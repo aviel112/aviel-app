@@ -743,7 +743,7 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){retur
 function toast(t,bad){ var el=$('#toast'); el.textContent=t; el.className='toast'+(bad?' e':''); el.hidden=false; clearTimeout(window._t); window._t=setTimeout(function(){el.hidden=true;},2600); }
 function api(a,p){
   var u=API+'?api='+a+'&t='+encodeURIComponent(T)+(p?'&p='+encodeURIComponent(JSON.stringify(p)):'')+'&_='+Date.now();
-  return fetch(u).then(function(r){ return r.json(); }).then(function(j){ if(!j.ok) throw new Error(j.error||'שגיאה'); return j.r; }, function(e){ if(e&&e.message&&!/fetch|network/i.test(e.message)) throw e; throw new Error('אין חיבור לאינטרנט. נסו שוב בעוד רגע.'); });
+  return fetch(u).then(function(r){ return r.json(); }).then(function(j){ if(!j.ok) throw new Error(j.error||'שגיאה'); return j.r; }, function(e){ if(e&&e.name!=='TypeError'&&e.message&&!/fetch|network|load failed|internet|offline/i.test(e.message)) throw e; throw new Error('אין חיבור לאינטרנט. נסו שוב בעוד רגע.'); }); /* TypeError = הבקשה לא יצאה (באייפון: Load failed) */
 }
 var DAYS=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'], MON=['ינו׳','פבר׳','מרץ','אפר׳','מאי','יוני','יולי','אוג׳','ספט׳','אוק׳','נוב׳','דצמ׳'];
 function pd(s){ var p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
@@ -1691,16 +1691,18 @@ function guidesHtml(){ if(!GUIDES_TRIED&&typeof api==='function'){ GUIDES_TRIED=
   if(!GUIDES||!GUIDES.length) return '';
   return '<div class="news guides"><div class="row"><b>המדריכים של אביאל</b><small>'+GUIDES.length+' מדריכים</small></div>'+GUIDES.map(function(g){ return '<a class="gd" target="_blank" rel="noopener" href="'+esc(g.u)+'"><span><b>'+esc(g.t)+'</b>'+(g.d?'<small>'+esc(g.d)+'</small>':'')+'</span><i>פתיחה</i></a>'; }).join('')+'</div>'; }
 /* ===== השיחה עם אביאל: שאלה מתוך האפליקציה והתשובות שלו באותו שרשור (במקום לחפש בוואטסאפ) ===== */
-var CHAT=null, CHAT_TRIED=false, ASKD='', CHAT_ALL=false;
+var CHAT=null, CHAT_TRIED=false, ASKD='', CHAT_ALL=false, ASK_BUSY=false;
 function chatAgo(at){ var t=Date.parse(at); if(isNaN(t)) return ''; var m=Math.round((Date.now()-t)/60000); if(m<2) return 'עכשיו'; if(m<60) return 'לפני '+m+' דק׳'; var h=Math.round(m/60); if(h<24) return 'לפני '+h+' שע׳'; var d=Math.round(h/24); return d===1?'אתמול':'לפני '+d+' ימים'; }
 function askHtml(){ if(!CHAT_TRIED&&typeof api==='function'){ CHAT_TRIED=true; api('chat',{}).then(function(r){ CHAT=(r&&r.list)||[]; if(CHAT.length) renderExtras(document.getElementById('todayCard')); }).catch(function(){}); }
   var ALL=CHAT||[], more=CHAT_ALL?0:Math.max(0,ALL.length-6), L=CHAT_ALL?ALL:ALL.slice(-6), has=L.length>0;
   return '<div class="news ask"><div class="row"><b>'+(has?'השיחה עם אביאל':'שאלה לאביאל')+'</b><small>מגיע ישר אליו</small></div>'+
     (more?'<button type="button" class="linkbtn" id="chatMore" style="margin-top:6px">הודעות קודמות ('+more+')</button>':'')+(has?'<div class="chat" role="log" aria-label="השיחה עם אביאל">'+L.map(function(x){ var me=x.f==='c'; return '<div class="cb'+(me?' me':'')+'"><div>'+esc(x.t||'')+(x.v?(x.d?' <i>· '+x.d+' שנ׳</i>':' <i>(הודעה קולית)</i>'):'')+(x.vid?' <button type="button" class="linkbtn cvp" data-vid="'+esc(x.vid)+'">השמעה</button>':'')+'</div><small>'+(me?'את/ה':'אביאל')+' · '+chatAgo(x.at)+'</small></div>'; }).join('')+'</div>':'')+
-    '<form id="askF" class="askf"><textarea id="askQ" rows="2" placeholder="'+(has?'כותבים לאביאל':'למשל: אפשר להחליף את האורז בצהריים בפסטה?')+'">'+esc(ASKD)+'</textarea><div class="askrow"><button type="submit">שליחה</button>'+(VN_OK?'<button type="button" id="askMic" class="mic" aria-label="הקלטת הודעה קולית לאביאל"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12z"/></svg><span>קולית</span></button>':'')+'</div></form></div>'; }
+    '<form id="askF" class="askf"><textarea id="askQ" rows="2" placeholder="'+(has?'כותבים לאביאל':'למשל: אפשר להחליף את האורז בצהריים בפסטה?')+'">'+esc(ASKD)+'</textarea><div class="askrow"><button type="submit"'+(ASK_BUSY?' disabled':'')+'>'+(ASK_BUSY?'שולח…':'שליחה')+'</button>'+(VN_OK?'<button type="button" id="askMic" class="mic" aria-label="הקלטת הודעה קולית לאביאל"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12z"/></svg><span>קולית</span></button>':'')+'</div></form></div>'; }
 function wireAsk(x){ var f=x.querySelector('#askF'); if(!f) return; var ta=x.querySelector('#askQ'); ta.oninput=function(){ ASKD=ta.value; }; wireChatVoice(x); var cm=x.querySelector('#chatMore'); if(cm) cm.onclick=function(){ CHAT_ALL=true; renderExtras(document.getElementById('todayCard')); }; wireMic(x);
-  f.onsubmit=function(e){ e.preventDefault(); var q=ta.value.trim(); if(q.length<3){ toast('כותבים שאלה',1); return; } var b=f.querySelector('button'); b.disabled=true;
-  api('question',{q:q}).then(function(){ ASKD=''; CHAT=(CHAT||[]).concat([{at:new Date().toISOString(),f:'c',t:q}]); renderExtras(document.getElementById('todayCard')); toast('נשלח לאביאל. התשובה תגיע לכאן ותקפוץ לך בטלפון'); }).catch(function(er){ b.disabled=false; toast(er.message||'לא נשלח',1); }); }; }
+  f.onsubmit=function(e){ e.preventDefault(); if(ASK_BUSY) return; var q=ta.value.trim(); if(q.length<3){ toast('כותבים שאלה',1); return; } var b=f.querySelector('button'); b.disabled=true; ASK_BUSY=true;
+  api('question',{q:q}).then(function(){ ASK_BUSY=false; ASKD=''; try{ ta.blur(); }catch(e){} CHAT=(CHAT||[]).concat([{at:new Date().toISOString(),f:'c',t:q}]); renderExtras(document.getElementById('todayCard')); toast('נשלח לאביאל. התשובה תגיע לכאן ותקפוץ לך בטלפון'); }).catch(function(er){ ASK_BUSY=false; var b2=document.querySelector('#askF button[type=submit]'); if(b2){ b2.disabled=false; b2.textContent='שליחה'; } b.disabled=false; toast(er.message||'לא נשלח',1); }); }; }
+/* רענון בזמן הקלדה בשיחה (חזרה לאפליקציה, תשובה שהגיעה) מחכה שהמקלדת תיסגר — אחרת הטקסט והמקלדת קופצים */
+var _rexAsk=renderExtras, REX_WAIT=false; renderExtras=function(el){ var a=document.activeElement; if(a&&a.id==='askQ'){ if(!REX_WAIT){ REX_WAIT=true; (function wait(){ setTimeout(function(){ var b=document.activeElement; if(b&&b.id==='askQ') return wait(); REX_WAIT=false; renderExtras(el); },700); })(); } return; } return _rexAsk.apply(this,arguments); };
 
 /* ===== מטרות והתקדמות: פס יעד, משקל/צעדים/היקפים, שבועי/חודשי/הכל, גרף חלק ===== */
 var MONF=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
@@ -1849,13 +1851,21 @@ var _drawChartL=drawChart; drawChart=function(){ _drawChartL.apply(this,argument
 
 /* ===== שקילה וצעדים גם בלי קליטה (מכון במרתף): נשמר בטלפון ונשלח כשיש חיבור, באותו יום ===== */
 var OQ_KEY='aviel_offq', _apiO=api;
-function oqFlush(){ var q=ls(OQ_KEY,[]); if(!q.length||!navigator.onLine) return; var today=trkYmd(new Date()), keep=q.filter(function(x){ return x.d===today; }), lost=q.length-keep.length; lsSet(OQ_KEY,[]);
-  if(lost) toast('שקילה מיום קודם לא נשלחה. כדאי לעדכן את אביאל.',1);
-  var sent=0; keep.reduce(function(p,x){ return p.then(function(){ return _apiO(x.a,x.p).then(function(r){ sent++; if(x.a==='lift') P.lifts=normLifts(r); else D=r; }); }); },Promise.resolve()).then(function(){ if(keep.length){ render(); try{ renderTrain(); drawStrength(); }catch(e){} toast('נשלח מהטלפון · '+keep.length+' עדכונים'); } }).catch(function(){ lsSet(OQ_KEY,keep.slice(sent).concat(ls(OQ_KEY,[]))); }); }
+var OQ_BUSY=false;
+function oqFlush(){ if(OQ_BUSY||!navigator.onLine) return; var q=ls(OQ_KEY,[]); if(!q.length) return; var today=trkYmd(new Date()), keep=q.filter(function(x){ return x.d===today; });
+  if(keep.length<q.length){ lsSet(OQ_KEY,keep); toast('עדכון שנשמר בטלפון מיום קודם לא נשלח. כדאי לספר לאביאל.',1); } if(!keep.length) return;
+  OQ_BUSY=true; var sent=0;
+  (function next(){ var cur=ls(OQ_KEY,[]).filter(function(x){ return x.d===today; });
+    if(!cur.length){ OQ_BUSY=false; if(sent){ try{ render(); renderTrain(); drawStrength(); }catch(e){} toast('נשלח מהטלפון · '+sent+' עדכונים'); } return; }
+    var x=cur[0], key=JSON.stringify(x), run;
+    if(x.a==='lift'){ run=LQ.then(function(){ return _apiO(x.a,x.p); }); LQ=run.then(function(){},function(){}); } else run=_apiO(x.a,x.p);
+    run.then(function(r){ var q2=ls(OQ_KEY,[]); for(var i=0;i<q2.length;i++){ if(JSON.stringify(q2[i])===key){ q2.splice(i,1); break; } } lsSet(OQ_KEY,q2); sent++;
+      if(x.a==='lift'){ if(P) P.lifts=normLifts(r); } else if(r) D=r; next(); }, function(){ OQ_BUSY=false; }); })(); }
 /* סטים בלי קליטה: נשמרים בתור ונשלחים כשחוזר חיבור. ההיסטוריה המקומית מתעדכנת כדי שההמלצות והסימון יעבדו */
 function oqLifts(add,del){ var o=JSON.parse(JSON.stringify(P&&P.lifts||{})), ex=(add||del).ex, L=o[ex]||(o[ex]={first:null,best:0,hist:[]});
   if(add){ var e={d:TODAY,kg:add.kg,reps:add.reps}; if(add.rir!=null) e.rir=add.rir; L.hist.push(e); if(!L.first) L.first=e; L.best=Math.max(L.best||0,add.kg); }
-  else { for(var i=L.hist.length-1;i>=0;i--){ var h=L.hist[i]; if(h.d===TODAY&&h.kg===del.kg&&h.reps===del.reps){ L.hist.splice(i,1); break; } } }
+  else { for(var i=L.hist.length-1;i>=0;i--){ var h=L.hist[i]; if(h.d===TODAY&&h.kg===del.kg&&h.reps===del.reps){ L.hist.splice(i,1); break; } }
+    if(!L.hist.length) delete o[ex]; else { L.first=L.hist[0]; L.best=Math.max.apply(null,L.hist.map(function(z){ return +z.kg||0; })); } } /* בלי רישומים — בלי תרגיל ריק שמפיל את גרף הכוח */
   return o; }
 /* סטים נשלחים לשרת אחד אחרי השני (גם כשמסמנים כמה סטים מהר), כדי ששום סט לא יידרס */
 var LQ=Promise.resolve(), FQ=Promise.resolve(); /* גם יומן האוכל: תשובות לא מגיעות בסדר הפוך */
@@ -1867,7 +1877,7 @@ api=function(a,p){ var call; if(a==='lift'||a==='liftdel'){ call=LQ.then(functio
     var q=ls(OQ_KEY,[]).filter(function(x){ return x.a!==a; }); q.push({a:a,p:p,d:trkYmd(new Date())}); lsSet(OQ_KEY,q);
     var wk=D.week||[], t=wk[wk.length-1]; if(t){ if(a==='weigh') t.kg=p.kg; else t.steps=p.n; }
     setTimeout(function(){ toast('אין קליטה. נשמר בטלפון ויישלח לבד כשיחזור חיבור.'); },60); return D; } throw e; }); };
-window.addEventListener('online',oqFlush); setTimeout(oqFlush,4000);
+window.addEventListener('online',oqFlush); setTimeout(oqFlush,4000); setInterval(oqFlush,60000); document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') setTimeout(oqFlush,1500); }); /* קליטה חלשה: navigator.onLine נשאר true ו-online לא נורה */
 
 /* ===== החלפות באותן קלוריות (מהשרת, לפי התפריט האחרון) בתחתית לשונית התפריט ===== */
 function renderMenuSwaps(){ var box=document.getElementById('menuBox'), S=(P&&P.menuSwaps)||[]; if(!box) return; var old=document.getElementById('mswaps'); if(old) old.remove(); if(!S.length||!P.menu||!P.menu.blocks||!P.menu.blocks.length) return;
@@ -1935,22 +1945,25 @@ function ciExtraRender(){ var f=document.getElementById('ciForm'), L=INBOX&&INBO
 /* ===== הודעה קולית לאביאל: לחיצה מתחילה הקלטה, לחיצה שנייה שולחת (עד 60 שנ׳) ===== */
 var VN_OK=!!(window.MediaRecorder&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia), VN=null;
 function vnMime(){ var c=['audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg']; for(var i=0;i<c.length;i++){ try{ if(MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} } return ''; }
-function wireMic(x){ var b=x.querySelector('#askMic'); if(!b) return; var lbl=b.querySelector('span');
-  var stopAll=function(){ if(VN&&VN.stream) VN.stream.getTracks().forEach(function(t){ t.stop(); }); clearInterval(VN&&VN.tick); clearTimeout(VN&&VN.cap); };
-  b.onclick=function(){
+function micUi(){ var b=document.getElementById('askMic'); if(!b) return; var l=b.querySelector('span');
+  if(VN&&VN.sending){ b.disabled=true; b.classList.remove('rec'); l.textContent='שולח…'; }
+  else if(VN&&VN.rec&&VN.rec.state==='recording'){ b.disabled=false; b.classList.add('rec'); var s2=Math.round((Date.now()-VN.t0)/1000); l.textContent='עצירה ושליחה · 0:'+('0'+s2).slice(-2); }
+  else { b.disabled=false; b.classList.remove('rec'); l.textContent='קולית'; } }
+function wireMic(x){ var b=x.querySelector('#askMic'); if(!b) return; micUi(); /* הכפתור נבנה מחדש ברינדור — המצב נשמר ב-VN ומוצג מחדש */
+  var stopAll=function(v){ if(v&&v.stream) v.stream.getTracks().forEach(function(t){ t.stop(); }); clearInterval(v&&v.tick); clearTimeout(v&&v.cap); };
+  b.onclick=function(){ if(VN&&VN.sending) return;
     if(VN&&VN.rec&&VN.rec.state==='recording'){ VN.rec.stop(); return; }
     navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){ var mt=vnMime(), rec; try{ rec=mt?new MediaRecorder(stream,{mimeType:mt}):new MediaRecorder(stream); }catch(e){ rec=new MediaRecorder(stream); }
-      VN={rec:rec,stream:stream,chunks:[],t0:Date.now()}; b.classList.add('rec'); lbl.textContent='עצירה ושליחה · 0:00';
-      VN.tick=setInterval(function(){ var s2=Math.round((Date.now()-VN.t0)/1000); lbl.textContent='עצירה ושליחה · 0:'+('0'+s2).slice(-2); },500);
-      VN.cap=setTimeout(function(){ if(rec.state==='recording') rec.stop(); },60000);
-      rec.ondataavailable=function(e){ if(e.data&&e.data.size) VN.chunks.push(e.data); };
-      rec.onstop=function(){ var dur=Math.round((Date.now()-VN.t0)/1000), type=(rec.mimeType||mt||'audio/mp4').split(';')[0], blob=new Blob(VN.chunks,{type:type}); stopAll(); b.classList.remove('rec');
-        if(dur<1||blob.size<800){ lbl.textContent='קולית'; toast('ההקלטה קצרה מדי',1); VN=null; return; }
-        b.disabled=true; lbl.textContent='שולח…'; var fr=new FileReader(); fr.onload=function(){
+      var v=VN={rec:rec,stream:stream,chunks:[],t0:Date.now()};
+      v.tick=setInterval(micUi,500); v.cap=setTimeout(function(){ if(rec.state==='recording') rec.stop(); },60000);
+      rec.ondataavailable=function(e){ if(e.data&&e.data.size) v.chunks.push(e.data); };
+      rec.onstop=function(){ var dur=Math.round((Date.now()-v.t0)/1000), type=(rec.mimeType||mt||'audio/mp4').split(';')[0], blob=new Blob(v.chunks,{type:type}); stopAll(v);
+        if(dur<1||blob.size<800){ if(VN===v) VN=null; micUi(); toast('ההקלטה קצרה מדי',1); return; }
+        v.sending=true; micUi(); var fr=new FileReader(); fr.onload=function(){
           fetch(API,{method:'POST',body:JSON.stringify({api:'voicenote',t:T,p:{audio:fr.result,dur:dur}})}).then(function(r){ return r.json(); }).then(function(j){ if(!j.ok) throw new Error(j.error||'לא נשלח');
-            CHAT=(CHAT||[]).concat([{at:new Date().toISOString(),f:'c',t:'הודעה קולית',v:1,d:dur}]); VN=null; renderExtras(document.getElementById('todayCard')); toast('ההודעה הקולית נשלחה לאביאל'); })
-          .catch(function(er){ b.disabled=false; lbl.textContent='קולית'; VN=null; toast(er.message||'לא נשלח, נסו שוב',1); }); }; fr.readAsDataURL(blob); };
-      rec.start(1000); })
+            CHAT=(CHAT||[]).concat([{at:new Date().toISOString(),f:'c',t:'הודעה קולית',v:1,d:dur}]); if(VN===v) VN=null; renderExtras(document.getElementById('todayCard')); toast('ההודעה הקולית נשלחה לאביאל'); })
+          .catch(function(er){ if(VN===v) VN=null; micUi(); toast(er&&er.name==='TypeError'?'אין חיבור לאינטרנט. נסו שוב בעוד רגע.':(er&&er.message)||'לא נשלח, נסו שוב',1); }); }; fr.readAsDataURL(blob); };
+      rec.start(1000); micUi(); })
     .catch(function(){ toast('צריך לאשר גישה למיקרופון בהגדרות הדפדפן',1); }); }; }
 
 /* ===== פגישת וידאו עם אביאל (למתאמנים אונליין): מופיע ביום הפגישה ויום לפניה ===== */
@@ -1965,14 +1978,14 @@ function wireUndo(f,e){ var b=f.querySelector('.sundo'); if(!b) return; var arme
     .catch(function(er){ armed=0; b.disabled=false; b.classList.remove('arm'); b.innerHTML=html; toast(er.message||'לא בוטל, נסו שוב',1); }); }; }
 
 /* ===== משימות מאביאל: מה לעשות ועד מתי, סימון "בוצע", וקיצור לפעולה עצמה ===== */
-var CTASKS=null, CT_TRIED=false;
+var CTASKS=null, CT_TRIED=false, CTQ=Promise.resolve(); function ctDay(v){ var d=new Date(v); return isNaN(d)?String(v).slice(0,10):trkYmd(d); } /* done נשמר ב-UTC; משווים ליום המקומי */
 function ctasksHtml(){ if(!CT_TRIED&&typeof api==='function'){ CT_TRIED=true; api('ctasks',{}).then(function(r){ CTASKS=r||[]; renderExtras(document.getElementById('todayCard')); }).catch(function(){}); }
-  var L=(CTASKS||[]).filter(function(x){ return !x.done||String(x.done).slice(0,10)===TODAY; }); if(!L.length) return '';
+  var L=(CTASKS||[]).filter(function(x){ return !x.done||ctDay(x.done)===TODAY; }); if(!L.length) return '';
   var GO={photo:'לצילום',measure:'למדידה',checkin:'לצ׳ק-אין',guide:'למדריכים'}, dd=function(s){ return s.slice(8,10)+'/'+s.slice(5,7); };
   return '<div class="news ctl"><div class="row"><b>משימות מאביאל</b><small>'+(function(n){ return n===0?'הכל בוצע':n===1?'אחת פתוחה':n+' פתוחות'; })(L.filter(function(x){ return !x.done; }).length)+'</small></div>'+L.map(function(x){ var late=!x.done&&x.due&&x.due<TODAY, today=!x.done&&x.due===TODAY;
     return '<div class="cti'+(x.done?' ok':'')+'"><button type="button" class="tdc" data-ctid="'+esc(x.id)+'" aria-pressed="'+(!!x.done)+'" aria-label="'+(x.done?'ביטול סימון':'סימון בוצע')+'">'+(x.done?IC_OK:'')+'</button><span class="ctt"><b>'+esc(x.t)+'</b>'+(x.done?'<small>בוצע היום</small>':x.due?'<small class="'+(late?'late':'')+'">'+(late?'באיחור · ':'')+(today?'היום':'עד '+dd(x.due))+'</small>':'')+'</span>'+(!x.done&&GO[x.kind]?'<button type="button" class="linkbtn" data-ctgo="'+x.kind+'">'+GO[x.kind]+'</button>':'')+'</div>'; }).join('')+'</div>'; }
 function wireCtasks(x){ x.querySelectorAll('[data-ctid]').forEach(function(b){ b.onclick=function(){ var id=b.dataset.ctid, it=(CTASKS||[]).filter(function(t){ return t.id===id; })[0]; if(!it) return; var undo=!!it.done; it.done=undo?'':new Date().toISOString(); renderExtras(document.getElementById('todayCard')); if(!undo) toast('כל הכבוד. אביאל רואה שסיימת');
-      api('ctaskdone',{id:id,undo:undo?1:0}).then(function(r){ CTASKS=r||CTASKS; }).catch(function(er){ it.done=undo?new Date().toISOString():''; renderExtras(document.getElementById('todayCard')); toast(er.message||'לא נשמר',1); }); }; });
+      var call=CTQ.then(function(){ return api('ctaskdone',{id:id,undo:undo?1:0}); }); CTQ=call.then(function(){},function(){}); call.then(function(r){ CTASKS=r||CTASKS; }).catch(function(er){ it.done=undo?new Date().toISOString():''; renderExtras(document.getElementById('todayCard')); toast(er.message||'לא נשמר',1); }); }; });
   x.querySelectorAll('[data-ctgo]').forEach(function(b){ b.onclick=function(){ var k=b.dataset.ctgo;
     if(k==='photo'){ show('prog'); setTimeout(function(){ var i=document.getElementById('phIn'); if(i) i.click(); },300); }
     else if(k==='measure'){ show('prog'); setTimeout(function(){ var f=document.getElementById('mForm'); if(f){ f.hidden=false; f.scrollIntoView({behavior:'smooth',block:'center'}); } },300); }
@@ -1982,6 +1995,7 @@ function wireCtasks(x){ x.querySelectorAll('[data-ctid]').forEach(function(b){ b
 /* ===== חזרה לאפליקציה (אחרי דקה ומעלה): הודעות, שיחה ומשימות מאביאל מתרעננים בלי לסגור את האפליקציה ===== */
 var BACK_AT=Date.now();
 document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden'){ BACK_AT=Date.now(); return; }
+  if(trkYmd(new Date())!==TODAY){ location.reload(); return; } /* האפליקציה נשארה פתוחה מאתמול: התאריך, הסטים והמשימות מתחילים מהיום */
   if(Date.now()-BACK_AT<60000||!D) return; INBOX_TRIED=false; CHAT_TRIED=false; CT_TRIED=false; try{ renderTodayCard(); }catch(e){} });
 
 /* ===== אחוז שומן (מהמשקל החכם): כרטיס בלשונית ההתקדמות, אחרי ההיקפים ===== */
@@ -1999,12 +2013,14 @@ function bfEnsure(){ var mt=document.getElementById('mTable'), mc=mt&&mt.closest
 var _renderBF=render; render=function(){ _renderBF.apply(this,arguments); try{ bfEnsure(); }catch(e){} };
 
 /* ===== השמעת הודעה קולית ישנה מאביאל מתוך השיחה (לחיצה ראשונה טוענת ומנגנת, ואם הטלפון חוסם — לחיצה שנייה מנגנת) ===== */
-var CVA={}, CVP=null;
-function wireChatVoice(x){ x.querySelectorAll('.cvp').forEach(function(b){ b.onclick=function(){ var id=b.dataset.vid, a=CVA[id];
-  if(CVP&&CVP!==a){ CVP.pause(); } if(a&&!a.paused){ a.pause(); b.textContent='השמעה'; return; } if(a){ CVP=a; a.play().then(function(){ b.textContent='עצירה'; }).catch(function(){}); return; }
-  b.disabled=true; b.textContent='טוען…'; api('voice',{id:id}).then(function(r){ b.disabled=false; if(!r||!r.b64){ b.textContent='השמעה'; toast('ההודעה לא נמצאה',1); return; }
-    a=CVA[id]=new Audio('data:'+(r.mime||'audio/mp4')+';base64,'+r.b64); a.onended=function(){ b.textContent='שוב'; }; CVP=a;
-    a.play().then(function(){ b.textContent='עצירה'; }).catch(function(){ b.textContent='השמעה'; }); }).catch(function(e){ b.disabled=false; b.textContent='השמעה'; toast(e.message||'לא נטען',1); }); }; }); }
+var CVA={}, CVP=null, CVL={};
+function wireChatVoice(x){ x.querySelectorAll('.cvp').forEach(function(b){ var id=b.dataset.vid, cur=function(){ return document.querySelector('.cvp[data-vid="'+id+'"]')||b; };
+  if(CVL[id]){ b.disabled=true; b.textContent='טוען…'; } else if(CVA[id]&&!CVA[id].paused) b.textContent='עצירה';
+  b.onclick=function(){ var a=CVA[id]; if(CVL[id]) return;
+  if(CVP&&CVP!==a){ CVP.pause(); } if(a&&!a.paused){ a.pause(); cur().textContent='השמעה'; return; } if(a){ CVP=a; a.play().then(function(){ cur().textContent='עצירה'; }).catch(function(){}); return; }
+  CVL[id]=1; b.disabled=true; b.textContent='טוען…'; api('voice',{id:id}).then(function(r){ CVL[id]=0; var c=cur(); c.disabled=false; if(!r||!r.b64){ c.textContent='השמעה'; toast('ההודעה לא נמצאה',1); return; }
+    a=CVA[id]=new Audio('data:'+(r.mime||'audio/mp4')+';base64,'+r.b64); a.onended=function(){ cur().textContent='שוב'; }; if(CVP&&CVP!==a) CVP.pause(); CVP=a;
+    a.play().then(function(){ cur().textContent='עצירה'; }).catch(function(){ cur().textContent='השמעה'; }); }).catch(function(e){ CVL[id]=0; var c=cur(); c.disabled=false; c.textContent='השמעה'; toast(e.message||'לא נטען',1); }); }; }); }
 
 /* ===== תשלום (רק כשאביאל מפעיל): יתרה מהלוח וכפתור לדף התשלום הקבוע שלו ===== */
 function payHtml(){ var p=D&&D.pay; if(!p||!(Number(p.bal)>0)||!/^https:\/\//.test(String(p.link||''))) return '';
