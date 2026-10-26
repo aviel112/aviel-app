@@ -442,7 +442,14 @@ var CARD={};
 function openCard(name){ try{ var rc=JSON.parse(localStorage.getItem('m_recent')||'[]').filter(function(x){ return x!==name; }); rc.unshift(name); localStorage.setItem('m_recent',JSON.stringify(rc.slice(0,5))); }catch(e){} var ov=document.createElement('div'); ov.className='ov'; ov.id='ov'; ov.innerHTML='<div class="sheet"><div class="sh"><h2>'+esc(name)+'</h2><button class="x" aria-label="סגירה">×</button></div><div id="cardBody"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div></div>';
   document.body.appendChild(ov); document.body.style.overflow='hidden';
   var close=function(){ ov.remove(); document.body.style.overflow=''; }; ov.querySelector('.x').onclick=close; ov.onclick=function(e){ if(e.target===ov) close(); };
-  if(CARD[name]) renderCard(CARD[name]); else google.script.run.withSuccessHandler(function(d){ CARD[name]=d; renderCard(d); }).withFailureHandler(function(e){ $('#cardBody').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }).dashboardClientCard(name); }
+  /* פתיחה מיידית: הכרטיס האחרון ששמור במכשיר מוצג מיד, והנתונים הטריים מחליפים אותו (בלי לקפוץ אם מקלידים בכרטיס) */
+  if(CARD[name]){ renderCard(CARD[name]); return; }
+  var cached=null; try{ var cc=JSON.parse(localStorage.getItem('mc_card_'+name)||'null'); if(cc&&Date.now()-cc.at<3*864e5) cached=cc.d; }catch(e){}
+  var stale=function(t){ var st=document.getElementById('cardStale'); if(st) st.textContent=t; };
+  if(cached){ renderCard(cached); var bd=$('#cardBody'); if(bd) bd.insertAdjacentHTML('afterbegin','<div class="s" id="cardStale" style="font-size:12px;color:var(--mute);margin:-2px 0 8px">מתעדכן…</div>'); }
+  google.script.run.withSuccessHandler(function(d){ CARD[name]=d; try{ localStorage.setItem('mc_card_'+name,JSON.stringify({at:Date.now(),d:d})); }catch(e){} if(!document.body.contains(ov)) return;
+    var ae=document.activeElement, busy=cached&&ae&&ae.closest&&ae.closest('#cardBody')&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName); if(busy){ stale('יש נתונים חדשים. סוגרים ופותחים את הכרטיס כדי לראות'); return; } renderCard(d); })
+    .withFailureHandler(function(e){ if(cached) stale('לא התעדכן: '+e.message); else $('#cardBody').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }).dashboardClientCard(name); }
 document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('[data-fday]'); if(!b) return; var p=String(b.dataset.fday).split('/'), now=new Date(), y=now.getFullYear(), dt=new Date(y,(+p[1]||1)-1,+p[0]||1); if(dt-now>2*864e5) dt.setFullYear(y-1);
   var iso=dt.getFullYear()+'-'+('0'+(dt.getMonth()+1)).slice(-2)+'-'+('0'+dt.getDate()).slice(-2), box=document.getElementById('fdayBox'); if(!box) return; document.querySelectorAll('.fb.sel').forEach(function(x){ x.classList.remove('sel'); }); b.classList.add('sel');
   box.innerHTML='<div class="skel" style="height:60px;margin-top:8px"></div>';
