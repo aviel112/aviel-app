@@ -1319,7 +1319,8 @@ function streak(){ var a=ls('aviel_active',{}), n=0, d=new Date(); if(!a[TODAY])
   for(var i=0;i<400;i++){ var k=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); if(!a[k]) break; n++; d.setDate(d.getDate()-1); } return n; }
 var IC_FLAME='<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2c1 4 4 5.5 4 10a4 4 0 0 1-8 0c0-1.5.5-2.5 1-3.5.3 1.2 1 2 2 2.5C11 8 10 5 12 2z"/><path d="M8.5 7C7 9 6 11 6 13.5a6 6 0 0 0 12 0c0-1-.2-2-.6-3-.4 2-1.6 3.2-3.2 3.7A5 5 0 0 1 8.5 7z" opacity=".55"/></svg>';
 /* סוג מעקב שאביאל קבע: "ערכים" = יעדי מאקרו ויומן אוכל, בלי לשונית תפריט */
-function applyMode(){ var mm=P&&P.mode, mb=document.querySelector('#tabs button[data-tab="menu"]'); if(mb) mb.style.display=mm==='ערכים'?'none':''; HABITS.forEach(function(h){ if(h.id==='menu') h.t=mm==='ערכים'?'רשמתי את כל האוכל':'אכלתי לפי התפריט'; }); }
+function applyMode(){ var mm=P&&P.mode, mb=document.querySelector('#tabs button[data-tab="menu"]'); if(mb) mb.style.display=mm==='ערכים'?'none':''; HABITS.forEach(function(h){ if(h.id==='menu') h.t=mm==='ערכים'?'רשמתי את כל האוכל':'אכלתי לפי התפריט'; });
+  /* הרגלים אישיים שאביאל הגדיר (עד 4) */ var cu=(P&&P.habits)||[]; HABITS=HABITS.filter(function(h){ return !/^c\d$/.test(h.id); }).concat(cu.map(function(t,i){ return {id:'c'+i,t:String(t)}; })); }
 function renderTodayCard(){ try{ applyMode(); }catch(e){}
   if(!D) return; var host=document.getElementById('wForm'); if(!host) return; var anchor=host.closest('.card'); if(!anchor) return;
   var el=document.getElementById('todayCard'); if(!el){ el=document.createElement('div'); el.id='todayCard'; el.className='card today'; anchor.parentNode.insertBefore(el,anchor); }
