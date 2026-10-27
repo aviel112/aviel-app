@@ -128,7 +128,7 @@ nav.tabs button[aria-selected="true"]{color:var(--gold)}
 .str .pct{font-weight:800}
 
 .beta{font-size:11px;background:var(--gold);color:var(--ink);border-radius:6px;padding:1px 6px;margin-right:4px;vertical-align:middle}
-nav.tabs .in{grid-template-columns:repeat(5,1fr)!important}
+nav.tabs .in{grid-template-columns:none!important;grid-auto-flow:column;grid-auto-columns:1fr} /* טאב מוסתר (תפריט אצל מתאמני "ערכים") לא משאיר חור */
 .fsearch{display:flex;flex-direction:column;gap:8px}
 .flist{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto}
 .flist button{background:var(--panel2);color:var(--text);border:1px solid var(--line);text-align:right;font-weight:600;padding:10px 12px}
@@ -644,7 +644,7 @@ input,select,textarea{font-size:16px}
           <div class="q"><span>שינה</span><div class="scale" data-q="sleep"></div></div>
           <div class="q"><span>כמה נצמדת לתפריט?</span><div class="pct" data-q="adh"><button type="button">פחות מ-50%</button><button type="button">50-80%</button><button type="button">מעל 80%</button></div></div>
           <label class="q" for="ciNote">משהו שאביאל צריך לדעת?</label>
-          <textarea id="ciNote" rows="2" placeholder="אירוע בסוף השבוע, כאב, שאלה על התפריט…"></textarea>
+          <textarea id="ciNote" rows="2" maxlength="500" placeholder="אירוע בסוף השבוע, כאב, שאלה על התפריט…"></textarea>
           <button type="submit" id="ciBtn">שליחה לאביאל</button>
         </form>
         <div class="sent" id="ciDone" hidden>✓ הצ׳ק-אין של השבוע נשלח. התשובה של אביאל תגיע לשיחה בבית ותקפוץ לך בטלפון.</div>
@@ -736,7 +736,7 @@ input,select,textarea{font-size:16px}
 <script>
 var API='https://script.google.com/macros/s/AKfycbxSkxJJ1ODs067IOfDkuosXzKX-pVi2W7uTcWKAS-7YFuh8PW9mrjSS8bNC4SaiRTkP/exec';
 var T=(new URLSearchParams(location.search).get('t')||'').replace(/[^A-Za-z0-9]/g,'');
-try{ if(T) localStorage.setItem('aviel_tb',T); else T=localStorage.getItem('aviel_tb')||''; }catch(e){}
+try{ var tbS=localStorage.getItem('aviel_tb')||''; if(T&&T===localStorage.getItem('aviel_tbad')&&tbS&&tbS!==T) T=tbS; /* האייקון במסך הבית נשמר עם קישור ישן */ if(T) localStorage.setItem('aviel_tb',T); else T=tbS; }catch(e){}
 var D=null, P=null, DAY=0;
 var $=function(s){ return document.querySelector(s); };
 function ltr(h){ return String(h).replace(/(\d[\d,.]*)\s*[–-]\s*(\d[\d,.]*)/g,'<span dir="ltr">$1–$2</span>'); }
@@ -992,13 +992,13 @@ $('#instX').addEventListener('click',function(){ $('#install').hidden=true; try{
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 
 /* ---------- טעינה ---------- */
-function fatal(msg){ $('#boot').hidden=true; var f=$('#fatal'); f.hidden=false; f.innerHTML='<b>לא הצלחנו לפתוח את האפליקציה</b><div class="sub" style="margin-top:6px">'+esc(msg||'')+'</div><a class="wa" style="margin-top:12px" href="https://wa.me/972537718200" target="_blank" rel="noopener">לכתוב לאביאל</a>'; }
+function fatal(msg){ $('#boot').hidden=true; var f=$('#fatal'); f.hidden=false; f.innerHTML='<b>לא הצלחנו לפתוח את האפליקציה</b><div class="sub" style="margin-top:6px">'+esc(msg||'')+'</div><button type="button" style="margin-top:12px" onclick="location.reload()">לנסות שוב</button><a class="wa" style="margin-top:10px" href="https://wa.me/972537718200" target="_blank" rel="noopener">לכתוב לאביאל</a>'; var rl=function(){ if(!f.hidden) location.reload(); }; window.addEventListener('online',rl); document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') rl(); }); }
 function showLogin(){ $('#boot').hidden=true; $('#tabs').hidden=true; var f=$('#fatal'); f.hidden=false; f.style.borderColor='var(--line)';
   f.innerHTML='<b style="font-size:20px">כניסה לאפליקציה</b><div class="sub" style="margin:6px 0 14px">מספר הטלפון והשם הפרטי, כמו שמסרת לאביאל</div><form id="lg" class="stack" style="gap:10px"><input id="lgPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="מספר טלפון" aria-label="מספר טלפון" style="font-size:18px"><input id="lgName" autocomplete="given-name" placeholder="שם פרטי" aria-label="שם פרטי" style="font-size:18px"><button type="submit" class="installbtn">כניסה</button></form><div class="sub" style="margin-top:12px">נכנסים פעם אחת, ומאז האפליקציה זוכרת אותך</div>';
   $('#lg').onsubmit=function(ev){ ev.preventDefault(); var b=this.querySelector('button'); b.disabled=true; b.textContent='בודק...';
     fetch(API+'?api=login&p='+encodeURIComponent(JSON.stringify({phone:$('#lgPhone').value,name:$('#lgName').value}))+'&_='+Date.now()).then(function(r){ return r.json(); })
       .then(function(j){ if(!j.ok) throw new Error(j.error||'לא הצלחנו להיכנס'); try{ localStorage.setItem('aviel_tb',j.r.t); }catch(e){} location.replace(location.pathname+'?t='+j.r.t); })
-      .catch(function(e){ toast(/fetch|network/i.test(e.message)?'אין חיבור לאינטרנט':e.message,1); b.disabled=false; b.textContent='כניסה'; }); }; }
+      .catch(function(e){ toast((e&&e.name==='TypeError')||/fetch|network|load failed|unexpected/i.test(e.message)?'אין חיבור לאינטרנט':e.message,1); b.disabled=false; b.textContent='כניסה'; }); }; }
 if(!T){ showLogin(); }
 else {
   /* פתיחה מיידית: המידע האחרון מהטלפון מוצג מיד, והמידע הטרי מהשרת מחליף אותו כשהוא מגיע (בלי מסך טעינה של כמה שניות) */
@@ -1010,7 +1010,7 @@ else {
   var FRESH=false;
   if(CACHED){ var fromCache=function(){ if(FRESH) return; D=CACHED.D; if(CACHED.P&&!P) P=CACHED.P; bootUI(); drawAll(); }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fromCache); else setTimeout(fromCache,0); }
   api('data').then(function(r){ FRESH=true; D=r; bootUI(); drawAll(); saveC(); })
-    .catch(function(er){ if(/הקישור לא בתוקף/.test(er&&er.message||'')){ try{ localStorage.removeItem('aviel_tb'); localStorage.removeItem(CK); }catch(e){} document.querySelectorAll('section[data-view]').forEach(function(s){ s.hidden=true; }); showLogin(); } else if(LOCKED){} else if(BOOTED) toast(/אין חיבור/.test(er&&er.message||'')?'אין חיבור כרגע. מוצג המידע האחרון ששמור בטלפון':er.message,1); else fatal(er.message); });
+    .catch(function(er){ if(/הקישור לא בתוקף/.test(er&&er.message||'')){ try{ localStorage.setItem('aviel_tbad',T); localStorage.removeItem('aviel_tb'); localStorage.removeItem(CK); }catch(e){} document.querySelectorAll('section[data-view]').forEach(function(s){ s.hidden=true; }); showLogin(); } else if(LOCKED){} else if(BOOTED) toast(/אין חיבור/.test(er&&er.message||'')?'אין חיבור כרגע. מוצג המידע האחרון ששמור בטלפון':er.message,1); else fatal(er.message); });
   api('plan').then(function(r){ P=r; P.lifts=normLifts(P.lifts); if(D){ renderMenu(); renderTrain(); drawStrength(); } saveC(); }).catch(function(){ if(!P) P={menu:null,program:null,lifts:{}}; if(D){ renderMenu(); renderTrain(); } });
   document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') saveC(); });
 }
@@ -1055,7 +1055,7 @@ function renderFood(){
   var del='<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
   $('#fItems').innerHTML=MEALS.map(function(ml){ var xs=it.filter(function(x){ return (x.m||mealByTime(x.t))===ml; }), k=xs.reduce(function(a,x){ return a+(+x.k||0); },0);
     return '<div class="fmeal"><div class="fmh"><b>'+ml+'</b><span class="num">'+(xs.length?Math.round(k)+' קק״ל':'')+'</span></div>'+
-      xs.map(function(x){ return '<div class="fitem"><span><b>'+esc(x.f)+'</b> <small>'+esc(x.g)+' ג׳</small></span><span><span class="num">'+esc(x.k)+'</span> <small>קק״ל</small> '+(x._p?'<small class="fpend">נשמר…</small>':'<button class="ghost sm" data-del="'+x.row+'" data-f="'+esc(x.f)+'" aria-label="מחיקה">'+del+'</button>')+'</span></div>'; }).join('')+
+      xs.map(function(x){ return '<div class="fitem"><span><b>'+esc(x.f)+'</b>'+(+x.g>0?' <small>'+esc(x.g)+' ג׳</small>':'')+'</span><span><span class="num">'+esc(x.k)+'</span> <small>קק״ל</small> '+(x._p?'<small class="fpend">נשמר…</small>':'<button class="ghost sm" data-del="'+x.row+'" data-f="'+esc(x.f)+'" aria-label="מחיקה">'+del+'</button>')+'</span></div>'; }).join('')+
       (past?'':'<button type="button" class="fmadd" data-meal="'+ml+'">+ הוספה ל'+ml+'</button>')+'</div>'; }).join('');
   document.querySelectorAll('#fItems [data-del]').forEach(function(b){ b.onclick=function(){ var all=document.querySelectorAll('#fItems [data-del]'); all.forEach(function(x){ x.disabled=true; }); api('fooddel',{row:+b.dataset.del,f:b.dataset.f,d:FDAY.d}).then(function(r){ FDAY=r; renderFood(); }).catch(function(e){ toast(e.message,1); all.forEach(function(x){ x.disabled=false; }); }); }; }); /* מחיקה אחת בכל פעם: השורות זזות אחרי כל מחיקה */
   document.querySelectorAll('#fItems .fmadd').forEach(function(b){ b.onclick=function(){ FMEAL=b.dataset.meal; drawMealChips(); $('#fQ').scrollIntoView({block:'center',behavior:'smooth'}); $('#fQ').focus(); }; });
@@ -1131,7 +1131,7 @@ function scanStart(){ $('#scan').hidden=false; var v=$('#scanV');
   SCAN.reader.decodeFromConstraints({video:{facingMode:'environment'}},v,function(res){ if(res) onCode(res.getText()); }).catch(camFail);
 }
 function onCode(code){ code=String(code||'').replace(/\D/g,''); if(!code) return; scanStop(); try{ if(navigator.vibrate) navigator.vibrate(60); }catch(e){}
-  var ex=EXTRA.filter(function(f){ return f.code===code; })[0]; if(ex){ pickExtra(ex); toast('נמצא במאגר של אביאל'); return; }
+  var nz=function(c){ return String(c||'').replace(/^0+/,''); }, ex=EXTRA.filter(function(f){ return f.code&&nz(f.code)===nz(code); })[0]; /* ברקוד שמתחיל ב-0 נשמר בגיליון בלי האפס */ if(ex){ pickExtra(ex); toast('נמצא במאגר של אביאל'); return; }
   toast('מחפש את הברקוד…');
   fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,product_name_he,brands,nutriments,serving_quantity').then(function(r){ return r.json(); }).then(function(j){
     var p=j&&j.status===1&&j.product, n=(p&&p.nutriments)||{}; var k=+n['energy-kcal_100g']||0, pr=+n.proteins_100g||0, c=+n.carbohydrates_100g||0, fat=+n.fat_100g||0;
@@ -1169,7 +1169,7 @@ function b64ToU8(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) 
   var sa=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true, iosDev=/iphone|ipad|ipod/i.test(navigator.userAgent);
   var done=false; try{ done=localStorage.getItem('aviel_push')==='1'; }catch(e){}
   try{ caches.open('aviel-beta-t').then(function(c){ c.put('token', new Response(T)); }); }catch(e){}
-  if(done&&can&&Notification.permission==='granted') return;
+  if(done&&can&&Notification.permission==='granted'){ navigator.serviceWorker.ready.then(function(reg){ return reg.pushManager.getSubscription().then(function(sub){ return sub||api('vapid').then(function(v){ return reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToU8(v.pub)}); }); }); }).then(function(sub){ if(sub) return api('pushsub',{sub:{endpoint:sub.endpoint}}); }).catch(function(){}); return; } /* השרת מוחק מנוי שנפל (התקנה מחדש וכו׳) — נרשמים שוב בשקט */
   if(iosDev&&!sa){ $('#pushCard').hidden=false; $('#pushTxt').textContent='כדי לקבל תזכורות באייפון, קודם מוסיפים את האפליקציה למסך הבית ופותחים אותה משם.'; $('#pushBtn').hidden=true; }
   else if(can){ $('#pushCard').hidden=false; }
   $('#pushX').onclick=function(){ $('#pushCard').hidden=true; };
@@ -1187,7 +1187,8 @@ document.querySelector('[data-tab=food]').addEventListener('click',function(){ F
 document.querySelector('[data-tab=prog]').addEventListener('click',function(){ api('photos',{}).then(function(r){ renderPhotos(r); }).catch(function(){}); });
 if(T){ api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){ renderFood(); }); api('photos',{}).then(function(r){ renderPhotos(r); }).catch(function(){ renderPhotos([]); }); }
 </script>
-<script>
+<script>var SHOWALL=false, SUBAT=0; /* אימונים שבוצעו השבוע מוסתרים, אלא אם ביקשו לפתוח */
+
 /* progressive overload כמו בנוטריקל: המאמן קובע בכמה ק״ג עולים בכל תרגיל (P.inc), אחרת ברירת מחדל לפי סוג התרגיל */
 function incFor(e,top){ var I=(typeof P!=='undefined'&&P&&P.inc)||{}, k=String(e.ex||'').replace(/\s*\(.*\)\s*$/,'').trim(), x=+I[k]||+I[e.ex]; if(x>0) return x; return top<=10?1:(/סקוואט|דדליפט|לג.?פרס|היפ.?טראסט|היפ.?תראסט|Squat|Deadlift|Leg Press|Hip Thrust/i.test(e.ex)?5:2.5); }
 /* דילואד: כל שבוע אימונים שביעי (6 שבועות עבודה + שבוע הורדה). סופרים רק שבועות שהיו בהם אימונים, כך שחופשה לא "שורפת" שבועות */
@@ -1240,8 +1241,14 @@ function renderTrain(){
   var done=doneMap();
   if(!DAYSET){ DAYSET=true; for(var q=0;q<days.length;q++){ if(!done[q]){ DAY=q; break; } } }
   if(DAY>=days.length) DAY=0;
+  /* אימון שבוצע השבוע נעלם עד יום ראשון (אביאל, 27.10.26). אפשר לפתוח בכל זאת מהקישור הקטן */
+  var left=[]; for(var q2=0;q2<days.length;q2++) if(!done[q2]) left.push(q2);
+  if(!SHOWALL&&done[DAY]&&left.length) DAY=left[0];
+  if(!SHOWALL&&!left.length){ box.innerHTML='<div class="card wkdone"><b>כל '+days.length+' האימונים של השבוע בוצעו</b><div class="exnote" style="margin-top:6px">כל הכבוד. האימונים חוזרים ביום ראשון, עם המשקלים החדשים. עד אז: צעדים, תפריט ושינה טובה.</div><button type="button" class="linkbtn" id="wkShow" style="margin-top:10px">לפתוח אימון בכל זאת</button></div>';
+    $('#wkShow').onclick=function(){ SHOWALL=true; renderTrain(); }; return; }
+  var vis=SHOWALL?days.map(function(x,i){ return i; }):left;
   var d=applySwaps(days[DAY]), h='<div class="sub">השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים</div>';
-  h+=(days.length>1?'<div class="chips" role="group" aria-label="בחירת אימון">'+days.map(function(x,i){ return '<button type="button" class="chip'+(done[i]?' done':'')+'" data-day="'+i+'" aria-pressed="'+(i===DAY)+'">אימון '+(i+1)+'</button>'; }).join('')+'</div>':'');
+  h+=(vis.length>1?'<div class="chips" role="group" aria-label="בחירת אימון">'+vis.map(function(i){ return '<button type="button" class="chip'+(done[i]?' done':'')+'" data-day="'+i+'" aria-pressed="'+(i===DAY)+'">אימון '+(i+1)+'</button>'; }).join('')+'</div>':'');
   var S0=deloadState(); if(S0.on) h+='<div class="card" style="border-color:var(--gold);margin-top:8px"><b>השבוע: שבוע הורדה (דילואד)</b><div class="exnote" style="margin-top:4px">אחרי 6 שבועות של עבודה הגוף צריך שבוע קל כדי להתאושש ולהתחזק. השבוע עובדים על 85% מהמשקל, סט אחד פחות בכל תרגיל, ולא מגיעים לכשל. בשבוע הבא חוזרים חזקים יותר.</div></div>';
   else if(S0.n>1) h+='<div class="sub" style="margin-top:4px">שבוע '+S0.n+' מתוך 6 בבלוק · שבוע הורדה אחרי שבוע 6</div>';
   h+='<div class="sub" style="margin-top:4px">'+esc(d.title)+'</div>';
@@ -1284,7 +1291,7 @@ function renderTrain(){
       sets+=td.length; td.forEach(function(x){ vol+=x.kg*x.reps; }); if(pb&&tt>pb) prs++; var R3=/כשל/.test(e.r)?null:rng(e.r), at=td.filter(function(x){ return x.kg===tt; }), ns=parseInt(e.s,10)||1; if(R3&&at.length>=ns&&at.every(function(x){ return x.reps>=R3[1]; })) rdy++; });
     if(sets) showFinish(DAY+1,sets,vol,prs,rdy); else toast('כל הכבוד! אימון '+(DAY+1)+' הושלם'); var dm=doneMap(); for(var q=0;q<days.length;q++){ if(!dm[q]){ DAY=q; break; } } renderTrain(); window.scrollTo(0,0); };
   box.querySelectorAll('form.setrow').forEach(function(f){ if(f.querySelector('.sundo')) wireUndo(f,d.ex[+f.dataset.i]); });
-  box.querySelectorAll('form.setrow').forEach(function(f){ f.onsubmit=function(ev){ ev.preventDefault(); if(f.classList.contains('ok')) return;
+  box.querySelectorAll('form.setrow').forEach(function(f){ f.onsubmit=function(ev){ ev.preventDefault(); if(f.classList.contains('ok')) return; var tnow=Date.now(); if(tnow-SUBAT<700) return; SUBAT=tnow; /* לחיצה כפולה לא רושמת עוד סט */
     var e=d.ex[+f.dataset.i], ins=f.querySelectorAll('input'), kg=parseFloat(String(ins[0].value).replace(',','.')), reps=parseInt(ins[1].value,10), rs=f.querySelector('select'), rir=rs&&rs.value!==''?+rs.value:null;
     if(!(kg>=0&&kg<500)||!(reps>=1&&reps<=100)){ toast('ממלאים משקל וחזרות',1); return; }
     var L0=P.lifts&&P.lifts[e.ex], best=L0&&L0.hist.length?L0.best:null, btn=f.querySelector('button'); btn.disabled=true; f.classList.add('ok'); LASTIN[e.ex]={kg:kg,reps:reps};
@@ -1368,7 +1375,8 @@ function habitsToday(){ var m=ls('aviel_habits',{}), d=m[TODAY]||{}, n=HABITS.fi
 function habitSet(id,on){ var m=ls('aviel_habits',{}); m[TODAY]=m[TODAY]||{}; if(on) m[TODAY][id]=1; else delete m[TODAY][id];
   var keys=Object.keys(m).sort(); if(keys.length>120) keys.slice(0,keys.length-120).forEach(function(k){ delete m[k]; }); lsSet('aviel_habits',m);
   var done=HABITS.filter(function(h){ return m[TODAY][h.id]; }).map(function(h){ return h.t; });
-  try{ api('habit',{d:TODAY,done:done,total:HABITS.length}).catch(function(){}); }catch(e){} }
+  clearTimeout(HAB_T); HAB_T=setTimeout(function(){ HAB_Q=HAB_Q.then(function(){ return api('habit',{d:TODAY,done:done,total:HABITS.length}).catch(function(){}); }); },800); } /* לחיצות מהירות: נשלח רק המצב האחרון, לפי הסדר */
+var HAB_T=null, HAB_Q=Promise.resolve();
 function activeDay(){ var a=ls('aviel_active',{}); if(!a[TODAY]){ a[TODAY]=1; var ks=Object.keys(a).sort(); if(ks.length>400) delete a[ks[0]]; lsSet('aviel_active',a); } }
 function streak(){ var a=ls('aviel_active',{}), n=0, d=new Date(); if(!a[TODAY]) d.setDate(d.getDate()-1);
   for(var i=0;i<400;i++){ var k=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); if(!a[k]) break; n++; d.setDate(d.getDate()-1); } return n; }
@@ -1584,9 +1592,13 @@ function a11yApply(){ var i=+ls('aviel_textsize',0)||0; document.documentElement
 function mealVals(b){ var out=null; (b.lines||[]).forEach(function(l){ if(!/^(ערכים ממוצעים|ערכי הארוחה)/.test(l)) return; var o={}, re=/כ-?\s*([\d.,]+)\s*(קלוריות|גרם חלבון|גרם פחמימ\S*|גרם שומן)/g, mm; while((mm=re.exec(l))){ var n=+mm[1].replace(/,/g,''); if(/קלור/.test(mm[2])) o.k=n; else if(/חלבון/.test(mm[2])) o.p=n; else if(/פחמ/.test(mm[2])) o.c=n; else o.fat=n; } if(o.k) out=o; }); return out; }
 function wireAteLog(M){ if(!M||!M.blocks) return; var logged=ls('aviel_ate_logged_'+TODAY,{});
   document.querySelectorAll('#menuBox .ate').forEach(function(btn){ var title=btn.dataset.meal, b=M.blocks.filter(function(x){ return x.title===title; })[0], vals=b&&mealVals(b); if(!vals) return;
-    btn.addEventListener('click',function(){ if(btn.getAttribute('aria-pressed')==='true') return; if(logged[title]) return; logged[title]=1; lsSet('aviel_ate_logged_'+TODAY,logged);
+    btn.addEventListener('click',function(){ var tag=title+' (מהתפריט)';
+      if(btn.getAttribute('aria-pressed')==='true'){ var it=(typeof FDAY!=='undefined'&&FDAY&&FDAY.d===TODAY&&FDAY.items||[]).filter(function(x){ return x.f===tag&&!x._p; }).pop(); delete logged[title]; lsSet('aviel_ate_logged_'+TODAY,logged);
+        if(it) api('fooddel',{row:it.row,f:it.f,d:FDAY.d}).then(function(r){ FDAY=r; if(typeof renderFood==='function') renderFood(); }).catch(function(){}); return; } /* ביטול "אכלתי" מוריד גם מהיומן */
+      if(logged[title]&&typeof FDAY!=='undefined'&&FDAY&&FDAY.d===TODAY&&!(FDAY.items||[]).some(function(x){ return x.f===tag; })) delete logged[title]; /* נמחק ביומן → אפשר לרשום שוב */
+      if(logged[title]) return; logged[title]=1; lsSet('aviel_ate_logged_'+TODAY,logged);
       var ml=/בוקר/.test(title)?'בוקר':/צהר/.test(title)?'צהריים':/ערב|לילה/.test(title)?'ערב':'ביניים';
-      api('food',{f:title+' (מהתפריט)',g:0,k:vals.k,p:vals.p||0,c:vals.c||0,fat:vals.fat||0,m:ml}).then(function(r){ FDAY=r; toast('נרשם ביומן: '+vals.k+' קק״ל'); if(typeof renderFood==='function') renderFood(); }).catch(function(){ delete logged[title]; lsSet('aviel_ate_logged_'+TODAY,logged); }); },true); }); }
+      api('food',{f:title+' (מהתפריט)',g:0,k:vals.k,p:vals.p||0,c:vals.c||0,fat:vals.fat||0,m:ml}).then(function(r){ FDAY=r; toast('נרשם ביומן: '+vals.k+' קק״ל'); if(typeof renderFood==='function') renderFood(); }).catch(function(e){ delete logged[title]; lsSet('aviel_ate_logged_'+TODAY,logged); var a2=ls('aviel_ate_'+TODAY,[]), j=a2.indexOf(title); if(j>=0){ a2.splice(j,1); lsSet('aviel_ate_'+TODAY,a2); } toast((e&&e.message)||'לא נרשם, נסו שוב',1); try{ renderMenu(); }catch(er){} }); },true); }); } /* לא נרשם → הסימון יורד, כדי שלא ייראה כאילו נרשם */
 
 /* ===== השוואה לעצמה: כמה עלית בתרגיל מאז ההתחלה / לפני 4 שבועות ===== */
 function growthLine(L){ if(!L||!L.hist||L.hist.length<2) return ''; var h=L.hist.filter(function(x){ return x.d&&x.d<TODAY; }); if(!h.length) return '';
@@ -1873,41 +1885,65 @@ var _drawChartL=drawChart; drawChart=function(){ _drawChartL.apply(this,argument
 
 /* ===== שקילה וצעדים גם בלי קליטה (מכון במרתף): נשמר בטלפון ונשלח כשיש חיבור, באותו יום ===== */
 var OQ_KEY='aviel_offq', _apiO=api;
-var OQ_BUSY=false;
-function oqFlush(){ if(OQ_BUSY||!navigator.onLine) return; var q=ls(OQ_KEY,[]); if(!q.length) return; var today=trkYmd(new Date()), keep=q.filter(function(x){ return x.d===today; });
-  if(keep.length<q.length){ lsSet(OQ_KEY,keep); toast('עדכון שנשמר בטלפון מיום קודם לא נשלח. כדאי לספר לאביאל.',1); } if(!keep.length) return;
-  OQ_BUSY=true; var sent=0;
-  (function next(){ var cur=ls(OQ_KEY,[]).filter(function(x){ return x.d===today; });
-    if(!cur.length){ OQ_BUSY=false; if(sent){ try{ render(); renderTrain(); drawStrength(); }catch(e){} toast('נשלח מהטלפון · '+sent+' עדכונים'); } return; }
-    if(cur[0].a==='lift'&&!cur[0].p.id&&!SRVL){ _apiO('plan').then(function(r){ if(r&&r.lifts&&P) P.lifts=oqOver(r.lifts); else SRVL={}; next(); }, function(){ OQ_BUSY=false; clearTimeout(OQ_RT); OQ_RT=setTimeout(oqFlush,8000); }); return; } /* תור ישן: קודם בודקים מה השרת כבר רשם */
-    if(cur[0].a==='lift'&&!cur[0].p.id&&SRVL){ var c0=cur[0].p, sh=(SRVL[c0.ex]||{hist:[]}).hist.some(function(h){ return h.d===today&&+h.kg===+c0.kg&&+h.reps===+c0.reps; }); if(sh){ var qd=ls(OQ_KEY,[]), jd=qd.map(function(z){ return JSON.stringify(z); }).indexOf(JSON.stringify(cur[0])); if(jd>=0){ qd.splice(jd,1); lsSet(OQ_KEY,qd); } return next(); } } /* תור מהגרסה הקודמת: סט שכבר נרשם לא נשלח שוב */
-    if(cur[0].a==='lift'&&!cur[0].p.id){ var qf=ls(OQ_KEY,[]), j=qf.map(function(z){ return JSON.stringify(z); }).indexOf(JSON.stringify(cur[0])); cur[0].p.id='o'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); if(j>=0){ qf[j]=cur[0]; lsSet(OQ_KEY,qf); } } /* תור ישן בלי מזהה */
-    var x=cur[0], key=JSON.stringify(x), run; OQ_INFL=key;
-    var isL=x.a==='lift'||x.a==='liftdel'; if(isL){ run=LQ.then(function(){ return Promise.race([_apiO(x.a,x.p), new Promise(function(_,rj){ setTimeout(function(){ rj(new Error('אין חיבור')); },20000); })]); }); LQ=run.then(function(){},function(){}); } else run=_apiO(x.a,x.p);
-    var drop=function(){ OQ_INFL=''; var q2=ls(OQ_KEY,[]); for(var i=0;i<q2.length;i++){ if(JSON.stringify(q2[i])===key){ q2.splice(i,1); break; } } lsSet(OQ_KEY,q2); };
-    run.then(function(r){ drop(); if(!isL) sent++;
-      if(isL){ if(P&&r) P.lifts=oqOver(r); } else if(r) D=r; next(); }, function(er){ var m=er&&er.message||'';
-      if(isL&&!/אין חיבור|לא זמין/.test(m)){ drop(); toast(m||'הסט לא נשמר אצל אביאל',1); if(P){ P.lifts=oqOver(P.lifts); try{ var y=window.scrollY; renderTrain(); window.scrollTo(0,y); }catch(e){} } next(); return; } /* שגיאה אמיתית מהשרת: לא מנסים שוב לנצח */
-      OQ_INFL=''; OQ_BUSY=false; clearTimeout(OQ_RT); OQ_RT=setTimeout(oqFlush,8000); }); })(); }
-var OQ_RT=null, OQ_INFL='';
-/* סטים בלי קליטה: נשמרים בתור ונשלחים כשחוזר חיבור. ההיסטוריה המקומית מתעדכנת כדי שההמלצות והסימון יעבדו */
-function oqLifts(add,del,base){ var o=JSON.parse(JSON.stringify(base||P&&P.lifts||{})), ex=(add||del).ex, L=o[ex]||(o[ex]={first:null,best:0,hist:[]});
-  if(add){ var e={d:TODAY,kg:add.kg,reps:add.reps}; if(add.rir!=null) e.rir=add.rir; L.hist.push(e); if(!L.first) L.first=e; L.best=Math.max(L.best||0,add.kg); }
-  else { for(var i=L.hist.length-1;i>=0;i--){ var h=L.hist[i]; if(h.d===TODAY&&h.kg===del.kg&&h.reps===del.reps){ L.hist.splice(i,1); break; } }
-    if(!L.hist.length) delete o[ex]; else { L.first=L.hist[0]; L.best=Math.max.apply(null,L.hist.map(function(z){ return +z.kg||0; })); } } /* בלי רישומים — בלי תרגיל ריק שמפיל את גרף הכוח */
-  return o; }
-/* מידע מהשרת + סטים שעוד בתור = מה שהמתאמן/ת באמת עשה/תה (בלי שסט "ייעלם" לרגע) */
-var SRVL=null; function oqOver(l){ var o=normLifts(l), today=trkYmd(new Date()); if(l) SRVL=JSON.parse(JSON.stringify(o)); /* מה שהשרת באמת רשם */ ls(OQ_KEY,[]).forEach(function(x){ if(x.d!==today) return; if(x.a==='lift') o=oqLifts(x.p,null,o); else if(x.a==='liftdel') o=oqLifts(null,x.p,o); }); return o; }
+var OQ_BUSY=false, OQ_RT=null, OQ_INFL='', OQ_FIRST=true, LCONF={};
+/* 27.10.26 (סבב בדיקות): תור אחד לסטים, שקילה וצעדים. כל קריאה עם timeout; שגיאה "קבועה" מהשרת — מוותרים ומודיעים, כל השאר — מנסים שוב (בטוח בזכות המזהים) */
+var OQ_PERM=/הקישור לא בתוקף|המנוי הסתיים|הליווי הסתיים|הליווי לא פעיל|אין לשונית|לא תקין|חסר |פעולה לא מוכרת|קובץ המעקב|אין קובץ/;
+function oqRace(a,p){ return Promise.race([_apiO(a,p), new Promise(function(_,rj){ setTimeout(function(){ rj(new Error('אין חיבור')); },20000); })]); }
+function oqKey(x){ return x&&x.p&&x.p.id?x.a+'#'+x.p.id:JSON.stringify(x); }
+function oqYest(){ var y=new Date(); y.setDate(y.getDate()-1); return trkYmd(y); }
+function oqTyping(){ var ae=document.activeElement; return !!(ae&&ae.closest&&ae.closest('form.setrow')); }
+function oqFlush(){ if(OQ_BUSY||!navigator.onLine) return;
+  if(OQ_FIRST&&typeof P!=='undefined'&&P&&P.lifts&&!SRVL){ OQ_FIRST=false; P.lifts=oqOver(P.lifts); try{ if(!oqTyping()) renderTrain(); }catch(e){} } /* פתיחה: הסטים שבתור מוצגים מיד */
+  var q=ls(OQ_KEY,[]); if(!q.length) return; var y=oqYest(), okd=function(x){ return (x.a==='lift'||x.a==='liftdel')?x.d>=y:x.d===trkYmd(new Date()); }, keep=q.filter(okd);
+  if(keep.length<q.length){ lsSet(OQ_KEY,keep); toast('עדכון ישן שנשמר בטלפון לא נשלח. כדאי לספר לאביאל.',1); } if(!keep.length) return;
+  OQ_BUSY=true; var sent=0, lifted=false, cons={};
+  (function next(){ var cur=ls(OQ_KEY,[]).filter(okd);
+    if(!cur.length){ OQ_BUSY=false; if(sent){ try{ render(); }catch(e){} toast('נשלח מהטלפון · '+sent+' עדכונים'); } if(lifted&&!oqTyping()){ try{ var sy=window.scrollY; renderTrain(); window.scrollTo(0,sy); drawStrength(); }catch(e){} } return; }
+    var x=cur[0];
+    if(x.a==='lift'&&!x.p.id&&!SRVL){ oqRace('plan',{}).then(function(r){ if(r&&r.lifts&&P) P.lifts=oqOver(r.lifts); else SRVL={}; next(); }, function(){ OQ_BUSY=false; clearTimeout(OQ_RT); OQ_RT=setTimeout(oqFlush,8000); }); return; } /* תור מגרסה ישנה: קודם בודקים מה השרת כבר רשם */
+    if(x.a==='lift'&&!x.p.id){ var ck=exKey(x.p.ex)+'|'+(+x.p.kg)+'|'+(+x.p.reps), have=((SRVL&&SRVL[exKey(x.p.ex)])||{hist:[]}).hist.filter(function(h){ return h.d===x.d&&+h.kg===+x.p.kg&&+h.reps===+x.p.reps; }).length;
+      if(have>(cons[ck]||0)){ cons[ck]=(cons[ck]||0)+1; oqDrop(oqKey(x)); return next(); } /* כבר נרשם (לפי כמות, לא "יש אחד") */
+      var qf=ls(OQ_KEY,[]), j=qf.map(oqKey).indexOf(oqKey(x)); x.p.id='o'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); if(j>=0){ qf[j]=x; lsSet(OQ_KEY,qf); } }
+    if((x.a==='lift'||x.a==='liftdel')&&!x.s){ x.s=1; var qs=ls(OQ_KEY,[]), js=qs.map(oqKey).indexOf(oqKey(x)); if(js>=0){ qs[js].s=1; lsSet(OQ_KEY,qs); } } /* נשלח לפחות פעם אחת — ביטול מעכשיו נשלח לשרת */
+    var key=oqKey(x), isL=x.a==='lift'||x.a==='liftdel', run; OQ_INFL=key;
+    if(isL){ run=LQ.then(function(){ return oqRace(x.a,x.p); }); LQ=run.then(function(){},function(){}); } else run=oqRace(x.a,x.p);
+    run.then(function(r){ OQ_INFL=''; oqDrop(key); if(isL){ lifted=true; if(x.a==='lift'){ var lk=exKey(x.p.ex)+'|'+(+x.p.kg)+'|'+(+x.p.reps); (LCONF[lk]=LCONF[lk]||[]).push(x.p.id); } if(P&&r) P.lifts=oqOver(r); } else { sent++; if(r) D=r; } next(); },
+      function(er){ var m=er&&er.message||''; OQ_INFL='';
+        if(OQ_PERM.test(m)){ oqDrop(key); toast(m,1); if(isL&&P&&SRVL){ P.lifts=oqOver(SRVL); lifted=true; } next(); return; } /* שגיאה קבועה: לא מנסים שוב לנצח */
+        OQ_BUSY=false; clearTimeout(OQ_RT); OQ_RT=setTimeout(oqFlush,8000); }); })(); }
+function oqDrop(key){ var q2=ls(OQ_KEY,[]); for(var i=0;i<q2.length;i++){ if(oqKey(q2[i])===key){ q2.splice(i,1); break; } } lsSet(OQ_KEY,q2); }
+/* שם תרגיל עם "(…)" בסוף: השרת שומר בלי הסוגריים. כל המפתחות לפי השם הנקי, והשם המלא מצביע לאותו מידע */
+function exKey(s){ return String(s||'').trim().replace(/\s*\([^()]*\)\s*$/,''); }
+function liftAlias(o){ try{ var names={}; ((P&&P.program&&P.program.blocks)||[]).forEach(function(b){ (b.ex||[]).forEach(function(e){ names[e.ex]=1; }); try{ (applySwaps(b).ex||[]).forEach(function(e){ names[e.ex]=1; }); }catch(er){} });
+    Object.keys(names).forEach(function(n){ var k=exKey(n); if(k!==n&&o[k]) o[n]=o[k]; }); }catch(e){} return o; }
+function oqLifts(add,del,base){ var src=base||P&&P.lifts||{}, o={}; Object.keys(src).forEach(function(k){ if(exKey(k)===k||!src[exKey(k)]) o[k]=JSON.parse(JSON.stringify(src[k])); });
+  var it=add||del, ex=exKey(it.ex), dd=it.d||TODAY, L=o[ex]||(o[ex]={first:null,best:0,hist:[]});
+  if(add){ var e={d:dd,kg:add.kg,reps:add.reps}; if(add.rir!=null) e.rir=add.rir; if(add.id) e.id=add.id; L.hist.push(e); if(!L.first) L.first=e; L.best=Math.max(L.best||0,add.kg); }
+  else { for(var i=L.hist.length-1;i>=0;i--){ var h=L.hist[i]; if(h.d===dd&&+h.kg===+del.kg&&+h.reps===+del.reps){ L.hist.splice(i,1); break; } }
+    if(!L.hist.length) delete o[ex]; else L.best=Math.max.apply(null,L.hist.map(function(z){ return +z.kg||0; })); } /* first נשאר: נקודת ההתחלה של גרף הכוח לא זזה אחרי ביטול */
+  return liftAlias(o); }
+/* מידע מהשרת + מה שעוד בתור = מה שבאמת נעשה */
+var SRVL=null; function oqOver(l,have){ var o=normLifts(l), y=oqYest(); if(l) SRVL=JSON.parse(JSON.stringify(o)); var hv=have||[];
+  if(hv.length){ var qh=ls(OQ_KEY,[]).filter(function(x){ return !(x.a==='lift'&&x.p.id&&hv.indexOf(x.p.id)>=0); }); lsSet(OQ_KEY,qh); } /* השרת כבר רשם — יוצא מהתור */
+  ls(OQ_KEY,[]).forEach(function(x){ if(x.d<y) return; if(x.a==='lift') o=oqLifts(x.p,null,o); else if(x.a==='liftdel') o=oqLifts(null,x.p,o); }); return liftAlias(o); }
 /* סטים נשלחים לשרת אחד אחרי השני (גם כשמסמנים כמה סטים מהר), כדי ששום סט לא יידרס */
-var LQ=Promise.resolve(), FQ=Promise.resolve(); /* גם יומן האוכל: תשובות לא מגיעות בסדר הפוך */
+var LQ=Promise.resolve(), FQ=Promise.resolve(), FMUT=0; /* גם יומן האוכל: תשובות לא מגיעות בסדר הפוך */
 api=function(a,p){ var call;
   if((a==='lift'||a==='liftdel')&&p&&!p.id) p.id=Date.now().toString(36)+Math.random().toString(36).slice(2,8); /* מזהה לכל סט: שליחה חוזרת אחרי קליטה חלשה לא יוצרת סט כפול */
   /* באימון לא מחכים לשרת (2-5 שניות לכל בקשה): הסט נרשם בטלפון מיד, ונשלח ברקע לפי הסדר. בלי קליטה — נשלח כשחוזר חיבור */
-  if((a==='lift'||a==='liftdel')&&P){ var qa=ls(OQ_KEY,[]), td=trkYmd(new Date()), r0;
-    if(a==='liftdel'){ var k=-1; qa.forEach(function(x,i){ if(x.a==='lift'&&x.p.ex===p.ex&&+x.p.kg===+p.kg&&+x.p.reps===+p.reps&&JSON.stringify(x)!==OQ_INFL) k=i; }); if(k>=0) qa.splice(k,1); else qa.push({a:a,p:p,d:td}); /* סט שכבר בדרך לשרת: שולחים אחריו מחיקה */ r0=oqLifts(null,p); }
+  if((a==='lift'||a==='liftdel')&&P){ var qa=ls(OQ_KEY,[]), td=TODAY, r0; p.d=p.d||td;
+    if(a==='liftdel'){ var k=-1; qa.forEach(function(x,i){ if(x.a==='lift'&&exKey(x.p.ex)===exKey(p.ex)&&+x.p.kg===+p.kg&&+x.p.reps===+p.reps) k=i; });
+      if(k>=0&&!qa[k].s&&oqKey(qa[k])!==OQ_INFL) qa.splice(k,1); /* עוד לא יצא — פשוט מוחקים מהתור */
+      else { if(k>=0){ p.lid=qa[k].p.id; p.pend=1; } else { var lk=exKey(p.ex)+'|'+(+p.kg)+'|'+(+p.reps), ids=LCONF[lk]; if(ids&&ids.length) p.lid=ids.pop(); } qa.push({a:a,p:p,d:td}); } /* כבר נשלח: מחיקה לפי מזהה הסט, אחריו בתור */
+      r0=oqLifts(null,p); }
     else { qa.push({a:a,p:p,d:td}); r0=oqLifts(p,null); }
     lsSet(OQ_KEY,qa); setTimeout(oqFlush,0); return Promise.resolve(r0); }
-  if(a==='plan') return _apiO(a,p).then(function(r){ if(r&&r.lifts) r.lifts=oqOver(r.lifts); return r; });
+  if(a==='food'||a==='fooddel'||a==='foodday'){ p=p||{}; if(a==='food'&&!p.id) p.id=Date.now().toString(36)+Math.random().toString(36).slice(2,8); if(a!=='fooddel'&&!p.d) p.d=TODAY; /* מזהה = בלי כפילויות בקליטה חלשה; היום של הטלפון (חו״ל / חצות) */
+    if(a==='foodday'){ var seq=FMUT; return _apiO(a,p).then(function(r){ if(seq!==FMUT&&typeof FDAY!=='undefined'&&FDAY&&r&&FDAY.d===r.d) return FDAY; return r; }); } /* תשובה שיצאה לפני רישום חדש לא מוחקת אותו */
+    var mine=a==='food'?p:null, fc=FQ.then(function(){ return Promise.race([_apiO(a,p), new Promise(function(_,rj){ setTimeout(function(){ rj(new Error('אין חיבור כרגע. נסו שוב בעוד רגע')); },20000); })]); }); FQ=fc.then(function(){},function(){});
+    return fc.then(function(r){ FMUT++; try{ var pend=(typeof FDAY!=='undefined'&&FDAY&&FDAY.items||[]).filter(function(x){ return x._p; }), used=false; if(r&&r.items&&pend.length){ pend.forEach(function(x){ if(!used&&mine&&x.f===String(mine.f).slice(0,80)&&+x.k===+mine.k){ used=true; return; } r.items.push(x); }); } }catch(e){}
+      if(a==='fooddel'&&r&&r.deleted===false) setTimeout(function(){ toast('לא נמחק: היומן השתנה בינתיים. רעננו ונסו שוב',1); },60); return r; }); }
+  if(a==='plan'){ p=p||{}; var qids=ls(OQ_KEY,[]).filter(function(x){ return x.a==='lift'&&x.p.id&&x.s; }).map(function(x){ return x.p.id; }); if(qids.length) p.qids=qids; return _apiO(a,p).then(function(r){ if(r&&r.lifts) r.lifts=oqOver(r.lifts,r.have); return r; }); }
   if(a==='lift'||a==='liftdel'){ call=LQ.then(function(){ return _apiO(a,p); }); LQ=call.then(function(){},function(){}); } else if(a==='food'||a==='fooddel'){ call=FQ.then(function(){ return _apiO(a,p); }); FQ=call.then(function(){},function(){}); } else call=_apiO(a,p);
   return call.catch(function(e){ var off=/אין חיבור/.test(e&&e.message||'');
   if(off&&a==='lift'&&P){ var q0=ls(OQ_KEY,[]); q0.push({a:'lift',p:p,d:trkYmd(new Date())}); lsSet(OQ_KEY,q0); setTimeout(function(){ toast('אין קליטה. הסט נשמר בטלפון ויישלח לבד כשיחזור חיבור.'); },60); return oqLifts(p,null); }
@@ -2085,6 +2121,29 @@ var _renderRenew=render; render=function(){ _renderRenew.apply(this,arguments); 
   document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') chk(); }); setInterval(chk,30*60000);
   var st=document.createElement('style'); st.textContent='.updbar{position:fixed;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));z-index:90;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border:0;border-radius:14px;background:var(--cta,var(--gold));color:var(--cta-t,var(--ink));font:inherit;font-weight:700;box-shadow:0 10px 30px -10px rgba(0,0,0,.45);text-align:start}.updbar b{white-space:nowrap;text-decoration:underline;text-underline-offset:3px}';
   document.head.appendChild(st); })();
+
+/* ===== אימון שנעשה בלי "סיימתי" (27.10.26): יום קודם השבוע שבו נרשמו סטים ברוב התרגילים של האימון נספר כבוצע. היום עצמו לא — אולי עוד באמצע ===== */
+var _doneMap0=doneMap; doneMap=function(){ var out=_doneMap0();
+  try{ var p=P&&P.program, L=P&&P.lifts; if(!p||!L) return out; var days=(p.blocks||[]).filter(function(b){ return b.ex&&b.ex.length; }); if(!days.length) return out;
+    var ws=weekStart(), dates=[]; for(var t=new Date(ws); trkYmd(t)<TODAY; t.setDate(t.getDate()+1)) dates.push(trkYmd(t));
+    var used={}, add={}; Object.keys(out).forEach(function(k){ used[out[k]]=1; });
+    days.forEach(function(day,i){ if(out[i]) return; var names=[]; try{ applySwaps(day).ex.forEach(function(e){ names.push(e.ex); }); }catch(e){} day.ex.forEach(function(e){ if(names.indexOf(e.ex)<0) names.push(e.ex); });
+      var nEx=day.ex.length; for(var j=0;j<dates.length;j++){ var D=dates[j]; if(used[D]) continue; var hit={};
+        names.forEach(function(n){ var h=L[n]&&L[n].hist; if(h&&h.some(function(x){ return x.d===D; })) hit[n]=1; });
+        if(Object.keys(hit).length>=Math.max(2,Math.ceil(nEx*0.6))){ out[i]=D; add[i]=D; used[D]=1; break; } } });
+    if(Object.keys(add).length){ var m=ls('aviel_done',{}); Object.keys(add).forEach(function(k){ m[k]=add[k]; }); lsSet('aviel_done',m); } }catch(e){}
+  return out; };
+
+/* ===== רינדור מחדש של האימון לא מוחק משקל/חזרות שהוקלדו בשורה שעוד לא סומנה (27.10.26) ===== */
+var _renderTrainK=renderTrain; renderTrain=function(){ var keep={}, cnt={};
+  try{ document.querySelectorAll('#progBox form.setrow').forEach(function(f){ var i=f.dataset.i; cnt[i]=(cnt[i]||0)+1; if(f.classList.contains('ok')) return; var ins=f.querySelectorAll('input'), sel=f.querySelector('select'); if(f.dataset.typed) keep[i+'|'+cnt[i]]=[ins[0].value,ins[1].value,sel?sel.value:'']; }); }catch(e){}
+  _renderTrainK.apply(this,arguments); cnt={};
+  try{ document.querySelectorAll('#progBox form.setrow').forEach(function(f){ var i=f.dataset.i; cnt[i]=(cnt[i]||0)+1; var v=keep[i+'|'+cnt[i]], ins=f.querySelectorAll('input'), sel=f.querySelector('select');
+    if(v&&!f.classList.contains('ok')){ ins[0].value=v[0]; ins[1].value=v[1]; if(sel) sel.value=v[2]; f.dataset.typed=1; }
+    f.addEventListener('input',function(){ f.dataset.typed=1; }); f.addEventListener('change',function(){ f.dataset.typed=1; }); }); }catch(e){} };
+
+/* נעילת מנוי: חוזרים לאפליקציה אחרי חידוש בוואטסאפ → טוענים מחדש ובודקים שוב (27.10.26) */
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&typeof LOCKED!=='undefined'&&LOCKED) location.reload(); });
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
