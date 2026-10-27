@@ -1879,19 +1879,36 @@ function oqFlush(){ if(OQ_BUSY||!navigator.onLine) return; var q=ls(OQ_KEY,[]); 
   OQ_BUSY=true; var sent=0;
   (function next(){ var cur=ls(OQ_KEY,[]).filter(function(x){ return x.d===today; });
     if(!cur.length){ OQ_BUSY=false; if(sent){ try{ render(); renderTrain(); drawStrength(); }catch(e){} toast('נשלח מהטלפון · '+sent+' עדכונים'); } return; }
+    if(cur[0].a==='lift'&&!cur[0].p.id&&!SRVL){ _apiO('plan').then(function(r){ if(r&&r.lifts&&P) P.lifts=oqOver(r.lifts); else SRVL={}; next(); }, function(){ OQ_BUSY=false; clearTimeout(OQ_RT); OQ_RT=setTimeout(oqFlush,8000); }); return; } /* תור ישן: קודם בודקים מה השרת כבר רשם */
+    if(cur[0].a==='lift'&&!cur[0].p.id&&SRVL){ var c0=cur[0].p, sh=(SRVL[c0.ex]||{hist:[]}).hist.some(function(h){ return h.d===today&&+h.kg===+c0.kg&&+h.reps===+c0.reps; }); if(sh){ var qd=ls(OQ_KEY,[]), jd=qd.map(function(z){ return JSON.stringify(z); }).indexOf(JSON.stringify(cur[0])); if(jd>=0){ qd.splice(jd,1); lsSet(OQ_KEY,qd); } return next(); } } /* תור מהגרסה הקודמת: סט שכבר נרשם לא נשלח שוב */
+    if(cur[0].a==='lift'&&!cur[0].p.id){ var qf=ls(OQ_KEY,[]), j=qf.map(function(z){ return JSON.stringify(z); }).indexOf(JSON.stringify(cur[0])); cur[0].p.id='o'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); if(j>=0){ qf[j]=cur[0]; lsSet(OQ_KEY,qf); } } /* תור ישן בלי מזהה */
     var x=cur[0], key=JSON.stringify(x), run;
-    if(x.a==='lift'){ run=LQ.then(function(){ return _apiO(x.a,x.p); }); LQ=run.then(function(){},function(){}); } else run=_apiO(x.a,x.p);
-    run.then(function(r){ var q2=ls(OQ_KEY,[]); for(var i=0;i<q2.length;i++){ if(JSON.stringify(q2[i])===key){ q2.splice(i,1); break; } } lsSet(OQ_KEY,q2); sent++;
-      if(x.a==='lift'){ if(P) P.lifts=normLifts(r); } else if(r) D=r; next(); }, function(){ OQ_BUSY=false; }); })(); }
+    var isL=x.a==='lift'||x.a==='liftdel'; if(isL){ run=LQ.then(function(){ return Promise.race([_apiO(x.a,x.p), new Promise(function(_,rj){ setTimeout(function(){ rj(new Error('אין חיבור')); },20000); })]); }); LQ=run.then(function(){},function(){}); } else run=_apiO(x.a,x.p);
+    var drop=function(){ var q2=ls(OQ_KEY,[]); for(var i=0;i<q2.length;i++){ if(JSON.stringify(q2[i])===key){ q2.splice(i,1); break; } } lsSet(OQ_KEY,q2); };
+    run.then(function(r){ drop(); if(!isL) sent++;
+      if(isL){ if(P&&r) P.lifts=oqOver(r); } else if(r) D=r; next(); }, function(er){ var m=er&&er.message||'';
+      if(isL&&!/אין חיבור|לא זמין/.test(m)){ drop(); toast(m||'הסט לא נשמר אצל אביאל',1); if(P){ P.lifts=oqOver(P.lifts); try{ var y=window.scrollY; renderTrain(); window.scrollTo(0,y); }catch(e){} } next(); return; } /* שגיאה אמיתית מהשרת: לא מנסים שוב לנצח */
+      OQ_BUSY=false; clearTimeout(OQ_RT); OQ_RT=setTimeout(oqFlush,8000); }); })(); }
+var OQ_RT=null;
 /* סטים בלי קליטה: נשמרים בתור ונשלחים כשחוזר חיבור. ההיסטוריה המקומית מתעדכנת כדי שההמלצות והסימון יעבדו */
-function oqLifts(add,del){ var o=JSON.parse(JSON.stringify(P&&P.lifts||{})), ex=(add||del).ex, L=o[ex]||(o[ex]={first:null,best:0,hist:[]});
+function oqLifts(add,del,base){ var o=JSON.parse(JSON.stringify(base||P&&P.lifts||{})), ex=(add||del).ex, L=o[ex]||(o[ex]={first:null,best:0,hist:[]});
   if(add){ var e={d:TODAY,kg:add.kg,reps:add.reps}; if(add.rir!=null) e.rir=add.rir; L.hist.push(e); if(!L.first) L.first=e; L.best=Math.max(L.best||0,add.kg); }
   else { for(var i=L.hist.length-1;i>=0;i--){ var h=L.hist[i]; if(h.d===TODAY&&h.kg===del.kg&&h.reps===del.reps){ L.hist.splice(i,1); break; } }
     if(!L.hist.length) delete o[ex]; else { L.first=L.hist[0]; L.best=Math.max.apply(null,L.hist.map(function(z){ return +z.kg||0; })); } } /* בלי רישומים — בלי תרגיל ריק שמפיל את גרף הכוח */
   return o; }
+/* מידע מהשרת + סטים שעוד בתור = מה שהמתאמן/ת באמת עשה/תה (בלי שסט "ייעלם" לרגע) */
+var SRVL=null; function oqOver(l){ var o=normLifts(l), today=trkYmd(new Date()); if(l) SRVL=JSON.parse(JSON.stringify(o)); /* מה שהשרת באמת רשם */ ls(OQ_KEY,[]).forEach(function(x){ if(x.d!==today) return; if(x.a==='lift') o=oqLifts(x.p,null,o); else if(x.a==='liftdel') o=oqLifts(null,x.p,o); }); return o; }
 /* סטים נשלחים לשרת אחד אחרי השני (גם כשמסמנים כמה סטים מהר), כדי ששום סט לא יידרס */
 var LQ=Promise.resolve(), FQ=Promise.resolve(); /* גם יומן האוכל: תשובות לא מגיעות בסדר הפוך */
-api=function(a,p){ var call; if(a==='lift'||a==='liftdel'){ call=LQ.then(function(){ return _apiO(a,p); }); LQ=call.then(function(){},function(){}); } else if(a==='food'||a==='fooddel'){ call=FQ.then(function(){ return _apiO(a,p); }); FQ=call.then(function(){},function(){}); } else call=_apiO(a,p);
+api=function(a,p){ var call;
+  if(a==='lift'&&p&&!p.id) p.id=Date.now().toString(36)+Math.random().toString(36).slice(2,8); /* מזהה לכל סט: שליחה חוזרת אחרי קליטה חלשה לא יוצרת סט כפול */
+  /* באימון לא מחכים לשרת (2-5 שניות לכל בקשה): הסט נרשם בטלפון מיד, ונשלח ברקע לפי הסדר. בלי קליטה — נשלח כשחוזר חיבור */
+  if((a==='lift'||a==='liftdel')&&P){ var qa=ls(OQ_KEY,[]), td=trkYmd(new Date()), r0;
+    if(a==='liftdel'){ var k=-1; qa.forEach(function(x,i){ if(x.a==='lift'&&x.p.ex===p.ex&&+x.p.kg===+p.kg&&+x.p.reps===+p.reps) k=i; }); if(k>=0) qa.splice(k,1); else qa.push({a:a,p:p,d:td}); r0=oqLifts(null,p); }
+    else { qa.push({a:a,p:p,d:td}); r0=oqLifts(p,null); }
+    lsSet(OQ_KEY,qa); setTimeout(oqFlush,0); return Promise.resolve(r0); }
+  if(a==='plan') return _apiO(a,p).then(function(r){ if(r&&r.lifts) r.lifts=oqOver(r.lifts); return r; });
+  if(a==='lift'||a==='liftdel'){ call=LQ.then(function(){ return _apiO(a,p); }); LQ=call.then(function(){},function(){}); } else if(a==='food'||a==='fooddel'){ call=FQ.then(function(){ return _apiO(a,p); }); FQ=call.then(function(){},function(){}); } else call=_apiO(a,p);
   return call.catch(function(e){ var off=/אין חיבור/.test(e&&e.message||'');
   if(off&&a==='lift'&&P){ var q0=ls(OQ_KEY,[]); q0.push({a:'lift',p:p,d:trkYmd(new Date())}); lsSet(OQ_KEY,q0); setTimeout(function(){ toast('אין קליטה. הסט נשמר בטלפון ויישלח לבד כשיחזור חיבור.'); },60); return oqLifts(p,null); }
   if(off&&a==='liftdel'&&P){ var q1=ls(OQ_KEY,[]), k=-1; q1.forEach(function(x,i){ if(x.a==='lift'&&x.p.ex===p.ex&&+x.p.kg===+p.kg&&+x.p.reps===+p.reps) k=i; }); if(k>=0){ q1.splice(k,1); lsSet(OQ_KEY,q1); return oqLifts(null,p); } }
