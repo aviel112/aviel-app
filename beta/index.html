@@ -2446,7 +2446,7 @@ var _showPhG=show; show=function(){ var r=_showPhG.apply(this,arguments); try{ p
 
 /* ===== צעדים מהבריאות בלחיצה (28.10.26, אביאל: "כמה שפחות להם"): באייפון, קיצור דרך אחד שמקבל את הקוד מהאפליקציה, קורא את הצעדים של היום ושולח.
    חד-פעמי: "חיבור" (מוסיפים את הקיצור). מאז: כפתור אחד. כשחוזרים לאפליקציה, הצעדים מתרעננים לבד ===== */
-var SC_LINK='', SC_NAME='צעדים לאביאל', SC_RAN=0;
+var SC_LINK='https://www.icloud.com/shortcuts/6316f070639f48c69b1c5e90911f9d39', SC_NAME='צעדים אביאל', SC_RAN=0;
 function scHtml(){ if(!SC_LINK||!/iphone|ipad|ipod/i.test(navigator.userAgent)) return ''; var on=!!ls('aviel_sc_on',false);
   return '<div class="card scc"><div class="row"><span class="label">צעדים מהבריאות</span>'+(on?'<button type="button" class="linkbtn" id="scRe">חיבור מחדש</button>':'')+'</div>'+
     (on?'<button type="button" class="installbtn" id="scRun">עדכון הצעדים של היום</button><div class="sub" style="margin-top:6px">נפתח לרגע מסך של אפל, ואז חוזרים לכאן והצעדים מעודכנים.</div>'
