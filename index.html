@@ -1602,8 +1602,9 @@ function recapHtml(){ var d=D||{}, wk=d.week||[], keys=weekKeys(), ws=weekStart(
   var fdays=keys.filter(function(k){ return (ls('aviel_ate_'+k,[])||[]).length||Object.keys(ls('aviel_ate_logged_'+k,{})).length||(k===TODAY&&typeof FDAY!=='undefined'&&FDAY&&FDAY.d===TODAY&&(FDAY.items||[]).length); }).length;
   var best=null; Object.keys((P&&P.lifts)||{}).forEach(function(ex){ (P.lifts[ex].hist||[]).forEach(function(h){ if(h.d>=keys[0]&&h.kg>=P.lifts[ex].best&&(!best||h.kg>best.kg)) best={ex:ex,kg:h.kg}; }); });
   var steps=wk.filter(function(x){ return x.steps!=null&&new Date(x.d+'T12:00:00').getTime()>=ws; }).map(function(x){ return x.steps; }), sAvg=steps.length?Math.round(steps.reduce(function(a,b){ return a+b; },0)/steps.length):null;
-  var goals=[{t:'שקילות',n:weighs,g:7},{t:'ימי תפריט או יומן',n:fdays,g:7},{t:'ימי הרגלים מלאים',n:hdays,g:7}]; if(days) goals.unshift({t:'אימונים',n:trains,g:days});
-  if(!days&&!weighs&&!fdays&&!hdays) return '';
+  var wv=wkWater(keys), vt=wkVit(keys); /* 28.10.26: במקום הרגלים — ימי יעד מים וימי תוספים */
+  var goals=[{t:'שקילות',n:weighs,g:7},{t:'ימי תפריט או יומן',n:fdays,g:7},{t:'ימי יעד מים',n:wv,g:7}]; if(vt!=null) goals.push({t:'ימי תוספים מלאים',n:vt,g:7}); if(days) goals.unshift({t:'אימונים',n:trains,g:days});
+  if(!days&&!weighs&&!fdays&&!wv) return '';
   var done=goals.filter(function(g){ return g.n>=g.g; }).length, left=7-keys.length;
   return '<div class="recap"><div class="row"><b>היעדים של השבוע</b><small>'+(left>0?'עוד '+left+' ימים':'היום האחרון')+'</small></div><div class="goals">'+goals.map(function(g){ var pc=Math.min(100,Math.round(g.n/g.g*100)), ok=g.n>=g.g; return '<div class="goal'+(ok?' ok':'')+'"><div class="row"><span>'+g.t+'</span><b class="num">'+g.n+'/'+g.g+'</b></div><div class="tdbar"><i style="width:'+pc+'%"></i></div></div>'; }).join('')+'</div>'+
     (done===goals.length?'<div class="rbest">סגרת את כל היעדים של השבוע. ככה נראית התמדה.</div>':best?'<div class="rbest">שיא חדש השבוע: <b>'+esc(best.ex)+'</b> · '+best.kg+' ק״ג</div>':'')+(sAvg!=null?'<div class="swaphint">צעדים: '+sAvg.toLocaleString('he-IL')+' ליום בממוצע</div>':'')+'</div>'; }
@@ -2260,6 +2261,26 @@ var _showGd=show; show=function(v){ _showGd.apply(this,arguments); if(v==='guide
 function ciOpen(){ var d=new Date(), w=d.getDay(), h=d.getHours(); return (w===6&&h>=17)||(w===0&&h<21); }
 var _renderCi=render; render=function(){ _renderCi.apply(this,arguments); try{ var f=document.getElementById('ciForm'), card=f&&f.closest('.card'); if(card) card.hidden=!ciOpen()&&!(D&&D.checkinDone&&new Date().getDay()===0); }catch(e){} };
 var _todayItemsCi=todayItems; todayItems=function(){ var it=_todayItemsCi.apply(this,arguments); return ciOpen()?it:it.filter(function(x){ return x.k!=='c'; }); };
+
+/* ===== סיכום שבועי (28.10.26): ימי מים ותוספים מההיסטוריה בשרת + היום מהטלפון ===== */
+function wkWater(keys){ var w=(D&&D.water)||{}, lg=w.log||{}, g=waterNow().goal; return keys.filter(function(k){ var ml=k===TODAY?waterNow().ml:+lg[k]||0; return ml>=g; }).length; }
+function wkVit(keys){ var V=(D&&D.vit)||{}, L=V.list||[]; if(!L.length) return null; var lg=V.log||{}, loc=ls('aviel_vit',{}); return keys.filter(function(k){ var dn=k===TODAY&&loc.d===TODAY?loc.done:(lg[k]||[]); return L.every(function(v){ return (dn||[]).indexOf(v.n)>=0; }); }).length; }
+function reportOpen(){ var d=new Date(), w=d.getDay(), h=d.getHours(); return (w===6&&h>=17)||(w===0&&h<21); }
+function weekReport(){ var keys=weekKeys(), wk=(D&&D.weekly)||[], wd=wk.length>1?Math.round((wk[wk.length-1]-wk[wk.length-2])*10)/10:null, week=(D&&D.week)||[], ws=weekStart().getTime();
+  var st=week.filter(function(x){ return x.steps!=null&&new Date(x.d+'T12:00:00').getTime()>=ws; }).map(function(x){ return +x.steps; }), sAvg=st.length?Math.round(st.reduce(function(a,b){ return a+b; },0)/st.length):null;
+  var p=P&&P.program, days=p&&p.blocks?p.blocks.filter(function(b){ return b.ex&&b.ex.length; }).length:0, tr=Object.keys(doneMap()).length, wv=wkWater(keys), vt=wkVit(keys);
+  var best=null; Object.keys((P&&P.lifts)||{}).forEach(function(ex){ (P.lifts[ex].hist||[]).forEach(function(hh){ if(hh.d>=keys[0]&&hh.kg>=P.lifts[ex].best&&(!best||hh.kg>best.kg)) best={ex:ex,kg:hh.kg}; }); });
+  var f=function(v){ return v==null?'—':(v>0?'+':'')+v; };
+  return {rows:[['משקל (ממוצע שבועי)',f(wd)+' ק״ג',1],['צעדים ביום',sAvg!=null?sAvg.toLocaleString('he-IL'):'—'],['אימונים',days?tr+' מתוך '+days:String(tr)],['ימי יעד מים',wv+' מתוך 7']].concat(vt!=null?[['ימי תוספים מלאים',vt+' מתוך 7']]:[]), best:best}; }
+function weekReportShow(){ var r=weekReport(), first=(D&&D.first)||'', ov=document.createElement('div'); ov.className='msov'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label','השבוע שלך');
+  ov.innerHTML='<div class="msbox wrep"><h2>השבוע של '+esc(first)+'</h2><div class="wrl">'+r.rows.map(function(x){ return '<div><span>'+x[0]+'</span><b class="num">'+(x[2]?'<bdi dir="ltr">'+esc(String(x[1]).replace(' ק״ג',''))+'</bdi> ק״ג':esc(x[1]))+'</b></div>'; }).join('')+'</div>'+(r.best?'<p class="msnote">שיא של השבוע: <b>'+esc(r.best.ex)+'</b> · '+r.best.kg+' ק״ג</p>':'')+(D&&D.focus?'<p class="sub">הנקודה של השבוע: '+esc(D.focus)+'</p>':'')+'<button type="button" id="wrShare">שיתוף</button><button type="button" class="ghost" id="wrX">סגירה</button></div>';
+  document.body.appendChild(ov); var close=function(){ ov.remove(); }; ov.querySelector('#wrX').onclick=close; ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+  ov.querySelector('#wrShare').onclick=function(){ var t='השבוע שלי עם אביאל:\n'+r.rows.map(function(x){ return x[0]+': '+x[1]; }).join('\n')+(r.best?'\nשיא: '+r.best.ex+' '+r.best.kg+' ק״ג':''); if(navigator.share) navigator.share({text:t}).catch(function(){}); else { try{ navigator.clipboard.writeText(t); toast('הועתק'); }catch(e){} } }; }
+/* כרטיסים בראש הבית: הנקודה של השבוע (מאביאל, כל השבוע) + הסיכום השבועי (שבת בערב עד ראשון בערב) */
+var _renderTodayWR=renderTodayCard; renderTodayCard=function(){ _renderTodayWR.apply(this,arguments); try{ var el=document.getElementById('todayCard'); if(!el||!D) return; var top=document.getElementById('wkTop'); if(!top){ top=document.createElement('div'); top.id='wkTop'; el.parentNode.insertBefore(top,el); }
+  top.innerHTML=(D.focus?'<div class="card wfocus"><small>הנקודה של השבוע מאביאל</small><b>'+esc(D.focus)+'</b></div>':'')+(reportOpen()?'<button type="button" class="card wrbtn" id="wrOpen"><span><b>השבוע שלך במסך אחד</b><small>משקל, צעדים, אימונים, מים ותוספים</small></span>'+IC_GO+'</button>':'');
+  var b=document.getElementById('wrOpen'); if(b) b.onclick=weekReportShow; }catch(e){} };
+(function(){ var st=document.createElement('style'); st.textContent='.wfocus{display:flex;flex-direction:column;gap:4px;border-color:var(--gold,#d4ac5b)}.wfocus small{color:var(--gold,#d4ac5b);font-weight:700}.wfocus b{font-size:18px}.wrbtn{display:flex;align-items:center;gap:10px;width:100%;text-align:start;font:inherit;color:inherit}.wrbtn span{flex:1;display:flex;flex-direction:column}.wrbtn small{color:var(--mute,#9d9aa6)}.wrbtn svg{width:20px;height:20px}.wrep{text-align:start}.wrep h2{text-align:center}.wrl{display:flex;flex-direction:column}.wrl div{display:flex;justify-content:space-between;align-items:baseline;padding:10px 2px;border-bottom:1px solid var(--line,#2c2c34)}.wrl b{font-size:18px}#wkTop{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}#wkTop:empty{display:none}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
