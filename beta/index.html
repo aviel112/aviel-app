@@ -2449,7 +2449,7 @@ function mChart(m){ var tb=document.getElementById('mTable'); if(!tb) return; va
   if(!L.length) return; if(!L.some(function(x){ return x.l===MCH_SEL; })) MCH_SEL=(L.filter(function(x){ return /בטן|מותן/.test(x.l); })[0]||L[0]).l;
   var cur=L.filter(function(x){ return x.l===MCH_SEL; })[0], pts=m.rows.map(function(r){ return {d:r.date,v:+r.vals[cur.i]}; }).filter(function(p){ return p.v>0; });
   var W=320,H=120,P=14, mn=Math.min.apply(null,pts.map(function(p){ return p.v; })), mx=Math.max.apply(null,pts.map(function(p){ return p.v; })), rg=(mx-mn)||1;
-  var X=function(i){ return pts.length<2?W/2:P+i*(W-2*P)/(pts.length-1); }, Y=function(v){ return H-P-(v-mn)/rg*(H-2*P-10); };
+  var X=function(i){ return pts.length<2?W/2:P+i*(W-2*P)/(pts.length-1); }, Y=function(v){ return pts.length<2||mx===mn?H/2:H-P-(v-mn)/rg*(H-2*P-10); };
   var path=pts.map(function(p,i){ return (i?'L':'M')+X(i).toFixed(1)+' '+Y(p.v).toFixed(1); }).join(' '), df=pts.length>1?Math.round((pts[pts.length-1].v-pts[0].v)*10)/10:null;
   var h='<div id="mChart" style="margin-top:12px"><div class="mchips">'+L.map(function(x){ return '<button type="button" class="'+(x.l===MCH_SEL?'on':'')+'" data-mch="'+esc(x.l)+'">'+esc(x.l)+'</button>'; }).join('')+'</div>'+
     '<div class="row" style="margin:8px 0 2px"><b>'+esc(MCH_SEL)+' · '+pts[pts.length-1].v+' ס״מ</b>'+(df!=null&&df!==0?'<span class="num" style="color:var('+(df<0?'--good':'--mute')+')">'+(df>0?'+':'')+df+' ס״מ מההתחלה</span>':'')+'</div>'+
