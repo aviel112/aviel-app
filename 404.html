@@ -7,6 +7,6 @@
 (function(){ var m=location.pathname.match(/\/aviel-app\/([a-z]+-\d{4})\/?$/i), msg=document.getElementById('m');
   var fail=function(t){ document.getElementById('sp').style.display='none'; msg.innerHTML=t; };
   if(!m){ fail('הדף לא נמצא. <a href="/aviel-app/">לאפליקציה</a>'); return; }
-  fetch('https://script.google.com/macros/s/AKfycbxSkxJJ1ODs067IOfDkuosXzKX-pVi2W7uTcWKAS-7YFuh8PW9mrjSS8bNC4SaiRTkP/exec?api=slug&c='+encodeURIComponent(m[1].toLowerCase())).then(function(r){ return r.json(); }).then(function(j){ if(j&&j.ok&&j.r&&j.r.t) location.replace('/aviel-app/?t='+j.r.t); else fail((j&&j.error)||'הקישור לא נמצא. בקשו מאביאל קישור חדש'); }).catch(function(){ fail('אין חיבור כרגע. נסו שוב בעוד רגע'); });
+  fetch('https://script.google.com/macros/s/AKfycbxSkxJJ1ODs067IOfDkuosXzKX-pVi2W7uTcWKAS-7YFuh8PW9mrjSS8bNC4SaiRTkP/exec?api=slug&code='+encodeURIComponent(m[1].toLowerCase())).then(function(r){ return r.json(); }).then(function(j){ if(j&&j.ok&&j.r&&j.r.t) location.replace('/aviel-app/?t='+j.r.t); else fail((j&&j.error)||'הקישור לא נמצא. בקשו מאביאל קישור חדש'); }).catch(function(){ fail('אין חיבור כרגע. נסו שוב בעוד רגע'); });
 })();
 </script></body></html>
