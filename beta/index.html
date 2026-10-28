@@ -1286,7 +1286,7 @@ function renderTrain(){
   var d=applySwaps(days[DAY]), h='<div class="sub">השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים</div>';
   h+=(vis.length>1?'<div class="chips" role="group" aria-label="בחירת אימון">'+vis.map(function(i){ return '<button type="button" class="chip'+(done[i]?' done':'')+'" data-day="'+i+'" aria-pressed="'+(i===DAY)+'">אימון '+(i+1)+'</button>'; }).join('')+'</div>':'');
   var S0=deloadState(); if(S0.on) h+='<div class="card" style="border-color:var(--gold);margin-top:8px"><b>השבוע: שבוע הורדה (דילואד)</b><div class="exnote" style="margin-top:4px">אחרי 6 שבועות של עבודה הגוף צריך שבוע קל כדי להתאושש ולהתחזק. השבוע עובדים על 85% מהמשקל, סט אחד פחות בכל תרגיל, ולא מגיעים לכשל. בשבוע הבא חוזרים חזקים יותר.</div></div>';
-  else if(S0.n>1) h+='<div class="sub" style="margin-top:4px">שבוע '+S0.n+' מתוך 6 בבלוק · שבוע הורדה אחרי שבוע 6</div>';
+  /* 28.10.26: בלי "שבוע X מתוך 6" — ההסבר מופיע רק בשבוע ההורדה עצמו */
   h+='<div class="sub" style="margin-top:4px">'+esc(d.title)+'</div>';
   var heavyN=0, rirHelp=0;
   d.ex.forEach(function(e,i){
@@ -1435,7 +1435,7 @@ function renderTodayCard(){ try{ applyMode(); }catch(e){}
   wireInbox(el); ciExtraRender(); try{ renderWV(el); }catch(e){}
   el.querySelectorAll('.tdi').forEach(function(b){ b.onclick=function(){ var k=b.dataset.k;
     if(k==='w'){ var w=document.getElementById('wIn'); w.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){ w.focus(); },350); }
-    else if(k==='t') show('train'); else if(k==='f') show(P&&P.menu&&P.menu.blocks&&P.menu.blocks.length?'menu':'food');
+    else if(k==='t') show('train'); else if(k==='f') show(P&&P.mode!=='ערכים'&&P.menu&&P.menu.blocks&&P.menu.blocks.length?'menu':'food'); /* מעקב לפי ערכים: תמיד ליומן */
     else if(k==='wa'){ var wc=document.getElementById('wvCard'); if(wc) wc.scrollIntoView({behavior:'smooth',block:'center'}); }
     else if(k==='h'){ var hx=el.querySelector('.habits'); if(hx) hx.scrollIntoView({behavior:'smooth',block:'center'}); }
     else { var c=document.getElementById('ciForm')||document.getElementById('ciDone'); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); } }; });
@@ -1584,6 +1584,12 @@ var TECH_IN=null, TECH_EX='';
 function techInput(){ if(TECH_IN) return TECH_IN; TECH_IN=document.createElement('input'); TECH_IN.type='file'; TECH_IN.accept='video/*'; TECH_IN.setAttribute('capture','environment'); TECH_IN.hidden=true; document.body.appendChild(TECH_IN);
   TECH_IN.addEventListener('change',function(){ var f=TECH_IN.files&&TECH_IN.files[0]; TECH_IN.value=''; if(!f) return;
     if(f.size>30e6){ toast('הסרטון גדול מדי. מספיקות 2–3 חזרות (עד 30MB)',1); return; }
+    /* 28.10.26 (אביאל): הסרטון יוצא אליו בוואטסאפ. שיתוף קבצים דורש לחיצה, אז קודם חלון קטן עם כפתור */
+    var fl=null; try{ fl=new File([f],'טכניקה.'+((f.type.split('/')[1]||'mp4').replace('quicktime','mov')),{type:f.type||'video/mp4'}); }catch(er){}
+    if(fl&&navigator.canShare&&navigator.canShare({files:[fl]})){ var ov=document.createElement('div'); ov.className='msov'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label','שליחת סרטון טכניקה');
+      ov.innerHTML='<div class="msbox"><h2>הסרטון מוכן</h2><p class="sub">'+esc(TECH_EX)+'</p><button type="button" id="tvWa">שליחה לאביאל בוואטסאפ</button><button type="button" class="ghost" id="tvX">ביטול</button><p class="sub" style="font-size:13px">נפתח חלון שיתוף, בוחרים וואטסאפ ואת השיחה עם אביאל.</p></div>';
+      document.body.appendChild(ov); var cl=function(){ ov.remove(); }; ov.querySelector('#tvX').onclick=cl;
+      ov.querySelector('#tvWa').onclick=function(){ navigator.share({files:[fl],text:'אביאל, בדיקת טכניקה: '+TECH_EX}).then(function(){ cl(); toast('נשלח'); }).catch(function(er){ if(er&&er.name==='AbortError') return; cl(); toast('השיתוף לא נפתח. שולחים את הסרטון מהגלריה בוואטסאפ',1); }); }; return; }
     toast('מעלה את הסרטון לאביאל… אפשר להמשיך באימון');
     var fr=new FileReader(); fr.onload=function(){ fetch(API,{method:'POST',body:JSON.stringify({api:'techvid',t:T,p:{ex:TECH_EX,video:fr.result,mime:f.type}})}).then(function(r){ return r.json(); })
       .then(function(j){ if(!j.ok) throw new Error(j.error||'לא נשלח'); toast('הסרטון אצל אביאל. התשובה הקולית שלו תגיע לכאן, לאפליקציה'); })
@@ -2022,7 +2028,7 @@ var _renderMenuSw=renderMenu; renderMenu=function(){ _renderMenuSw.apply(this,ar
 /* ===== תמונות תרגילים: מאגר free-exercise-db (נחלת הכלל) ממופה לשמות בעברית. בלי טקסט באנגלית — רק תמונה ושם ===== */
 var EXIMG=null, EXIMG_TRIED=false;
 function exNorm(s){ return String(s||'').replace(/[()\[\]'"׳״.,:–—-]/g,' ').replace(/\s+/g,' ').trim(); }
-function exImgFor(n){ if(!EXIMG) return null; var m=EXIMG.map, k=String(n||'').trim(); if(m[k]) return m[k];
+function exImgFor(n){ if(!EXIMG) return null; var m=EXIMG.map, k=String(n||'').trim(), ov=(P&&P.exOvr)||{}; if(ov[k]) return ov[k]; if(ov[exKey(k)]) return ov[exKey(k)]; /* תמונה שאביאל בחר (מצב מנהל) */ if(m[k]) return m[k];
   if(!EXIMG._n){ EXIMG._n={}; Object.keys(m).forEach(function(x){ EXIMG._n[exNorm(x)]=m[x]; }); }
   var nk=exNorm(k); if(EXIMG._n[nk]) return EXIMG._n[nk];
   /* שם שמתחיל בשם מוכר: הארוך ביותר שמתאים. אחרת, שם קצר שמוכר כהתחלה של שמות ארוכים: הקצר מביניהם (התרגיל הבסיסי) */
@@ -2030,7 +2036,9 @@ function exImgFor(n){ if(!EXIMG) return null; var m=EXIMG.map, k=String(n||'').t
   var sl=1e9; Object.keys(EXIMG._n).forEach(function(x){ if(nk.length>=5&&x.indexOf(nk+' ')===0&&x.length<sl){ best=EXIMG._n[x]; sl=x.length; } }); return best; }
 function openExImg(name,id){ var s=document.createElement('div'); s.className='sheet'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true');
   s.innerHTML='<div class="sheet-in exsheet"><h2>'+esc(name)+'</h2><div class="exanim"><img alt="תחילת התנועה" src="'+EXIMG.base+id+'/0.jpg"><img alt="סוף התנועה" src="'+EXIMG.base+id+'/1.jpg"></div><div class="sub">התמונות מתחלפות: תחילת התנועה וסוף התנועה. יש ספק בטכניקה? מצלמים סרטון קצר ושולחים לאביאל בכפתור "טכניקה".</div><a class="ytl" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query='+encodeURIComponent(String(id).replace(/_/g,' ')+' exercise proper form')+'">סרטון הדגמה (יוטיוב)</a><button type="button">סגירה</button></div>';
-  var close=function(){ s.remove(); }; s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('button').onclick=close; document.body.appendChild(s); s.querySelector('button').focus(); }
+  var close=function(){ s.remove(); }; s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('button').onclick=close;
+  if(P&&P.admin){ var ab=document.createElement('button'); ab.type='button'; ab.className='ghost'; ab.textContent='מנהל: החלפת התמונה'; ab.style.marginTop='8px'; ab.onclick=function(){ close(); exImgPick(name); }; s.querySelector('.sheet-in').appendChild(ab); }
+  document.body.appendChild(s); s.querySelector('button').focus(); }
 function addExImgs(){ if(!EXIMG){ if(!EXIMG_TRIED){ EXIMG_TRIED=true; fetch('../data/exercise-images.json').then(function(r){ return r.json(); }).then(function(j){ EXIMG=j; addExImgs(); }).catch(function(){}); } return; }
   document.querySelectorAll('#progBox .card.ex .nmrow').forEach(function(row){ if(row.querySelector('.exthumb')) return; var nm=row.querySelector('.nm'); if(!nm) return; var id=exImgFor(nm.textContent); if(!id) return;
     var b=document.createElement('button'); b.type='button'; b.className='exthumb'; b.setAttribute('aria-label','איך עושים: '+nm.textContent); b.innerHTML='<img loading="lazy" alt="" src="'+EXIMG.base+id+'/0.jpg">'; b.onclick=function(){ openExImg(nm.textContent,id); }; row.insertBefore(b,row.firstChild); }); }
@@ -2281,6 +2289,39 @@ var _renderTodayWR=renderTodayCard; renderTodayCard=function(){ _renderTodayWR.a
   top.innerHTML=(D.focus?'<div class="card wfocus"><small>הנקודה של השבוע מאביאל</small><b>'+esc(D.focus)+'</b></div>':'')+(reportOpen()?'<button type="button" class="card wrbtn" id="wrOpen"><span><b>השבוע שלך במסך אחד</b><small>משקל, צעדים, אימונים, מים ותוספים</small></span>'+IC_GO+'</button>':'');
   var b=document.getElementById('wrOpen'); if(b) b.onclick=weekReportShow; }catch(e){} };
 (function(){ var st=document.createElement('style'); st.textContent='.wfocus{display:flex;flex-direction:column;gap:4px;border-color:var(--gold,#d4ac5b)}.wfocus small{color:var(--gold,#d4ac5b);font-weight:700}.wfocus b{font-size:18px}.wrbtn{display:flex;align-items:center;gap:10px;width:100%;text-align:start;font:inherit;color:inherit}.wrbtn span{flex:1;display:flex;flex-direction:column}.wrbtn small{color:var(--mute,#9d9aa6)}.wrbtn svg{width:20px;height:20px}.wrep{text-align:start}.wrep h2{text-align:center}.wrl{display:flex;flex-direction:column}.wrl div{display:flex;justify-content:space-between;align-items:baseline;padding:10px 2px;border-bottom:1px solid var(--line,#2c2c34)}.wrl b{font-size:18px}#wkTop{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}#wkTop:empty{display:none}'; document.head.appendChild(st); })();
+
+/* ===== מה רואים באפליקציה (28.10.26): אביאל מדליק/מכבה חלקים לכולם או למתאמן/ת מסוים/ת. D.feat מהשרת ===== */
+function FEAT(k){ return !(D&&D.feat&&D.feat[k]===false); }
+function applyFeat(){ try{ var mv=document.querySelector('section[data-view="menu"]'); if(P&&P.mode==='ערכים'&&mv&&!mv.hidden) show('food'); }catch(e){} /* לשונית התפריט מוסתרת במעקב לפי ערכים — גם אם נשמרה כלשונית האחרונה */
+  if(!D||!D.feat) return; var hide=function(sel,off){ document.querySelectorAll(sel).forEach(function(e){ e.classList.toggle('fhide',!!off); }); };
+  hide('#tabs button[data-tab="guides"]',!FEAT('guides')); hide('#tabs button[data-tab="food"]',!FEAT('food'));
+  hide('.mealshot,#menuShot',!FEAT('meal'));
+  hide('#sForm,#sgoal',!FEAT('steps')); /* רק טופס הצעדים — הוא באותו כרטיס של השקילה */
+  hide('#progSeg [data-pp="ph"]',!FEAT('photos')); if(!FEAT('photos')&&PROG_PANE==='ph'){ PROG_PANE='w'; }
+  var wc=document.getElementById('wvCard'); if(wc){ var wr=wc.querySelector('.wvrow'), vt=wc.querySelector('.vit'), vl=(D.vit&&D.vit.list)||[]; if(wr) wr.classList.toggle('fhide',!FEAT('water')); if(vt) vt.classList.toggle('fhide',!FEAT('vit')||(!vl.length&&!FEAT('vitAdd'))); hide('#wvCard .vadd,#wvCard .vx',!FEAT('vitAdd')); wc.classList.toggle('fhide',!FEAT('water')&&(!FEAT('vit')||(!vl.length&&!FEAT('vitAdd')))); if(vt&&!FEAT('water')) vt.style.borderTop='0'; } }
+var _ciOpenF=ciOpen; ciOpen=function(){ return FEAT('checkin')&&_ciOpenF(); };
+var _repOpenF=reportOpen; reportOpen=function(){ return FEAT('report')&&_repOpenF(); };
+var _boardF=boardHtml; boardHtml=function(){ return FEAT('board')?_boardF.apply(this,arguments):''; };
+var _photoDueF=photoDueHtml; photoDueHtml=function(){ return FEAT('photos')?_photoDueF.apply(this,arguments):''; };
+var _todayItemsF=todayItems; todayItems=function(){ var it=_todayItemsF.apply(this,arguments); return it.filter(function(x){ return !(x.k==='wa'&&!FEAT('water')); }); };
+var _renderF=render; render=function(){ _renderF.apply(this,arguments); try{ applyFeat(); }catch(e){} };
+var _renderTodayF=renderTodayCard; renderTodayCard=function(){ _renderTodayF.apply(this,arguments); try{ applyFeat(); }catch(e){} };
+var _progLayoutF=progLayout; progLayout=function(){ if(D&&!FEAT('photos')&&PROG_PANE==='ph') PROG_PANE='w'; _progLayoutF.apply(this,arguments); try{ applyFeat(); }catch(e){} };
+(function(){ var st=document.createElement('style'); st.textContent='.fhide{display:none!important}'; document.head.appendChild(st); })();
+
+/* ===== מצב מנהל: בחירת תמונה לתרגיל מתוך 873 התרגילים של המאגר. נשמר בשרת לכל המתאמנים ===== */
+var EXDB=null;
+function exImgPick(name){ var ov=document.createElement('div'); ov.className='msov'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label','בחירת תמונה');
+  ov.innerHTML='<div class="msbox expick"><h2>תמונה ל: '+esc(name)+'</h2><input id="xpQ" placeholder="חיפוש באנגלית, למשל reverse fly / pec deck" dir="ltr"><div id="xpL" class="xpgrid"><div class="sub">טוען…</div></div><button type="button" class="ghost" id="xpReset">חזרה לתמונה האוטומטית</button><button type="button" class="ghost" id="xpX">סגירה</button></div>';
+  document.body.appendChild(ov); var close=function(){ ov.remove(); }; ov.querySelector('#xpX').onclick=close;
+  var save=function(id){ ov.querySelector('#xpL').innerHTML='<div class="sub">שומר…</div>'; api('eximg',{n:exKey(name),id:id}).then(function(o){ P.exOvr=o; close(); document.querySelectorAll('.exthumb').forEach(function(b){ b.remove(); }); addExImgs(); toast(id?'התמונה הוחלפה לכל המתאמנים':'חזר לתמונה האוטומטית'); }).catch(function(e){ toast(e.message||'לא נשמר',1); close(); }); };
+  ov.querySelector('#xpReset').onclick=function(){ save(''); };
+  var draw=function(q){ var L=EXDB||[], w=String(q||'').toLowerCase().split(/\s+/).filter(Boolean), r=L.filter(function(x){ var t=(x[1]+' '+x[0]+' '+x[2]+' '+x[3]).toLowerCase(); return w.every(function(k){ return t.indexOf(k)>=0; }); }).slice(0,30);
+    ov.querySelector('#xpL').innerHTML=r.length?r.map(function(x){ return '<button type="button" data-xp="'+esc(x[0])+'"><img loading="lazy" alt="" src="'+EXIMG.base+x[0]+'/0.jpg"><small dir="ltr">'+esc(x[1])+'</small></button>'; }).join(''):'<div class="sub">אין תוצאות. מנסים מילה אחרת באנגלית.</div>';
+    ov.querySelectorAll('[data-xp]').forEach(function(b){ b.onclick=function(){ save(b.dataset.xp); }; }); };
+  var go=function(){ var q=ov.querySelector('#xpQ'); q.oninput=function(){ draw(q.value); }; var cur=exImgFor(name)||''; q.value=cur.replace(/_/g,' ').toLowerCase().split(' ').slice(0,2).join(' '); draw(q.value); q.focus(); };
+  if(EXDB) go(); else fetch('../data/exercise-db-ids.json').then(function(r){ return r.json(); }).then(function(d){ EXDB=d; go(); }).catch(function(){ ov.querySelector('#xpL').innerHTML='<div class="sub">לא נטען, נסו שוב</div>'; }); }
+(function(){ var st=document.createElement('style'); st.textContent='.expick{max-height:88vh;overflow:auto;text-align:start}.expick h2{font-size:20px;text-align:center}.xpgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.xpgrid button{display:flex;flex-direction:column;gap:4px;padding:6px;border-radius:12px;border:1px solid var(--line,#2c2c34);background:var(--panel2,#202026);color:var(--text,#f2efe8);font:inherit}.xpgrid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#fff}.xpgrid small{font-size:10px;line-height:1.2;overflow:hidden;max-height:2.4em}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
