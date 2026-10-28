@@ -671,7 +671,7 @@ input,select,textarea{font-size:16px}
       </div>
       <div class="card" id="pushCard" hidden>
         <div class="row"><span class="label">תזכורות לטלפון</span><button class="ghost sm" type="button" id="pushX" aria-label="סגירה"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
-        <div style="margin-top:6px;font-size:14px" id="pushTxt">תזכורת עדינה לשקילת בוקר, לצעדים בערב ולצ׳ק-אין ביום ראשון. אפשר לכבות בכל רגע בהגדרות הטלפון.</div>
+        <div style="margin-top:6px;font-size:14px" id="pushTxt">בלי זה התזכורות וההודעות ממני לא מגיעות אליך: שקילת בוקר, אימונים, מים וצ׳ק-אין. לחיצה אחת, ואפשר לכבות בכל רגע בהגדרות הטלפון.</div>
         <button type="button" class="installbtn" id="pushBtn">הפעלת תזכורות</button>
       </div>
       <div class="card" id="noteCard" hidden><div class="label">ההודעה של אביאל לשבוע</div><p style="margin:6px 0 0;white-space:pre-wrap" id="note"></p></div>
@@ -1209,8 +1209,9 @@ function b64ToU8(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) 
   var done=false; try{ done=localStorage.getItem('aviel_push')==='1'; }catch(e){}
   try{ caches.open('aviel-beta-t').then(function(c){ c.put('token', new Response(T)); }); }catch(e){}
   if(done&&can&&Notification.permission==='granted'){ navigator.serviceWorker.ready.then(function(reg){ return reg.pushManager.getSubscription().then(function(sub){ return sub||api('vapid').then(function(v){ return reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToU8(v.pub)}); }); }); }).then(function(sub){ if(sub) return api('pushsub',{sub:{endpoint:sub.endpoint}}); }).catch(function(){}); return; } /* השרת מוחק מנוי שנפל (התקנה מחדש וכו׳) — נרשמים שוב בשקט */
-  if(iosDev&&!sa){ $('#pushCard').hidden=false; $('#pushTxt').textContent='כדי לקבל תזכורות באייפון, קודם מוסיפים את האפליקציה למסך הבית ופותחים אותה משם.'; $('#pushBtn').hidden=true; }
-  else if(can){ $('#pushCard').hidden=false; }
+  var pc=$('#pushCard'); if(pc&&pc.parentNode){ pc.style.borderColor='var(--gold)'; var hm=document.querySelector('section[data-view="home"]'), fc=hm&&hm.querySelector('.card'); if(hm&&fc&&fc!==pc) fc.parentNode.insertBefore(pc,fc); } /* ראשון בבית: בלי זה שום תזכורת לא מגיעה */
+  if(iosDev&&!sa){ $('#pushCard').hidden=false; $('#pushTxt').innerHTML='כדי לקבל ממני תזכורות באייפון:<br>1. לוחצים על כפתור השיתוף בספארי (ריבוע עם חץ)<br>2. "הוספה למסך הבית"<br>3. פותחים את האפליקציה מהאייקון ולוחצים כאן "הפעלת תזכורות"'; $('#pushBtn').hidden=true; }
+  else if(can&&!(done&&Notification.permission==='granted')){ $('#pushCard').hidden=false; }
   $('#pushX').onclick=function(){ $('#pushCard').hidden=true; };
   $('#pushBtn').onclick=function(){ var b=this; b.disabled=true;
     Notification.requestPermission().then(function(p){ if(p!=='granted') throw new Error('לא אושרו התראות. אפשר לאשר בהגדרות הטלפון.');
