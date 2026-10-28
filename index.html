@@ -1388,14 +1388,16 @@ function renderTrain(){
     var nx=f.nextElementSibling; while(nx&&nx.classList.contains('setrow')){ if(!nx.classList.contains('ok')){ var ni=nx.querySelectorAll('input'); if(ni[0]&&!ni[0].value) ni[0].value=kg; } nx=nx.nextElementSibling; }
     if(rir!=null) lsSet('aviel_rir_seen',1);
     ins.forEach(function(x){ x.disabled=true; }); restStart(restMin(e.rest)); restNext(f,d,kg); /* "כמה קשה" נשאר פתוח: אפשר לבחור גם אחרי הסימון */
-    api('lift',{ex:e.ex,mu:e.mu,kg:kg,reps:reps,rir:rir}).then(function(r){ P.lifts=normLifts(r); LASTIN[e.ex]={kg:kg,reps:reps};
+    var lid=Date.now().toString(36)+Math.random().toString(36).slice(2,8), lb={ex:e.ex,mu:e.mu,kg:kg,reps:reps,rir:rir,id:lid,d:TODAY}; /* מזהה: שליחה חוזרת לא רושמת פעמיים */
+    api('lift',lb).then(function(r){ P.lifts=normLifts(r); LASTIN[e.ex]={kg:kg,reps:reps};
       var R2=/כשל/.test(e.r)?null:rng(e.r), L2=P.lifts&&P.lifts[e.ex], td=L2?L2.hist.filter(function(x){ return x.d===TODAY&&x.kg===kg; }):[], ns=parseInt(e.s,10)||0;
       var done=R2&&ns&&td.length>=ns&&td.every(function(x){ return x.reps>=R2[1]; });
       toast(done?'הגעת ל-'+R2[1]+' חזרות בכל הסטים! בפעם הבאה עולים '+incFor(e,kg)+' ק״ג':(best!=null&&kg>best?'שיא חדש! '+kg+' ק״ג':'סט נשמר · '+kg+'×'+reps));
       var ae=document.activeElement, typing=ae&&ae.closest&&ae.closest('form.setrow')&&ae.closest('form.setrow')!==f;
       if(typing){ btn.type='button'; btn.classList.add('sundo'); btn.disabled=false; wireUndo(f,e); } else { var y=window.scrollY; renderTrain(); window.scrollTo(0,y); }
       drawStrength(); })
-    .catch(function(er){ toast(er.message||'לא נשמר',1); btn.disabled=false; f.classList.remove('ok'); ins.forEach(function(x){ x.disabled=false; }); if(rs) rs.disabled=false; });
+    .catch(function(er){ if(/חיבור|לא זמין/.test(er&&er.message||'')){ liftQAdd(lb); toast('אין קליטה. הסט נשמר בטלפון ויישלח לבד כשתחזור הקליטה',1); f.classList.add('lq'); return; } /* בלי קליטה במכון: לא מאבדים את הסט */
+      toast(er.message||'לא נשמר',1); btn.disabled=false; f.classList.remove('ok'); ins.forEach(function(x){ x.disabled=false; }); if(rs) rs.disabled=false; });
   }; });
   /* "כמה קשה" (28.10.26): בחירה נזכרת גם כשעוברים תרגיל, ובסט שכבר נרשם היא נשמרת מיד בשרת */
   box.querySelectorAll('select[data-rk]').forEach(function(sl){ sl.onchange=function(){ var f=sl.closest('form.setrow'), e=d.ex[+f.dataset.i], k=+sl.dataset.rk, v=sl.value===''?null:+sl.value; RIRD[e.ex+'|'+k]=v; if(v!=null) lsSet('aviel_rir_seen',1);
@@ -2567,6 +2569,18 @@ var _renderCoachBtn=render; render=function(){ _renderCoachBtn.apply(this,argume
   var home=document.querySelector('section[data-view="home"]')||document.querySelector('section[data-view]'); if(!home) return;
   el=document.createElement('a'); el.id='coachGo'; el.href=u; el.target='_blank'; el.rel='noopener'; el.className='installbtn'; el.style.cssText='display:block;text-align:center;text-decoration:none;margin:0 0 12px'; el.textContent='מסך מאמן · ניהול המתאמנים ↗';
   home.insertBefore(el,home.firstChild); }catch(e){} };
+
+/* ===== תור סטים בלי קליטה (29.10.26, אביאל: "שלא יעלם כלום"): נשמר בטלפון, נשלח לבד כשיש קליטה, עם מזהה כדי שלא ייכנס פעמיים ===== */
+function liftQ(){ var q=ls('aviel_liftq',[]); return Array.isArray(q)?q:[]; }
+function liftQAdd(b){ var q=liftQ(); if(!q.some(function(x){ return x.id===b.id; })) q.push(b); lsSet('aviel_liftq',q); liftQBadge(); }
+var LQ_BUSY=false;
+function liftQFlush(){ var q=liftQ(); if(!q.length||LQ_BUSY||typeof api!=='function'||!T) return; LQ_BUSY=true; var sent=0;
+  q.reduce(function(pr,b){ return pr.then(function(){ return api0('lift',b).then(function(r){ sent++; var cur=liftQ().filter(function(x){ return x.id!==b.id; }); lsSet('aviel_liftq',cur); try{ P.lifts=normLifts(r); }catch(e){} }); }); },Promise.resolve())
+   .then(function(){ LQ_BUSY=false; liftQBadge(); if(sent){ toast(sent===1?'הסט שנשמר בטלפון נשלח':sent+' סטים שנשמרו בטלפון נשלחו'); try{ renderTrain(); drawStrength(); }catch(e){} } })
+   .catch(function(){ LQ_BUSY=false; liftQBadge(); }); }
+function liftQBadge(){ var n=liftQ().length, el=document.getElementById('liftQB'); if(!n){ if(el) el.remove(); return; } if(!el){ el=document.createElement('button'); el.id='liftQB'; el.type='button'; el.className='lqb'; el.onclick=liftQFlush; document.body.appendChild(el); } el.textContent=n+(n===1?' סט ממתין':' סטים ממתינים')+' לשליחה · לחיצה לשליחה עכשיו'; }
+window.addEventListener('online',liftQFlush); document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') liftQFlush(); }); setInterval(liftQFlush,30000); setTimeout(function(){ liftQBadge(); liftQFlush(); },4000);
+(function(){ var st=document.createElement('style'); st.textContent='.lqb{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:130;width:auto;min-height:0;padding:8px 14px;border-radius:999px;border:1px solid var(--gold);background:var(--panel2,#202026);color:var(--gold);font:inherit;font-size:13px;font-weight:700}form.setrow.lq{opacity:.75}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
