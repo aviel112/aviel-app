@@ -2582,6 +2582,53 @@ function liftQFlush(){ var q=liftQ(); if(!q.length||LQ_BUSY||typeof api!=='funct
 function liftQBadge(){ var n=liftQ().length, el=document.getElementById('liftQB'); if(!n){ if(el) el.remove(); return; } if(!el){ el=document.createElement('button'); el.id='liftQB'; el.type='button'; el.className='lqb'; el.onclick=liftQFlush; document.body.appendChild(el); } el.textContent=n+(n===1?' סט ממתין':' סטים ממתינים')+' לשליחה · לחיצה לשליחה עכשיו'; }
 window.addEventListener('online',liftQFlush); document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') liftQFlush(); }); setInterval(liftQFlush,30000); setTimeout(function(){ liftQBadge(); liftQFlush(); },4000);
 (function(){ var st=document.createElement('style'); st.textContent='.lqb{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:130;width:auto;min-height:0;padding:8px 14px;border-radius:999px;border:1px solid var(--gold);background:var(--panel2,#202026);color:var(--gold);font:inherit;font-size:13px;font-weight:700}form.setrow.lq{opacity:.75}'; document.head.appendChild(st); })();
+
+/* ===== הקלטה כללית (29.10.26): צ׳ק-אין בקול. אותו מסך הקלטה כמו ביומן ===== */
+function recAsk(o){ if(!navigator.mediaDevices||!window.MediaRecorder){ toast('הטלפון לא תומך בהקלטה כאן',1); return; }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(st){ var mt=['audio/mp4','audio/webm','audio/ogg'].filter(function(t){ return MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t); })[0]||'';
+    var rec=mt?new MediaRecorder(st,{mimeType:mt}):new MediaRecorder(st), ch=[], t0=Date.now(); VREC={st:st,rec:rec};
+    rec.ondataavailable=function(e){ if(e.data&&e.data.size) ch.push(e.data); };
+    rec.onstop=function(){ st.getTracks().forEach(function(t){ t.stop(); }); var bl=new Blob(ch,{type:rec.mimeType||mt||'audio/mp4'}); if(bl.size<1500){ vClose(); toast('לא נקלט קול. נסו שוב',1); return; } vSheet('<h2>'+esc(o.busy||'שולח…')+'</h2><div class="sub">כמה שניות</div>');
+      var fr=new FileReader(); fr.onload=function(){ api(o.api,{b64:String(fr.result).split(',')[1],mime:bl.type}).then(o.done).catch(function(er){ vClose(); toast((er&&er.message)||'לא נשלח',1); }); }; fr.readAsDataURL(bl); };
+    rec.start(); vSheet('<h2>מקליט…</h2><div class="sub">'+esc(o.hint)+'</div><div class="vtime num" id="vT">0:00</div><button type="button" class="installbtn" id="vStop">סיימתי</button><button type="button" class="linkbtn" id="vCancel">ביטול</button>');
+    var mx=o.max||120, tm=setInterval(function(){ var e=document.getElementById('vT'); if(!e||!VREC){ clearInterval(tm); return; } var s2=Math.round((Date.now()-t0)/1000); e.textContent=Math.floor(s2/60)+':'+('0'+s2%60).slice(-2); if(s2>=mx&&rec.state==='recording') rec.stop(); },300);
+    document.getElementById('vStop').onclick=function(){ if(rec.state==='recording') rec.stop(); };
+    document.getElementById('vCancel').onclick=function(){ rec.onstop=null; try{ rec.stop(); }catch(e){} vClose(); };
+  }).catch(function(){ toast('צריך לאשר גישה למיקרופון',1); }); }
+var _renderCiV=render; render=function(){ _renderCiV.apply(this,arguments); try{ var f=document.getElementById('ciForm'); if(!f||document.getElementById('ciVoice')) return; var b=document.createElement('button'); b.type='button'; b.id='ciVoice'; b.className='ghost civ'; b.innerHTML='🎤 במקום לכתוב: מספרים בקול איך עבר השבוע (עד 2 דקות)';
+  b.onclick=function(){ recAsk({api:'civoice',max:120,busy:'שולח לאביאל…',hint:'מספרים בחופשיות: איך היה השבוע, אנרגיה, שינה, תפריט, אימונים, ומה קשה. אביאל מקבל סיכום.',done:function(r){ vSheet('<h2>הצ׳ק-אין נשלח לאביאל</h2><div class="sub" style="white-space:pre-wrap;text-align:right">'+esc((r&&r.summary)||'')+'</div><button type="button" class="installbtn" id="vX2">סגירה</button>'); document.getElementById('vX2').onclick=vClose; try{ D.checkinDone=true; D.ciDue=false; render(); }catch(e){} }}); };
+  f.parentNode.insertBefore(b,f); }catch(e){} };
+
+/* ===== תפריט מסעדה (29.10.26): מצלמים תפריט, כותבים מה בא לך → ההמלצה של אביאל לפי מה שנשאר היום ===== */
+function foodLeft(){ var T0=targets(), it=(FDAY&&FDAY.items)||[], s={k:0,p:0,c:0,f:0}; it.forEach(function(x){ s.k+=+x.k||0; s.p+=+x.p||0; s.c+=+x.c||0; s.f+=+x.fat||0; }); var L=function(t,v){ return t?Math.max(0,Math.round(t-v)):0; };
+  return {k:L(T0['קלוריות'],s.k),p:L(T0['חלבון'],s.p),c:L(T0['פחמימות'],s.c),f:L(T0['שומן'],s.f)}; }
+function menuPickStart(file){ var left=foodLeft(); vSheet('<h2>מה בא לך?</h2><div class="sub">נשאר לך היום '+(left.k?left.k+' קק״ל, '+left.p+' ג׳ חלבון':'מה שנשאר מהיום')+'. כותבים במילה מה מתחשק, או משאירים ריק.</div><input type="text" id="mpWant" maxlength="120" placeholder="למשל: משהו בשרי, לא כבד" style="width:100%;margin:10px 0;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:16px"><button type="button" class="installbtn" id="mpGo">מה להזמין?</button><button type="button" class="linkbtn" id="mpX">ביטול</button>');
+  document.getElementById('mpX').onclick=vClose;
+  document.getElementById('mpGo').onclick=function(){ var want=document.getElementById('mpWant').value; vSheet('<h2>עובר על התפריט…</h2><div class="sub">כמה שניות</div>');
+    shrink(file,1400,.8).then(function(img){ return fetch(API,{method:'POST',body:JSON.stringify({api:'menupick',t:T,p:{photo:img,want:want,left:left}})}).then(function(r){ return r.json().catch(function(){ throw new Error('השרת לא זמין כרגע'); }); }); })
+     .then(function(j){ if(!j.ok) throw new Error(j.error||'לא נשלח'); var r=j.r||{}, P2=r.picks||[];
+       if(!P2.length){ vSheet('<h2>לא הצלחתי לקרוא את התפריט</h2><div class="sub">'+esc(r.tip||'נסו צילום קרוב וחד יותר')+'</div><button type="button" class="installbtn" id="vX2">סגירה</button>'); document.getElementById('vX2').onclick=vClose; return; }
+       vSheet('<h2>ההמלצה שלי</h2><div class="mpl">'+P2.map(function(x,i){ return '<div class="mpi"><b>'+esc(x.n)+'</b>'+(x.tweak?'<div class="mpt">'+esc(x.tweak)+'</div>':'')+(x.why?'<div class="sub">'+esc(x.why)+'</div>':'')+'<div class="mpr"><span class="num">'+(x.k||'?')+' קק״ל · '+(x.p||'?')+' ג׳ חלבון</span><button type="button" class="ghost sm" data-mp="'+i+'">הזמנתי, לרשום</button></div></div>'; }).join('')+'</div>'+(r.tip?'<p class="sub">'+esc(r.tip)+'</p>':'')+'<div class="sub" style="margin-top:6px">— אביאל</div><button type="button" class="linkbtn" id="vX2">סגירה</button>');
+       document.getElementById('vX2').onclick=vClose;
+       document.querySelectorAll('#vSheet [data-mp]').forEach(function(b){ b.onclick=function(){ var x=P2[+b.dataset.mp]; b.disabled=true; api('food',{f:x.n+' (מסעדה)',g:0,k:x.k||0,p:x.p||0,c:0,fat:0,m:fMeal()}).then(function(r2){ FDAY=r2; vClose(); toast('נרשם ביומן: '+(x.k||0)+' קק״ל'); try{ renderFood(); }catch(e){} }).catch(function(e){ b.disabled=false; toast(e.message||'לא נרשם',1); }); }; }); })
+     .catch(function(e){ vClose(); toast(e.message||'לא נשלח',1); }); }; }
+(function(){ var ms=document.querySelector('.mealshot'); if(!ms||document.getElementById('mpIn')) return; var w=document.createElement('div'); w.className='mealshot'; w.innerHTML='<label class="ghost sm" for="mpIn">במסעדה? צילום התפריט · מה להזמין</label><input type="file" id="mpIn" accept="image/*" capture="environment" hidden><span class="sub">מצלמים את התפריט ומקבלים המלצה לפי מה שנשאר לך היום.</span>'; ms.parentNode.insertBefore(w,ms.nextSibling);
+  document.getElementById('mpIn').addEventListener('change',function(){ var f=this.files&&this.files[0]; this.value=''; if(f) menuPickStart(f); }); })();
+
+/* ===== סיכום חודשי לסטורי (29.10.26) ===== */
+function monthStory(o){ var c=document.createElement('canvas'); c.width=1080; c.height=1920; var x=c.getContext('2d'), W=1080, G='#d6b066', IV='#f3ede2', MU='#a59c8d';
+  x.fillStyle='#0e0d0b'; x.fillRect(0,0,W,1920); x.strokeStyle='rgba(214,176,102,.55)'; x.lineWidth=3; x.strokeRect(54,54,W-108,1920-108); x.direction='rtl'; x.textAlign='center';
+  var serif="'Frank Ruhl Libre', Georgia, serif", sans="'Assistant', Arial, sans-serif";
+  x.fillStyle=G; x.font='800 46px '+sans; x.save(); x.direction='ltr'; x.fillText('A V I E L   A M I R A',W/2,200); x.restore(); x.fillStyle=IV; x.font='700 58px '+serif; x.fillText('אביאל עמירה',W/2,280); x.fillStyle=MU; x.font='600 32px '+sans; x.fillText('ליווי אישי · מתאמן איתך',W/2,330); x.fillStyle=G; x.fillRect(W/2-60,385,120,3);
+  x.fillStyle=IV; x.font='700 104px '+serif; x.fillText('החודש שלי',W/2,600);
+  var rows=[[o.trains,'אימונים'],[o.weighs,'שקילות'],[o.food,'ימי יומן']]; if(o.kg) rows.push([o.kg,'ק״ג']); var y=800;
+  rows.forEach(function(r){ x.fillStyle=G; x.font='700 150px '+serif; x.save(); x.direction='ltr'; x.fillText(String(r[0]),W/2,y); x.restore(); x.fillStyle=MU; x.font='600 46px '+sans; x.fillText(r[1],W/2,y+64); y+=250; });
+  x.fillStyle=G; x.font='800 48px '+sans; x.save(); x.direction='ltr'; x.fillText('@avielife1',W/2,1760); x.restore(); return c; }
+var _renderMS=render; render=function(){ _renderMS.apply(this,arguments); try{ var h=document.getElementById('progHero'); if(!h||document.getElementById('msBtn')) return; var b=document.createElement('button'); b.type='button'; b.id='msBtn'; b.className='ghost'; b.style.cssText='width:100%;margin:-4px 0 12px'; b.textContent='סיכום החודש · תמונה לסטורי';
+  b.onclick=function(){ b.disabled=true; b.textContent='מכין…'; api('report',{}).then(function(r){ b.disabled=false; b.textContent='סיכום החודש · תמונה לסטורי'; var a=r&&r.adh||{}, w=r&&r.weight||{}, d=(w.first!=null&&w.last!=null)?Math.round((w.last-w.first)*10)/10:null;
+    shareStory(b,{canvas:function(){ return monthStory({trains:a.trains||0,weighs:a.weighs||0,food:a.food||0,kg:d?(d>0?'+':'')+d:''}); }}); }).catch(function(e){ b.disabled=false; b.textContent='סיכום החודש · תמונה לסטורי'; toast(e.message||'לא הצלחנו',1); }); };
+  h.parentNode.insertBefore(b,h.nextSibling); }catch(e){} };
+(function(){ var st=document.createElement('style'); st.textContent='.civ{width:100%;margin:8px 0 10px;font-size:14px}.mpl{display:flex;flex-direction:column;gap:10px;margin:8px 0;text-align:right}.mpi{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--panel)}.mpt{color:var(--gold);font-weight:700;font-size:14px;margin:4px 0}.mpr{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}.mpr .ghost{width:auto}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
