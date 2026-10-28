@@ -821,13 +821,19 @@ function normLifts(o){ o=o||{}; Object.keys(o).forEach(function(k){ var x=o[k]; 
 var ACX=null; function beep(f,ms){ try{ if(!ACX) return; var o=ACX.createOscillator(), g=ACX.createGain(), t=ACX.currentTime; o.type='sine'; o.frequency.value=f; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.35,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+ms/1000); o.connect(g); g.connect(ACX.destination); o.start(t); o.stop(t+ms/1000+0.05); }catch(e){} }
 function restStart(min){
   var sec=Math.round(min*60); if(!(sec>0)) return; clearInterval(RT); var end=Date.now()+sec*1000, lastB=-1; $('#rest').hidden=false;
-  try{ var AC=window.AudioContext||window.webkitAudioContext; if(AC&&!ACX) ACX=new AC(); if(ACX&&ACX.state==='suspended') ACX.resume(); }catch(e){} /* נפתח מתוך הלחיצה על הסט, אחרת הדפדפן חוסם צליל */
+  try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){} /* אייפון: מנגן גם כשהטלפון על שקט */
+  try{ var AC=window.AudioContext||window.webkitAudioContext; if(AC&&!ACX) ACX=new AC(); if(ACX&&ACX.state==='suspended') ACX.resume(); if(ACX){ var sb=ACX.createBufferSource(); sb.buffer=ACX.createBuffer(1,1,22050); sb.connect(ACX.destination); sb.start(0); } }catch(e){} /* נפתח מתוך הלחיצה על הסט, אחרת הדפדפן חוסם צליל */
+  wakeOn(); REST_END=end; /* המסך לא נכבה במנוחה; ואם יצאו מהאפליקציה — בחזרה רואים/שומעים שהמנוחה נגמרה */
   var tick=function(){ var l=Math.max(0,Math.round((end-Date.now())/1000)); $('#restT').textContent='מנוחה '+Math.floor(l/60)+':'+('0'+l%60).slice(-2);
     if(l>0&&l<=3&&lastB!==l){ lastB=l; beep(880,140); }
-    if(!l){ clearInterval(RT); $('#rest').hidden=true; beep(1320,450); try{ if(navigator.vibrate) navigator.vibrate([250,120,250]); }catch(e){} toast('יאללה, לסט הבא'); } };
+    if(!l){ clearInterval(RT); REST_END=0; $('#rest').hidden=true; wakeOff(); beep(1320,450); try{ if(navigator.vibrate) navigator.vibrate([250,120,250]); }catch(e){} toast('יאללה, לסט הבא'); } };
   tick(); RT=setInterval(tick,500);
 }
-$('#restX').addEventListener('click',function(){ clearInterval(RT); $('#rest').hidden=true; });
+$('#restX').addEventListener('click',function(){ clearInterval(RT); REST_END=0; $('#rest').hidden=true; wakeOff(); });
+/* מסך דולק במנוחה (Wake Lock) — בלי זה האייפון ננעל והטיימר נעצר */
+var WL=null, REST_END=0; function wakeOn(){ try{ if(navigator.wakeLock&&!WL) navigator.wakeLock.request('screen').then(function(w){ WL=w; w.addEventListener('release',function(){ WL=null; }); }).catch(function(){}); }catch(e){} }
+function wakeOff(){ try{ if(WL) WL.release(); }catch(e){} WL=null; }
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState!=='visible'||!REST_END) return; try{ if(ACX&&ACX.state!=='running') ACX.resume(); }catch(e){} if(Date.now()<REST_END) wakeOn(); /* הטיימר ממשיך מהשעה האמיתית; אם נגמר בזמן שהיו בחוץ — הצפצוף מנגן עכשיו */ });
 
 /* ---------- תפריט ---------- */
 function renderMenu(){
