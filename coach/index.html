@@ -203,7 +203,7 @@ main>section>.card,main>section>details.box{grid-column:auto}main>section>.howto
 .tgs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.tag.ct{background:rgba(37,99,235,.1);color:var(--blue)}.tgnew[hidden]{display:none}
 .vided[hidden]{display:none}
 @media (min-width:1100px){ .ov .sheet{width:min(1200px,94vw);max-width:none} #cardBody{column-count:2;column-gap:14px} #cardBody>*:not(.qbar){break-inside:avoid;-webkit-column-break-inside:avoid} #cardBody>.qbar,#cardBody>#cardStale{column-span:all} } /* כרטיס מתאמן במחשב: שתי עמודות במקום גלילה ארוכה */
-.vtrow{display:grid;grid-template-columns:1.6fr 1fr 1fr auto;gap:6px;margin-bottom:6px}.vtrow input{min-width:0}
+.vtrow{display:grid;grid-template-columns:1.6fr 1fr 1fr auto;gap:6px;margin-bottom:10px}.vtrow input{min-width:0}.vtrow .vtwhy{grid-column:1/-1;font-size:13px}.vth{margin:6px 0 10px;font-size:13px}.vth summary{cursor:pointer;color:var(--mute)}
 .wkrow{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:3px}.wkp{align-self:flex-start;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--line)}.wkp.p1{background:var(--orange,#e8a54a);color:#111}.wkp.p2{background:var(--gold,#d4ac5b);color:#111}
 </style></head><body>
 <div class="top"><h1 id="hi">שלום אביאל</h1><div class="d" id="today"></div><button class="btn x" id="rfBtn" type="button" style="position:absolute;left:16px;top:18px;padding:8px 12px;font-size:13px">רענון</button></div>
@@ -591,6 +591,7 @@ function trackCard(d){ var t=d.track||{}, m=t.mode||'', mc=t.macros||{};
   var ex=d.extras||{}, wl=ex.waterGoal?Math.round(ex.waterGoal/100)/10:'', vl=ex.vitList||[];
   h+='</div><div class="card"><div class="gh">מים ותוספים</div><div class="kv" style="align-items:flex-end"><label style="flex:1">יעד מים ביום (ליטר)<input id="wvL" inputmode="decimal" placeholder="אוטומטי: 35 מ״ל לק״ג" value="'+wl+'"></label><button class="btn" id="wvSave">שמירה</button></div>'+
     '<div class="s" style="font-size:13px;color:var(--mute);margin:10px 0 6px">תוספים שהגדרתם יחד. המתאמן/ת מסמן/ת כל יום באפליקציה.</div><div id="vtRows">'+vl.map(function(v,i){ return vtRow(v,i); }).join('')+'</div>'+
+    (ex.vitHist&&ex.vitHist.length?'<details class="vth"><summary>היסטוריית המלצות ('+ex.vitHist.length+')</summary>'+ex.vitHist.slice().reverse().map(function(x){ return '<div class="s"><b>'+esc(x.at)+'</b> · '+esc((x.list||[]).join(' | ')||'רשימה ריקה')+'</div>'; }).join('')+'</details>':'')+
     '<div class="kv"><button class="btn" id="vtAdd">+ תוסף</button><button class="btn p" id="vtSave" style="flex:1">שמירת התוספים</button></div>';
   h+='</div><div class="card" id="wkCard">'+weakHtml(d.weak)+'</div>';
   return h; }
@@ -601,7 +602,7 @@ function weakHtml(w){ var h='<div class="gh">ניתוח חולשות מתמונ�
     '<div class="s" style="font-size:12px;color:var(--mute);margin-top:8px">הדגשים נכנסים אוטומטית להערות בתוכנית הבאה שתבנה.</div>'; }
   else h+='<div class="s" style="font-size:13px;color:var(--mute);margin-bottom:8px">המתאמן/ת מעלה 3-4 תמונות באפליקציה (התקדמות ← תמונות: חזית, גב, צד, פוזת רחב-גבי). אחרי זה לוחצים כאן.</div>';
   return h+'<button class="btn'+(w?'':' p')+'" id="wkGo" style="width:100%;margin-top:8px">'+(w?'ניתוח מחדש':'ניתוח מהתמונות')+'</button>'; }
-function vtRow(v,i){ v=v||{}; return '<div class="vtrow" data-i="'+i+'"><input placeholder="שם, למשל ויטמין D" value="'+esc(v.n||'')+'" data-f="n"><input placeholder="מינון" value="'+esc(v.dose||'')+'" data-f="dose"><input placeholder="מתי" value="'+esc(v.when||'')+'" data-f="when"><button class="btn" data-vx aria-label="הסרה">×</button></div>'; }
+function vtRow(v,i){ v=v||{}; return '<div class="vtrow" data-i="'+i+'"><input placeholder="שם, למשל ויטמין D" value="'+esc(v.n||'')+'" data-f="n"><input placeholder="מינון" value="'+esc(v.dose||'')+'" data-f="dose"><input placeholder="מתי" value="'+esc(v.when||'')+'" data-f="when"><button class="btn" data-vx aria-label="הסרה">×</button><input class="vtwhy" placeholder="למה? למשל: בדיקת דם 10/26, D נמוך" value="'+esc(v.why||'')+'" data-f="why"></div>'; }
 function wireTrack(d){ var box=$('#cardBody'); if(!box) return; var set=function(mode,mac,msg){ google.script.run.withSuccessHandler(function(r){ d.track=r; CARD[d.name]=d; if(TM){ TM[d.name]=r.mode; renderClients(); } renderCard(d); toast(msg); }).withFailureHandler(function(e){ toast(e.message); }).dashboardTrackMode(d.name,mode,mac); };
   box.querySelectorAll('[data-tm]').forEach(function(b){ b.onclick=function(){ b.disabled=true; set(b.dataset.tm,null,'סומן: לפי '+b.dataset.tm); }; });
   var cb=$('#mcCalc'); if(cb) cb.onclick=function(){ var k=+$('#mcK').value; if(!(k>=1000&&k<=5000)){ toast('כותבים קלוריות, למשל 1800'); return; } var kg=+d.last||70, p=Math.round(1.8*kg), f=Math.round(k*0.25/9), c=Math.max(0,Math.round((k-p*4-f*9)/4)); $('#mcP').value=p; $('#mcF').value=f; $('#mcC').value=c; };

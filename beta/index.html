@@ -706,6 +706,11 @@ input,select,textarea{font-size:16px}
     </div>
     <div class="scan" id="scan" hidden><div class="bar2"><span>מכוונים את הברקוד למסגרת</span><button type="button" id="scanX">סגירה</button></div><div class="vw"><video id="scanV" playsinline muted></video><div class="scanbox"></div></div></div>
   </section>
+    <section data-view="guides" hidden>
+    <h1>המדריכים</h1>
+    <div class="sub">כל מה שכתבתי בשבילכם במקום אחד. מתעדכן כל הזמן.</div>
+    <div class="stack" id="gdBox"><div class="skel"></div><div class="skel"></div></div>
+  </section>
   <section data-view="prog" hidden>
     <h1>ההתקדמות שלך</h1>
     <div class="sub">ממוצע שבועי, כי משקל יומי קופץ ממים ומלח</div>
@@ -731,6 +736,7 @@ input,select,textarea{font-size:16px}
   <button role="tab" aria-selected="false" data-tab="train"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"/></svg>אימון</button>
   <button role="tab" aria-selected="false" data-tab="food"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>יומן</button>
   <button role="tab" aria-selected="false" data-tab="prog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19h16M6 15l4-4 3 3 5-6"/></svg>התקדמות</button>
+  <button role="tab" aria-selected="false" data-tab="guides"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h6"/></svg>מדריכים</button>
 </div></nav>
 <div class="toast" id="toast" hidden></div>
 
@@ -1603,14 +1609,21 @@ function recapHtml(){ var d=D||{}, wk=d.week||[], keys=weekKeys(), ws=weekStart(
     (done===goals.length?'<div class="rbest">סגרת את כל היעדים של השבוע. ככה נראית התמדה.</div>':best?'<div class="rbest">שיא חדש השבוע: <b>'+esc(best.ex)+'</b> · '+best.kg+' ק״ג</div>':'')+(sAvg!=null?'<div class="swaphint">צעדים: '+sAvg.toLocaleString('he-IL')+' ליום בממוצע</div>':'')+'</div>'; }
 /* ===== אתגר צעדים שבועי: מי הולך הכי הרבה (שמות פרטיים בלבד) ===== */
 var BOARD=null, BOARD_TRIED=false;
-function boardHtml(){ if(!BOARD||!BOARD.list||!BOARD.list.length) return ''; var me=BOARD.me||'';
+function boardHtml(){ if(!BOARD||!BOARD.list||!BOARD.list.length) return ''; var L=BOARD.list, n=L.length, rk=BOARD.rank, mine=BOARD.mine||0, top=L[0].avg||1, t3=L[Math.min(2,n-1)].avg, f=function(v){ return (+v||0).toLocaleString('he-IL'); };
+  /* 28.10.26 (אביאל): בלי שמות. טופ 3 תמיד, המקום שלי, וכמה חסר לטופ 3 */
+  var row=function(i,v,me){ return '<div class="brow'+(me?' me':'')+'"><span class="bn num">'+(i+1)+'</span><span class="bname">'+(me?'אני':'מתאמן/ת')+'<i class="bbar"><i style="width:'+Math.max(4,Math.round(v/top*100))+'%"></i></i></span><span class="num">'+f(v)+'</span></div>'; };
+  var h='<div class="board"><div class="row"><b>אתגר הצעדים השבועי</b><small>ממוצע ליום · '+n+' משתתפים</small></div>'+L.slice(0,3).map(function(x,i){ return row(i,x.avg,rk===i+1); }).join('');
+  if(rk&&rk>3) h+='<div class="bgap">⋯</div>'+row(rk-1,mine,true);
+  h+='<div class="swaphint">'+(!rk?'רושמים צעדים השבוע ונכנסים לטבלה.':rk<=3?'את/ה בטופ 3 השבוע. שומרים על זה עד שבת.':'עוד '+f(Math.max(0,t3-mine+1))+' צעדים ביום בממוצע, ואת/ה בטופ 3.')+'</div></div>';
+  return h; }
+function boardHtmlOld(){ var me='';
   return '<div class="board"><div class="row"><b>אתגר הצעדים השבועי</b><small>ממוצע ליום</small></div>'+BOARD.list.slice(0,5).map(function(x,i){ return '<div class="brow'+(x.n===me?' me':'')+'"><span class="bn num">'+(i+1)+'</span><span class="bname">'+esc(x.n)+(x.n===me?' (אני)':'')+'</span><span class="num">'+x.avg.toLocaleString('he-IL')+'</span></div>'; }).join('')+(BOARD.rank&&BOARD.rank>5?'<div class="brow me"><span class="bn num">'+BOARD.rank+'</span><span class="bname">'+esc(me)+' (אני)</span><span class="num">'+(BOARD.mine||0).toLocaleString('he-IL')+'</span></div>':'')+'<div class="swaphint">מתעדכן כל שעה מהצעדים שכולם רושמים. כל מי שמסיים את השבוע עם 7 ימי רישום מקבל ממני כבוד.</div></div>'; }
 function renderExtras(el){ var x=document.getElementById('extras'), wf=document.getElementById('wForm'), wc=wf&&wf.closest('.card'), at=wc||el;
   if(!x){ x=document.createElement('div'); x.id='extras'; } if(x.previousSibling!==at) at.parentNode.insertBefore(x,at.nextSibling);
   var x2=document.getElementById('extras2'); if(!x2){ x2=document.createElement('div'); x2.id='extras2'; } if(x2.parentNode!==at.parentNode||x2.nextSibling) at.parentNode.appendChild(x2);
   /* למעלה: רק מה שדורש פעולה עכשיו. השקילה מעליהם. למטה: שבועי, אתגר, מדריכים ושאלה */
   x.innerHTML=videoMeetHtml()+payHtml()+ctasksHtml()+firstWeekHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+photoDueHtml()+reportHtml();
-  x2.innerHTML=recapHtml()+boardHtml()+guidesHtml()+askHtml();
+  x2.innerHTML=recapHtml()+boardHtml(); guidesHtml(); /* 28.10.26: שאלה לאביאל הוסרה (וואטסאפ), המדריכים בלשונית משלהם */
   wireAsk(x2);
   wireMonthly(x); wireCtasks(x);
   wireBlood(x); var sx=x.querySelector('#suppX'); if(sx) sx.onclick=function(){ lsSet('aviel_supp_seen',INBOX.supp.at); renderExtras(document.getElementById('todayCard')); };
@@ -1754,13 +1767,14 @@ function photoDueHtml(){ if(PHOTOS_L==null) return ''; if(ls('aviel_photo_snooze
   return '<div class="news"><div class="row"><b>'+(last?'עבר חודש מהתמונה האחרונה':'תמונת התחלה')+'</b><button type="button" class="linkbtn" onclick="lsSet(\'aviel_photo_snooze\',TODAY); renderExtras(document.getElementById(\'todayCard\'));">לא היום</button></div><p>'+(last?'תמונה חדשה באותו מקום ובאותה תאורה, וההבדל יופיע בלפני-אחרי.':'תמונה אחת עכשיו, ובעוד חודש רואים את ההבדל. רק לך ולאביאל יש גישה אליה.')+'</p><button type="button" class="vplay" onclick="show(\'prog\'); setTimeout(function(){ var i=document.getElementById(\'phIn\'); if(i) i.click(); },250);">צילום עכשיו</button></div>'; }
 /* ===== המדריכים של אביאל: רשימה שהוא מנהל מהדשבורד (לשונית "מדריכים" בלוח) ===== */
 var GUIDES=null, GUIDES_TRIED=false;
-function guidesHtml(){ if(!GUIDES_TRIED&&typeof api==='function'){ GUIDES_TRIED=true; api('guides',{}).then(function(r){ GUIDES=r||[]; if(GUIDES.length) renderExtras(document.getElementById('todayCard')); }).catch(function(){}); }
+function guidesHtml(){ if(!GUIDES_TRIED&&typeof api==='function'){ GUIDES_TRIED=true; api('guides',{}).then(function(r){ GUIDES=r||[]; renderGuides(); }).catch(function(){ GUIDES=[]; renderGuides(); }); }
   if(!GUIDES||!GUIDES.length) return '';
   return '<div class="news guides"><div class="row"><b>המדריכים של אביאל</b><small>'+GUIDES.length+' מדריכים</small></div>'+GUIDES.map(function(g){ return '<a class="gd" target="_blank" rel="noopener" href="'+esc(g.u)+'"><span><b>'+esc(g.t)+'</b>'+(g.d?'<small>'+esc(g.d)+'</small>':'')+'</span><i>פתיחה</i></a>'; }).join('')+'</div>'; }
 /* ===== השיחה עם אביאל: שאלה מתוך האפליקציה והתשובות שלו באותו שרשור (במקום לחפש בוואטסאפ) ===== */
 var CHAT=null, CHAT_TRIED=false, ASKD='', CHAT_ALL=false, ASK_BUSY=false;
 function chatAgo(at){ var t=Date.parse(at); if(isNaN(t)) return ''; var m=Math.round((Date.now()-t)/60000); if(m<2) return 'עכשיו'; if(m<60) return 'לפני '+m+' דק׳'; var h=Math.round(m/60); if(h<24) return 'לפני '+h+' שע׳'; var d=Math.round(h/24); return d===1?'אתמול':'לפני '+d+' ימים'; }
-function askHtml(){ if(!CHAT_TRIED&&typeof api==='function'){ CHAT_TRIED=true; api('chat',{}).then(function(r){ CHAT=(r&&r.list)||[]; if(CHAT.length) renderExtras(document.getElementById('todayCard')); }).catch(function(){}); }
+function askHtml(){ return ''; }
+function askHtmlOld(){ if(!CHAT_TRIED&&typeof api==='function'){ CHAT_TRIED=true; api('chat',{}).then(function(r){ CHAT=(r&&r.list)||[]; if(CHAT.length) renderExtras(document.getElementById('todayCard')); }).catch(function(){}); }
   var ALL=CHAT||[], more=CHAT_ALL?0:Math.max(0,ALL.length-6), L=CHAT_ALL?ALL:ALL.slice(-6), has=L.length>0;
   return '<div class="news ask"><div class="row"><b>'+(has?'השיחה עם אביאל':'שאלה לאביאל')+'</b><small>מגיע ישר אליו</small></div>'+
     (more?'<button type="button" class="linkbtn" id="chatMore" style="margin-top:6px">הודעות קודמות ('+more+')</button>':'')+(has?'<div class="chat" role="log" aria-label="השיחה עם אביאל">'+L.map(function(x){ var me=x.f==='c'; return '<div class="cb'+(me?' me':'')+'"><div>'+esc(x.t||'')+(x.v?(x.d?' <i>· '+x.d+' שנ׳</i>':' <i>(הודעה קולית)</i>'):'')+(x.vid?' <button type="button" class="linkbtn cvp" data-vid="'+esc(x.vid)+'">השמעה</button>':'')+'</div><small>'+(me?'אני':'אביאל')+' · '+chatAgo(x.at)+'</small></div>'; }).join('')+'</div>':'')+
@@ -2235,6 +2249,17 @@ function progLayout(){ var sec=document.querySelector('section[data-view="prog"]
 var _showPL=show; show=function(v){ _showPL.apply(this,arguments); if(v==='prog') setTimeout(function(){ try{ progLayout(); }catch(e){} },0); };
 var _renderPL=render; render=function(){ _renderPL.apply(this,arguments); try{ if(!document.querySelector('section[data-view="prog"]').hidden) progLayout(); }catch(e){} };
 (function(){ var st=document.createElement('style'); st.textContent='.pphide{display:none!important}.phero{display:flex;flex-direction:column;gap:12px}.phv{font-weight:700;font-size:16px;padding:10px 12px;border-radius:12px;background:var(--panel2,#202026)}.phv.ok{color:var(--good,#5cc489)}.phv.warn{color:var(--warn,#e8a54a)}.phg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}.phg b{display:block;font-size:24px}.phg small{color:var(--mute,#9d9aa6);font-size:12px}.pseg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;margin:12px 0;border-radius:14px;background:var(--panel2,#202026);border:1px solid var(--line,#2c2c34)}.pseg button{border:0;background:none;color:var(--mute,#9d9aa6);font:inherit;font-weight:700;padding:9px 4px;border-radius:10px}.pseg button[aria-selected="true"]{background:var(--gold,#d4ac5b);color:var(--ink,#0d0d0f)}'; document.head.appendChild(st); })();
+
+/* ===== לשונית המדריכים (28.10.26) ===== */
+function renderGuides(){ var box=document.getElementById('gdBox'); if(!box) return; if(GUIDES==null){ guidesHtml(); return; }
+  if(!GUIDES.length){ box.innerHTML='<div class="card"><div class="sub">המדריכים יעלו לכאן בקרוב.</div></div>'; return; }
+  box.innerHTML=GUIDES.map(function(g,i){ return '<a class="card gdc" target="_blank" rel="noopener" href="'+esc(g.u)+'"><span class="gdn num">'+(i+1)+'</span><span class="gdt"><b>'+esc(g.t)+'</b>'+(g.d?'<small>'+esc(g.d)+'</small>':'')+'</span><span class="gdo">פתיחה</span></a>'; }).join(''); }
+var _showGd=show; show=function(v){ _showGd.apply(this,arguments); if(v==='guides') renderGuides(); };
+(function(){ var st=document.createElement('style'); st.textContent='.gdc{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}.gdc .gdn{flex:0 0 34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--panel2,#202026);color:var(--gold,#d4ac5b);font-weight:800}.gdc .gdt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.gdc small{color:var(--mute,#9d9aa6)}.gdc .gdo{color:var(--gold,#d4ac5b);font-weight:700;font-size:14px}.board .bbar{display:block;height:5px;margin-top:5px;border-radius:9px;background:var(--line,#2c2c34);overflow:hidden}.board .bbar i{display:block;height:100%;background:var(--gold,#d4ac5b);border-radius:9px}.board .bname{display:flex;flex-direction:column}.board .bgap{text-align:center;color:var(--mute,#9d9aa6);line-height:1}'; document.head.appendChild(st); })();
+/* ===== צ׳ק-אין שבועי פתוח רק משבת בערב (17:00) עד ראשון בערב (21:00) — אביאל, 28.10.26 ===== */
+function ciOpen(){ var d=new Date(), w=d.getDay(), h=d.getHours(); return (w===6&&h>=17)||(w===0&&h<21); }
+var _renderCi=render; render=function(){ _renderCi.apply(this,arguments); try{ var f=document.getElementById('ciForm'), card=f&&f.closest('.card'); if(card) card.hidden=!ciOpen()&&!(D&&D.checkinDone&&new Date().getDay()===0); }catch(e){} };
+var _todayItemsCi=todayItems; todayItems=function(){ var it=_todayItemsCi.apply(this,arguments); return ciOpen()?it:it.filter(function(x){ return x.k!=='c'; }); };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
