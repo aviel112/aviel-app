@@ -1832,7 +1832,7 @@ var FIRST_WEEK=[
  ['הרגלים יומיים','מסמנים בבית את ההרגלים: מים, שינה, חלבון, צעדים. כל סימון בונה רצף.'],
  ['צעדים','רושמים בערב את הצעדים של היום. רואים את עצמך באתגר השבועי.'],
  ['שואלים את אביאל','משהו לא ברור בתפריט או בתרגיל? "טכניקה" בכרטיס התרגיל שולחת לי סרטון, ואני עונה בקול.'],
- ['צ׳ק-אין ראשון','פעם בשבועיים, בסוף השבוע, ממלאים צ׳ק-אין קצר. ככה אני מכוון אותך הלאה. סיימת שבוע ראשון, כל הכבוד.']];
+ ['שבוע ראשון מאחוריך','בלשונית ההתקדמות רואים את השבוע הראשון בגרף. מכאן ממשיכים באותו קצב, והצ׳ק-אין הראשון מגיע בסוף השבוע השני.']]; /* 29.10.26 אביאל: בשבוע הראשון בלי "כל הכבוד" ובלי צ׳ק-אין */
 function firstWeekHtml(){ if(!D||D.weekNo==null||D.weekNo>1||D.lastKg!=null&&D.firstKg!=null&&(D.week||[]).length&&D.weekNo>0) { if(!D||D.weekNo==null||D.weekNo>1) return ''; } var f=ls('aviel_first_day',''); if(!f){ f=TODAY; lsSet('aviel_first_day',f); }
   var n=Math.round((new Date(TODAY+'T12:00:00')-new Date(f+'T12:00:00'))/864e5); if(n<0||n>6) return ''; if(ls('aviel_fw_seen','')===TODAY) return '';
   var it=FIRST_WEEK[n]; if(n===1&&!(P&&P.menu&&P.menu.blocks&&P.menu.blocks.length)) it=['רושמים ארוחה אחת ביומן','בלשונית היומן מוסיפים מה אכלת בארוחה אחת. אפשר גם ללחוץ על המיקרופון ופשוט להגיד. לא צריך מושלם, רק להתחיל.']; /* מי שעובד עם יומן ולא עם תפריט */ return '<div class="news fw"><div class="row"><b>שבוע ראשון · יום '+(n+1)+' מתוך 7</b><button type="button" class="linkbtn" onclick="lsSet(\'aviel_fw_seen\',TODAY); renderExtras(document.getElementById(\'todayCard\'));">בוצע</button></div><p><b>'+esc(it[0])+'.</b> '+esc(it[1])+'</p><div class="tdbar"><i style="width:'+Math.round((n+1)/7*100)+'%"></i></div></div>'; }
