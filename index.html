@@ -1820,7 +1820,7 @@ function trkGoalHtml(){ var d=D||{}, rows=trkRows().filter(function(r){ return r
   var start=d.firstKg!=null?+d.firstKg:(rows[0]&&rows[0].kg), cur=rows.length?rows[rows.length-1].kg:(d.lastKg!=null?+d.lastKg:null), h='';
   if(goal&&start!=null&&cur!=null&&Math.abs(start-goal)>=0.5){ var pc=Math.max(0,Math.min(100,Math.round((start-cur)/(start-goal)*100))), up=goal>start;
     h+='<div class="tgoal"><div class="row"><b>'+(up?'עלייה ל-':'ירידה ל-')+goal+' ק״ג</b><button type="button" class="linkbtn" id="trkGoal">שינוי</button></div><div class="tbar"><i style="width:'+pc+'%"></i><span class="tknob" style="right:'+pc+'%"></span></div><div class="tends"><span class="num">'+start+' ק״ג</span><b class="num">'+pc+'%</b><span class="num">'+goal+' ק״ג</span></div><div class="tnote">'+(pc>=100?'הגעת ליעד. עכשיו שומרים.':'עברת '+Math.abs(Math.round((start-cur)*10)/10)+' ק״ג מתוך '+Math.abs(Math.round((start-goal)*10)/10)+'. נשארו '+Math.abs(Math.round((cur-goal)*10)/10)+'.')+'</div></div>'; }
-  else h+='<div class="tgoal"><div class="row"><b>היעד שלך</b><button type="button" class="linkbtn" id="trkGoal">הגדרת יעד משקל</button></div><div class="tnote">מגדירים יעד, ורואים כאן כמה אחוז מהדרך כבר עשית.</div></div>';
+  else h+='<div class="tgoal"><div class="row"><b>היעד שלך</b><button type="button" class="linkbtn" id="trkGoal">הגדרת יעד משקל</button></div><div class="tnote">אביאל יגדיר כאן את היעד שלך, ותראו כמה אחוז מהדרך כבר עשית.</div></div>';
   var now=new Date(), mk=trkYmd(now).slice(0,7), days=now.getDate(), n=rows.filter(function(r){ return r.k.slice(0,7)===mk; }).length, ap=Math.min(100,Math.round(n/days*100));
   h+='<div class="tgoal"><div class="row"><b>שקילות החודש</b><b class="num tok">'+n+'/'+days+'</b></div><div class="tbar ok"><i style="width:'+ap+'%"></i></div><div class="tnote">'+(ap>=70?'התמדה מצוינת. ככה הממוצע אמין.':'5 שקילות בשבוע נותנות ממוצע אמין.')+'</div></div>';
   return h; }
@@ -2322,6 +2322,16 @@ function exImgPick(name){ var ov=document.createElement('div'); ov.className='ms
   var go=function(){ var q=ov.querySelector('#xpQ'); q.oninput=function(){ draw(q.value); }; var cur=exImgFor(name)||''; q.value=cur.replace(/_/g,' ').toLowerCase().split(' ').slice(0,2).join(' '); draw(q.value); q.focus(); };
   if(EXDB) go(); else fetch('data/exercise-db-ids.json').then(function(r){ return r.json(); }).then(function(d){ EXDB=d; go(); }).catch(function(){ ov.querySelector('#xpL').innerHTML='<div class="sub">לא נטען, נסו שוב</div>'; }); }
 (function(){ var st=document.createElement('style'); st.textContent='.expick{max-height:88vh;overflow:auto;text-align:start}.expick h2{font-size:20px;text-align:center}.xpgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.xpgrid button{display:flex;flex-direction:column;gap:4px;padding:6px;border-radius:12px;border:1px solid var(--line,#2c2c34);background:var(--panel2,#202026);color:var(--text,#f2efe8);font:inherit}.xpgrid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#fff}.xpgrid small{font-size:10px;line-height:1.2;overflow:hidden;max-height:2.4em}'; document.head.appendChild(st); })();
+
+/* ===== אביאל קובע, המתאמן רואה (28.10.26): יעד משקל מהשרת בלבד, תפריט או יומן — לא שניהם, בלי "סיכום ערכים" בתפריט ===== */
+function coachRules(){ try{ lsSet('aviel_goal_kg',(D&&+D.goalKg)||0); }catch(e){}
+  var mode=P&&P.mode, hasMenu=!!(P&&P.menu&&P.menu.blocks&&P.menu.blocks.length), useMenu=mode==='תפריט'||(mode!=='ערכים'&&hasMenu);
+  document.querySelectorAll('#tabs button[data-tab="food"]').forEach(function(b){ b.classList.toggle('mhide',useMenu); });
+  document.querySelectorAll('#tabs button[data-tab="menu"]').forEach(function(b){ b.classList.toggle('mhide',!useMenu); });
+  var cur=(document.querySelector('section[data-view]:not([hidden])')||{}).dataset; cur=cur&&cur.view; if(useMenu&&cur==='food') show('menu'); if(!useMenu&&cur==='menu') show('food'); }
+var _renderMenuCR=renderMenu; renderMenu=function(){ if(P&&P.menu&&P.menu.blocks) P.menu.blocks=P.menu.blocks.filter(function(b){ return !/סיכום ערכים/.test(b.title||''); }); _renderMenuCR.apply(this,arguments); try{ coachRules(); }catch(e){} };
+var _renderCR=render; render=function(){ try{ lsSet('aviel_goal_kg',(D&&+D.goalKg)||0); }catch(e){} _renderCR.apply(this,arguments); try{ coachRules(); }catch(e){} };
+(function(){ var st=document.createElement('style'); st.textContent='#trkGoal,#goalSet{display:none!important}.mhide{display:none!important}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
