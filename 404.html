@@ -1,0 +1,12 @@
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>AVIEL · ליווי אישי</title>
+<meta name="theme-color" content="#0d0d0f"><link rel="apple-touch-icon" href="/aviel-app/apple-touch-icon.png">
+<style>html,body{margin:0;height:100%;background:#0d0d0f;color:#f2efe8;font-family:system-ui,-apple-system,"Heebo",sans-serif}main{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}.b{font-weight:800;letter-spacing:.3px;color:#d4ac5b}.s{color:#9d9aa6;font-size:15px;max-width:30ch}.sp{width:36px;height:36px;border-radius:50%;border:3px solid #2c2c34;border-top-color:#d4ac5b;animation:r .9s linear infinite}@keyframes r{to{transform:rotate(360deg)}}a{color:#d4ac5b}</style></head>
+<body><main><div class="b">AVIEL · ליווי אישי</div><div class="sp" id="sp"></div><div class="s" id="m">פותח את האפליקציה שלך…</div></main>
+<script>
+/* קישור קצר: /aviel-app/shani-2535 → השרת מחזיר את הקישור האישי (הקוד לא נשמר באתר) */
+(function(){ var m=location.pathname.match(/\/aviel-app\/([a-z]+-\d{4})\/?$/i), msg=document.getElementById('m');
+  var fail=function(t){ document.getElementById('sp').style.display='none'; msg.innerHTML=t; };
+  if(!m){ fail('הדף לא נמצא. <a href="/aviel-app/">לאפליקציה</a>'); return; }
+  fetch('https://script.google.com/macros/s/AKfycbxSkxJJ1ODs067IOfDkuosXzKX-pVi2W7uTcWKAS-7YFuh8PW9mrjSS8bNC4SaiRTkP/exec?api=slug&c='+encodeURIComponent(m[1].toLowerCase())).then(function(r){ return r.json(); }).then(function(j){ if(j&&j.ok&&j.r&&j.r.t) location.replace('/aviel-app/?t='+j.r.t); else fail((j&&j.error)||'הקישור לא נמצא. בקשו מאביאל קישור חדש'); }).catch(function(){ fail('אין חיבור כרגע. נסו שוב בעוד רגע'); });
+})();
+</script></body></html>
