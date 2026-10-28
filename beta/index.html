@@ -1579,10 +1579,18 @@ function applySwaps(d){ if(!d||!d.ex) return d; var st=swapStore();
 var GRP=[[/בטן|פלאנק|כפיפות בטן/,'בטן'],[/תאומים|עקבים/,'תאומים'],[/המסטרינג|כפיפת ברך|דדליפט רומני|RDL/,'המסטרינג'],[/ישבן|היפ.?(טראסט|תראסט)|גלוט|קיק.?ב|מרחיק|הרחקת ירך|פתיחת/,'ישבן'],[/ארבע ראשי|סקוואט|לג.?פרס|פשיטת ברך|לאנג|מקרב|קירוב ירך|סגירת רגליים/,'ארבע ראשי'],[/יד אחורית|פשיטת מרפק|טרייספס|דיפס/,'יד אחורית'],[/יד קדמית|כפיפת מרפק|בייספס|פטיש/,'יד קדמית'],[/כתף|הרחקת כתפ|פייס|פרפר הפוך|לחיצת כתפ/,'כתפיים'],[/גב|רחב|חתירה|מתח|פולי|פול/,'גב'],[/חזה|לחיצת חזה|פרפר|מקבילים|שכיבות/,'חזה']];
 function grpOf(e){ var t=(e.mu||'')+' '+e.ex; for(var i=0;i<GRP.length;i++) if(GRP[i][0].test(t)) return GRP[i][1]; return ''; }
 function toks(s){ return String(s).replace(/[()\-–,]/g,' ').split(/\s+/).filter(function(w){ return w.length>=3&&!/^(עם|על|בכבל|במכונה|ביד)$/.test(w); }); }
-function altsFor(e){ if(!LIB) return []; var orig=e._orig||e.ex, g=grpOf({mu:e.mu,ex:orig}); if(!g) return [];
+/* חלופות רלוונטיות בלבד (28.10.26, אביאל): לא רק אותו שריר, אלא אותה תנועה — לחיצה מול לחיצה, חתירה מול חתירה, הרחקה מול הרחקה */
+var PAT=[['חזה','לחיצה',/לחיצת חזה|לחיצה.*(שיפוע|חזה)|בנץ|bench|שכיבות|מקבילים|dips/i],['חזה','פרפר',/פרפר(?! הפוך)|קרוס|crossover|cross|פלאי|צלב|fly/i],
+ ['גב','אנכי',/פולי עליון|מתח|pull.?down|pull.?up|פולאובר|פול אובר|chin/i],['גב','אופקי',/חתיר|row|תי.?בר|t.?bar/i],
+ ['כתפיים','לחיצה',/לחיצ(ת|ה).*כתפ|לחיצה צבאית|ארנולד|overhead|shoulder press/i],['כתפיים','צד',/הרחק(ת|ות|ה).*(כתפ|צד)|הרמ(ות|ת) צד|הרחקה (בכבל|במשקולת|במכונה)|lateral/i],['כתפיים','אחורית',/פרפר הפוך|פייס|face|אחורית|reverse|rear/i],['כתפיים','קדמית',/הרמ(ות|ה) קדמי|front raise/i],
+ ['ארבע ראשי','סקוואט',/סקוואט|squat|לג.?פרס|leg press|האק|hack/i],['ארבע ראשי','לאנג',/לאנג|lunge|בולגרי|bulgarian|מכרע|סטפ|step|עלייה על/i],['ארבע ראשי','פשיטה',/פשיטת ברך|leg ext/i],['ארבע ראשי','מקרב',/מקרב|קירוב ירך|סגירת רגליים|adduct/i],
+ ['המסטרינג','כפיפה',/כפיפת ברך|leg curl/i],['המסטרינג','ציר',/דדליפט|deadlift|RDL|סטיף|stiff|גוד מורנינג|good morning|הינג/i],
+ ['ישבן','גשר',/היפ.?(טראסט|תראסט)|hip thrust|גשר|bridge/i],['ישבן','הרחקה',/הרחק(ת|ות) ירך|מרחיק|פתיחת|abduct/i],['ישבן','קיק',/קיק.?ב|kick|בעיט/i]];
+function patOf(name,g){ for(var i=0;i<PAT.length;i++) if(PAT[i][0]===g&&PAT[i][2].test(name)) return PAT[i][1]; return ''; }
+function altsFor(e){ if(!LIB) return []; var orig=e._orig||e.ex, g=grpOf({mu:e.mu,ex:orig}); if(!g) return []; var pt=patOf(orig,g), pool=LIB.filter(function(x){ return x[0]===g; }), same=pt?pool.filter(function(x){ return patOf(x[2],g)===pt; }):[]; if(same.length>=2) pool=same; else if(pt) pool=pool.filter(function(x){ var q=patOf(x[2],g); return !q||q===pt; });
   var sub=(e.mu||'').trim(), ot=toks(orig), learnG=(P&&P.swaps&&P.swaps[orig])||{}, learnL=(ls('aviel_swap_learn',{})[orig])||{};
   var seen={}; seen[orig]=1;
-  return LIB.filter(function(x){ return x[0]===g&&!seen[x[2]]&&(seen[x[2]]=1); }).map(function(x){ var sc=0, nt=toks(x[2]);
+  return pool.filter(function(x){ return !seen[x[2]]&&(seen[x[2]]=1); }).map(function(x){ var sc=0, nt=toks(x[2]);
       ot.forEach(function(w){ if(nt.indexOf(w)>=0) sc+=2; }); if(x[6]==='a') sc+=3; if(sub&&x[1]&&sub.indexOf(x[1])>=0) sc+=2; sc+=(+learnG[x[2]]||0)*3+(+learnL[x[2]]||0)*4;
       return {n:x[2],s:x[3],r:x[4],sc:sc,pop:(+learnG[x[2]]||0)+(+learnL[x[2]]||0)}; })
     .sort(function(a,b){ return b.sc-a.sc; }).slice(0,8); }
@@ -1593,7 +1601,7 @@ function openSwap(i,e){ var box=document.getElementById('swb'+i); if(!box) retur
     box.querySelectorAll('.swarr').forEach(function(b){ b.onclick=function(){ k=(k+(+b.dataset.d)+L.length)%L.length; draw(); }; });
     box.querySelectorAll('[data-pick]').forEach(function(b){ b.onclick=function(){ var orig=e._orig||e.ex, st=swapStore(); if(b.dataset.pick==='perm'){ st.perm[orig]=a.n; delete st.day[orig]; } else st.day[orig]=a.n; swapSave(st.day,st.perm);
       var lr=ls('aviel_swap_learn',{}); lr[orig]=lr[orig]||{}; lr[orig][a.n]=(lr[orig][a.n]||0)+1; lsSet('aviel_swap_learn',lr);
-      try{ api('swap',{orig:orig,alt:a.n}).catch(function(){}); }catch(er){}
+      try{ api('swap',{orig:orig,alt:a.n,perm:b.dataset.pick==='perm'?1:0}).catch(function(){}); }catch(er){}
       toast(b.dataset.pick==='perm'?'הוחלף קבוע: '+a.n:'להיום: '+a.n); var y=window.scrollY; renderTrain(); window.scrollTo(0,y); }; }); };
   box.hidden=false; draw(); }
 document.addEventListener('click',function(ev){ var b=ev.target.closest('.swapbtn'); if(b){ var days=(P.program.blocks||[]).filter(function(x){ return x.ex&&x.ex.length; }), d=applySwaps(days[DAY]); openSwap(+b.dataset.sw,d.ex[+b.dataset.sw]); return; }
