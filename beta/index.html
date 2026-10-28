@@ -2214,6 +2214,27 @@ function renderWV(today){ if(!D) return; var el=document.getElementById('wvCard'
 /* צילום ארוחה גם מתוך התפריט (28.10.26) — אותו ניתוח כמו ביומן */
 var _renderMenuShot=renderMenu; renderMenu=function(){ _renderMenuShot.apply(this,arguments); try{ var mb=document.getElementById('menuBox'); if(!mb||document.getElementById('menuShot')) return; var b=document.createElement('button'); b.type='button'; b.id='menuShot'; b.className='ghost shotbtn'; b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>צילום ארוחה · הערכת קלוריות</span>'; b.onclick=function(){ var i=document.getElementById('msIn'); if(i) i.click(); }; mb.parentNode.insertBefore(b,mb); }catch(e){} };
 (function(){ var st=document.createElement('style'); st.textContent='.shotbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:0 0 12px}.shotbtn svg{width:20px;height:20px}'; document.head.appendChild(st); })();
+
+/* ===== מסך התקדמות (28.10.26, אביאל: "יותר ברור ופחות מסובך"): סיכום של 3 מספרים + משפט אחד, ואז לשונית אחת בכל פעם ===== */
+var PROG_PANE=ls('aviel_ppane','w');
+function progPaneOf(card){ var t=((card.querySelector('h2,h3,.label,.lbl,.gh,b')||card).textContent||''); return /תמונות/.test(t)?'ph':/^\s*כוח/.test(t)?'st':/היקפים/.test(t)?'me':'w'; }
+function progLayout(){ var sec=document.querySelector('section[data-view="prog"]'); if(!sec||!D) return; var stack=sec.querySelector('.stack'); if(!stack) return;
+  var sub=sec.querySelector(':scope > .sub'); if(sub) sub.hidden=true;
+  var hero=document.getElementById('progHero'); if(!hero){ hero=document.createElement('div'); hero.id='progHero'; hero.className='card phero'; stack.parentNode.insertBefore(hero,stack); }
+  var wk=D.weekly||[], last=wk.length?wk[wk.length-1]:D.lastKg, first=wk.length?wk[0]:D.firstKg, tot=(last!=null&&first!=null)?Math.round((last-first)*10)/10:null, wd=wk.length>1?Math.round((wk[wk.length-1]-wk[wk.length-2])*10)/10:null;
+  var since=new Date(); since.setDate(since.getDate()-30); var s30=trkYmd(since), days={}; Object.keys((P&&P.lifts)||{}).forEach(function(k){ (P.lifts[k].hist||[]).forEach(function(h){ if(h.d&&h.d>=s30) days[h.d]=1; }); }); var tr=Object.keys(days).length;
+  var down=D.goal==='ירידה', up=D.goal==='עלייה', good=wd==null?null:(down?wd<0:up?wd>0:Math.abs(wd)<=0.3);
+  var fmt=function(v){ return v==null?'—':(v>0?'+':'')+v; };
+  var verdict=wd==null?'עוד שבוע של שקילות, ותראו כאן אם אתם בכיוון':good?'השבוע בכיוון הנכון. ממשיכים בדיוק ככה':(down||up)?'השבוע המשקל לא זז לכיוון. אביאל מסתכל ומכוון':'השבוע יציב';
+  hero.innerHTML='<div class="phv'+(good===false?' warn':good?' ok':'')+'">'+esc(verdict)+'</div><div class="phg"><div><b class="num" dir="ltr">'+fmt(tot)+'</b><small>ק״ג מההתחלה</small></div><div><b class="num" dir="ltr">'+fmt(wd)+'</b><small>ק״ג השבוע</small></div><div><b class="num">'+tr+'</b><small>אימונים ב-30 יום</small></div></div>';
+  var seg=document.getElementById('progSeg'); if(!seg){ seg=document.createElement('div'); seg.id='progSeg'; seg.className='pseg'; seg.setAttribute('role','tablist'); stack.parentNode.insertBefore(seg,stack); }
+  var P4=[['w','משקל'],['st','כוח'],['me','היקפים'],['ph','תמונות']];
+  seg.innerHTML=P4.map(function(x){ return '<button type="button" role="tab" data-pp="'+x[0]+'" aria-selected="'+(PROG_PANE===x[0])+'">'+x[1]+'</button>'; }).join('');
+  seg.querySelectorAll('[data-pp]').forEach(function(b){ b.onclick=function(){ PROG_PANE=b.dataset.pp; lsSet('aviel_ppane',PROG_PANE); progLayout(); }; });
+  [].forEach.call(stack.children,function(c){ c.classList.toggle('pphide',progPaneOf(c)!==PROG_PANE); }); }
+var _showPL=show; show=function(v){ _showPL.apply(this,arguments); if(v==='prog') setTimeout(function(){ try{ progLayout(); }catch(e){} },0); };
+var _renderPL=render; render=function(){ _renderPL.apply(this,arguments); try{ if(!document.querySelector('section[data-view="prog"]').hidden) progLayout(); }catch(e){} };
+(function(){ var st=document.createElement('style'); st.textContent='.pphide{display:none!important}.phero{display:flex;flex-direction:column;gap:12px}.phv{font-weight:700;font-size:16px;padding:10px 12px;border-radius:12px;background:var(--panel2,#202026)}.phv.ok{color:var(--good,#5cc489)}.phv.warn{color:var(--warn,#e8a54a)}.phg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}.phg b{display:block;font-size:24px}.phg small{color:var(--mute,#9d9aa6);font-size:12px}.pseg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;margin:12px 0;border-radius:14px;background:var(--panel2,#202026);border:1px solid var(--line,#2c2c34)}.pseg button{border:0;background:none;color:var(--mute,#9d9aa6);font:inherit;font-weight:700;padding:9px 4px;border-radius:10px}.pseg button[aria-selected="true"]{background:var(--gold,#d4ac5b);color:var(--ink,#0d0d0f)}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
