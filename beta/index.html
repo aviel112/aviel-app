@@ -675,7 +675,6 @@ input,select,textarea{font-size:16px}
         <button type="button" class="installbtn" id="pushBtn">הפעלת תזכורות</button>
       </div>
       <div class="card" id="noteCard" hidden><div class="label">ההודעה של אביאל לשבוע</div><p style="margin:6px 0 0;white-space:pre-wrap" id="note"></p></div>
-      <a class="wa" href="https://wa.me/972537718200" target="_blank" rel="noopener">שאלה לאביאל בוואטסאפ</a>
     </div>
   </section>
 
@@ -1786,7 +1785,7 @@ function suppHtml(){ var sp=INBOX&&INBOX.supp; if(!sp||!sp.at||!sp.items||!sp.it
 
 /* ===== שאלון חודשי קצר לפני הפגישה (5 שאלות) ===== */
 var MONTHLY_Q=['מה היה הכי קשה החודש?','מה הכי עבד לך?','מה היית רוצה לשנות בתפריט?','איך האנרגיה והשינה (1–10)?','מה המטרה שלך לחודש הבא?'], MONTHLY_OPEN=false;
-function monthlyHtml(){ if(!INBOX||!INBOX.monthlyDue) return ''; if(ls('aviel_monthly_done','')===TODAY.slice(0,7)) return '';
+function monthlyHtml(){ if(!INBOX||!INBOX.monthlyDue) return ''; try{ var mdt=D&&D.meeting&&D.meeting.date?pd(D.meeting.date):null; if(!mdt) return ''; var dd=Math.round((new Date(mdt.getFullYear(),mdt.getMonth(),mdt.getDate(),12)-new Date(TODAY+'T12:00:00'))/864e5); if(dd<0||dd>3) return ''; }catch(e){ return ''; } /* 29.10.26 אביאל: רק 3 ימים לפני הפגישה */ if(ls('aviel_monthly_done','')===TODAY.slice(0,7)) return '';
   return '<div class="news monthly"><div class="row"><b>שאלון חודשי לפני הפגישה</b><small>2 דקות</small></div><p>5 שאלות קצרות, ואביאל מגיע לפגישה מוכן בדיוק למה שחשוב לך.</p>'+(MONTHLY_OPEN?'<form id="moForm" class="moform">'+MONTHLY_Q.map(function(q,i){ return '<label><span>'+esc(q)+'</span><textarea name="q'+i+'" rows="2"></textarea></label>'; }).join('')+'<button type="submit">שליחה לאביאל</button></form>':'<button type="button" class="vplay" id="moOpen" style="margin-top:6px">למילוי</button>')+'</div>'; }
 function wireMonthly(x){ var o=x.querySelector('#moOpen'); if(o) o.onclick=function(){ MONTHLY_OPEN=true; renderExtras(document.getElementById('todayCard')); };
   var f=x.querySelector('#moForm'); if(f) f.onsubmit=function(e){ e.preventDefault(); var a=MONTHLY_Q.map(function(q,i){ return f.elements['q'+i].value.trim(); }); if(!a.some(Boolean)){ toast('עונים לפחות על שאלה אחת',1); return; }
@@ -1836,7 +1835,7 @@ var FIRST_WEEK=[
  ['צ׳ק-אין ראשון','פעם בשבועיים, בסוף השבוע, ממלאים צ׳ק-אין קצר. ככה אני מכוון אותך הלאה. סיימת שבוע ראשון, כל הכבוד.']];
 function firstWeekHtml(){ if(!D||D.weekNo==null||D.weekNo>1||D.lastKg!=null&&D.firstKg!=null&&(D.week||[]).length&&D.weekNo>0) { if(!D||D.weekNo==null||D.weekNo>1) return ''; } var f=ls('aviel_first_day',''); if(!f){ f=TODAY; lsSet('aviel_first_day',f); }
   var n=Math.round((new Date(TODAY+'T12:00:00')-new Date(f+'T12:00:00'))/864e5); if(n<0||n>6) return ''; if(ls('aviel_fw_seen','')===TODAY) return '';
-  var it=FIRST_WEEK[n]; return '<div class="news fw"><div class="row"><b>שבוע ראשון · יום '+(n+1)+' מתוך 7</b><button type="button" class="linkbtn" onclick="lsSet(\'aviel_fw_seen\',TODAY); renderExtras(document.getElementById(\'todayCard\'));">בוצע</button></div><p><b>'+esc(it[0])+'.</b> '+esc(it[1])+'</p><div class="tdbar"><i style="width:'+Math.round((n+1)/7*100)+'%"></i></div></div>'; }
+  var it=FIRST_WEEK[n]; if(n===1&&!(P&&P.menu&&P.menu.blocks&&P.menu.blocks.length)) it=['רושמים ארוחה אחת ביומן','בלשונית היומן מוסיפים מה אכלת בארוחה אחת. אפשר גם ללחוץ על המיקרופון ופשוט להגיד. לא צריך מושלם, רק להתחיל.']; /* מי שעובד עם יומן ולא עם תפריט */ return '<div class="news fw"><div class="row"><b>שבוע ראשון · יום '+(n+1)+' מתוך 7</b><button type="button" class="linkbtn" onclick="lsSet(\'aviel_fw_seen\',TODAY); renderExtras(document.getElementById(\'todayCard\'));">בוצע</button></div><p><b>'+esc(it[0])+'.</b> '+esc(it[1])+'</p><div class="tdbar"><i style="width:'+Math.round((n+1)/7*100)+'%"></i></div></div>'; }
 
 /* ===== תזכורת לתמונת התקדמות: אין תמונה, או שהאחרונה לפני יותר מ-30 יום ===== */
 var PHOTOS_L=null;
