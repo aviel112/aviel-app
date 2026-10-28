@@ -443,6 +443,7 @@ function progMain(){ var P=S.P; if(!P) return '<div class="card empty">טוען�
   var store=S.pstore||[], own=store.filter(function(x){ return x.kind==='מתאמן'&&x.name===S.client; })[0], tpl=store.filter(function(x){ return x.kind==='תבנית'; }), oth=store.filter(function(x){ return x.kind==='מתאמן'&&x.name!==S.client; }), sug=S.psug||{};
   var h=progGuide()+'<div><div class="bar"><label class="upl">העלאת קובץ תוכנית<input type="file" id="pFile" accept=".doc,.docx,.pdf,.txt,image/*"></label>'+
     '<select id="pLoad" aria-label="טעינת תוכנית קיימת"><option value="">טעינת תוכנית קיימת…</option>'+(own?'<option value="מתאמן|'+esc(own.name)+'">האחרונה שלו/ה ('+own.n+' אימונים · '+esc(own.d)+')</option>':'')+(tpl.length?'<optgroup label="תבניות">'+tpl.map(function(x){ return '<option value="תבנית|'+esc(x.name)+'">'+esc(x.name)+' ('+x.n+')</option>'; }).join('')+'</optgroup>':'')+(oth.length?'<optgroup label="ממתאמן אחר">'+oth.map(function(x){ return '<option value="מתאמן|'+esc(x.name)+'">'+esc(x.name)+' ('+x.n+')</option>'; }).join('')+'</optgroup>':'')+'</select>'+autoProgCtl()+'<button class="g" id="pNew">תוכנית ריקה</button></div>';
+  h+=bodyChatHtml();
   if(sug.exp||sug.injText) h+='<div class="muted" style="margin:-4px 0 10px">מהטופס: '+(sug.exp?'ניסיון '+esc(sug.exp):'')+(sug.freq?' · '+esc(sug.freq):'')+(sug.injText?' · פציעות: '+esc(sug.injText):'')+'</div>';
   P.days.forEach(function(d,di){
     h+='<section class="card day"><div class="mh"><input class="t" data-dl="'+di+'" value="'+esc(d.lbl)+'" aria-label="שם האימון"><select data-dday="'+di+'" aria-label="יום בשבוע" style="font-size:13px;padding:4px 6px">'+['','ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'].map(function(x){ return '<option value="'+x+'"'+((d.day||'')===x?' selected':'')+'>'+(x?'יום '+x:'יום…')+'</option>'; }).join('')+'</select><span class="kc">'+d.exercises.length+' תרגילים · כ-'+pMin(d)+' דק׳</span><button class="g" data-ddup="'+di+'" title="שכפול אימון">שכפול</button><button class="g" data-dmv="'+di+'|-1">↑</button><button class="g" data-dmv="'+di+'|1">↓</button><button class="g" data-ddel="'+di+'" title="מחיקת אימון">מחיקה</button></div>'+
@@ -459,7 +460,7 @@ function progMain(){ var P=S.P; if(!P) return '<div class="card empty">טוען�
 var SWAP=null;
 function swapHtml(e,key){ var g=muOf(e); var c=S.ex.filter(function(x){ return x[0]===g&&x[2]!==e.n; }).sort(function(a,b){ return (b[6]==='a')-(a[6]==='a'); }).slice(0,12); return '<div class="swp">'+(c.length?c.map(function(x,i){ return '<button data-swto="'+key+'|'+i+'">'+(x[6]==='a'?'★ ':'')+esc(x[2])+'</button>'; }).join(''):'<span class="muted">אין חלופות במאגר לקבוצה הזו</span>')+'</div>'; }
 function pMin(d){ var t=5; d.exercises.forEach(function(e){ var s=parseInt(e.s,10)||3, r=+e.rest||1.5; if(r>10) r=r/60; t+=s*(40+r*60)/60; }); return Math.round(t/5)*5; }
-function wireProg(){ var P=S.P; if(!P) return; var upd=function(){ saveDraft(); render(); };
+function wireProg(){ var P=S.P; if(!P) return; try{ wireBodyChat(); }catch(e){} var upd=function(){ saveDraft(); render(); };
   var at=function(key){ var k=key.split('|'); var d=P.days[+k[0]]; return {d:d, e:k.length>1?d.exercises[+k[1]]:null, k:k}; };
   document.querySelectorAll('[data-en]').forEach(function(inp){ inp.oninput=function(){ if(!AC||AC.input!==inp) openAC(inp,'ex',function(x){ var a=at(inp.dataset.en); var e=a.e; e.n=x[2]; e.mu=x[0]; if(!e.s) e.s=String(x[3]||3); if(!e.r) e.r=String(x[4]||10); if(!e.rest) e.rest=String(+x[5]||1.5); upd(); }); else fillAC(); }; inp.onchange=function(){ var a=at(inp.dataset.en); if(a.e.n!==inp.value){ a.e.n=inp.value; a.e.mu=''; saveDraft(); } }; });
   document.querySelectorAll('[data-pqa]').forEach(function(b){ b.onclick=function(){ var el=document.querySelector('[data-dl="'+b.dataset.pqa+'"]'); if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); var sec=el.closest('.day'); if(sec){ sec.classList.add('flash'); setTimeout(function(){ sec.classList.remove('flash'); },1600); } } }; });
@@ -516,5 +517,35 @@ function boot(){ render();
   call('dashboardBaseFoods').then(function(r){ (r||[]).forEach(function(f){ if(!S.foods.some(function(x){ return x[0]===f[0]; })) S.foods.push(f); }); FOODS_CACHE=null; if(S.M){ refreshMenu(S.M); render(); } }).catch(function(){});
   if(S.client){ loadMenuCtx(); loadProgCtx(); } }
 boot();
+
+/* ===== ניתוח גוף בשיחה (29.10.26, אביאל): תמונות + טופס הקליטה → אחוז שומן, חולשות, המלצות; ממשיכים לשאול; ובסוף "תוכנית מהשיחה" נכנסת לבונה ===== */
+var BC={};
+function bcState(){ var c=S.client; if(!BC[c]){ var st=lsg('coach_bc_'+c,null); BC[c]={msgs:(st&&st.msgs)||[],open:!!(st&&st.msgs&&st.msgs.length),imgs:[],draft:''}; } return BC[c]; }
+function bcSave(){ var b=bcState(); lss('coach_bc_'+S.client,{msgs:b.msgs.slice(-30)}); }
+function bcFmt(t){ return esc(t).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/^#+\s*(.+)$/gm,'<b>$1</b>').replace(/\n/g,'<br>'); }
+function bodyChatHtml(){ var b=bcState(), M=b.msgs;
+  return '<details class="card bchat" id="bcBox"'+(b.open?' open':'')+'><summary><b>ניתוח גוף בשיחה</b> <span class="muted">תמונות וטופס הקליטה → אחוז שומן, חולשות ותוכנית</span></summary>'+
+    '<div class="bcmsgs">'+(M.length?M.map(function(m){ return '<div class="bcm '+(m.r==='ai'?'ai':'me')+'">'+(m.r==='ai'?bcFmt(m.t):esc(m.t))+'</div>'; }).join(''):'<div class="muted">משתמש בתמונות האחרונות שהמתאמן/ת העלה/תה באפליקציה. אין עדיין? מעלים כאן 1-4 תמונות (חזית, גב, צד, רחב-גבי), והן נשמרות גם בתיקייה שלו/ה.</div>')+(b.busy?'<div class="bcm ai"><i>'+(b.busy==='prog'?'בונה תוכנית…':'מנתח…')+' (עד דקה)</i></div>':'')+'</div>'+
+    '<div class="bar"><label class="upl">העלאת תמונות<input type="file" id="bcImg" accept="image/*" multiple></label>'+(b.imgs.length?'<span class="muted">'+b.imgs.length+' תמונות יישלחו עם ההודעה הבאה</span>':'')+(M.length?'':'<button class="p" id="bcGo"'+(b.busy?' disabled':'')+'>ניתוח ראשוני</button>')+'</div>'+
+    (M.length?'<div class="bcin"><textarea id="bcQ" rows="2" placeholder="למשל: הוא רוצה 4 אימונים, יש לו כאב בכתף שמאל, תתמקד בגב רחב">'+esc(b.draft||'')+'</textarea><button class="p" id="bcSend"'+(b.busy?' disabled':'')+'>שליחה</button></div>'+
+      '<div class="bar"><button class="p" id="bcProg"'+(b.busy?' disabled':'')+'>בניית תוכנית מהשיחה ← לבונה</button><button class="g" id="bcReset">שיחה חדשה</button></div>':'')+'</details>'; }
+function bcResize(file,max){ return new Promise(function(ok,bad){ var fr=new FileReader(); fr.onload=function(){ var im=new Image(); im.onload=function(){ var k=Math.min(1,max/Math.max(im.width,im.height)), c=document.createElement('canvas'); c.width=Math.round(im.width*k); c.height=Math.round(im.height*k); c.getContext('2d').drawImage(im,0,0,c.width,c.height); ok(c.toDataURL('image/jpeg',0.82).split(',')[1]); }; im.onerror=bad; im.src=fr.result; }; fr.onerror=bad; fr.readAsDataURL(file); }); }
+function bcAsk(mode){ var b=bcState(), c0=S.client, imgs=b.imgs; b.busy=mode||'chat'; render();
+  call('dashboardBodyChat',c0,b.msgs,mode||'',mode==='prog'?S.ex.map(function(x){ return x[2]; }):[],imgs).then(function(r){ b.busy=''; b.imgs=[];
+    if(mode==='prog'){ var pr=r.prog||{}; if(!pr.days||!pr.days.length) throw new Error('התוכנית חזרה ריקה, נסו שוב');
+      var fit=function(n){ var x=S.ex.filter(function(z){ return z[2]===n; })[0]||searchEx(n)[0]; return x; };
+      S.P={split:pr.split||'',days:pr.days.map(function(d){ return {lbl:d.lbl||'',day:'',exercises:(d.exercises||[]).map(function(e){ var x=fit(String(e.n||'')); return {n:x?x[2]:String(e.n||''),mu:x?x[0]:'',s:String(e.s||3),r:String(e.r||'10'),rest:String(e.rest||1.5),inc:'',note:String(e.note||''),mode:''}; })}; }),notes:pr.notes||''};
+      b.msgs.push({r:'ai',t:'✓ התוכנית נכנסה לבונה'+(pr.split?' ('+pr.split+')':'')+'. '+(pr.notes||'')}); bcSave(); saveDraft(); render(); toast('התוכנית מהשיחה נכנסה לבונה. עוברים ובודקים'); return; }
+    b.msgs.push({r:'ai',t:r.t||''}); bcSave(); render(); })
+   .catch(function(e){ b.busy=''; render(); toast(e.message,1); }); }
+function wireBodyChat(){ var box=$('#bcBox'); if(!box) return; var b=bcState();
+  box.addEventListener('toggle',function(){ b.open=box.open; });
+  var fi=$('#bcImg'); if(fi) fi.onchange=function(){ var fs=[].slice.call(fi.files||[]).slice(0,4); if(!fs.length) return; Promise.all(fs.map(function(f){ return Promise.all([bcResize(f,1100),bcResize(f,300)]).then(function(a){ return {full:a[0],thumb:a[1]}; }); })).then(function(L){ b.imgs=L; b.open=true; render(); toast(L.length+' תמונות מוכנות'); }).catch(function(){ toast('לא הצלחתי לקרוא את התמונה',1); }); };
+  var g=$('#bcGo'); if(g) g.onclick=function(){ bcAsk(''); };
+  var q=$('#bcQ'); if(q) q.oninput=function(){ b.draft=q.value; };
+  var sd=$('#bcSend'); if(sd) sd.onclick=function(){ var t=String(($('#bcQ')||{}).value||'').trim(); if(!t) return; b.msgs.push({r:'me',t:t}); b.draft=''; bcSave(); bcAsk(''); };
+  var pg=$('#bcProg'); if(pg) pg.onclick=function(){ var n=0; (S.P&&S.P.days||[]).forEach(function(d){ n+=d.exercises.length; }); if(n&&pg.dataset.arm!=='1'){ pg.dataset.arm='1'; pg.textContent='התוכנית הנוכחית תוחלף. לחיצה נוספת לאישור'; return; } bcAsk('prog'); };
+  var rs=$('#bcReset'); if(rs) rs.onclick=function(){ if(rs.dataset.arm!=='1'){ rs.dataset.arm='1'; rs.textContent='למחוק את השיחה?'; return; } b.msgs=[]; b.draft=''; bcSave(); render(); }; }
+(function(){ var st=document.createElement('style'); st.textContent='.bchat summary{cursor:pointer;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.bchat[open] summary{margin-bottom:10px}.bcmsgs{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto;margin-bottom:10px}.bcm{padding:10px 12px;border-radius:12px;line-height:1.65;font-size:14.5px;max-width:92%}.bcm.ai{background:var(--soft,#f3f1ec);align-self:flex-start}.bcm.me{background:var(--blue,#1f5fbf);color:#fff;align-self:flex-end}.bcin{display:flex;gap:8px;margin:6px 0}.bcin textarea{flex:1;min-width:0;font:inherit;padding:8px 10px;border-radius:10px;border:1px solid var(--line,#ddd)}'; document.head.appendChild(st); })();
 </script>
 </body></html>
