@@ -204,7 +204,7 @@ nav.tabs .in{grid-template-columns:none!important;grid-auto-flow:column;grid-aut
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .cmp figure{margin:0;text-align:center;font-size:12px;color:var(--mute)}
 .sets{display:flex;flex-direction:column;gap:6px;margin-top:4px}
-.sets .sh,.setrow{display:grid;grid-template-columns:28px 1fr 1fr 58px 48px;gap:6px;align-items:center}
+.sets .sh,.setrow{display:grid;grid-template-columns:24px 1fr 1fr 86px 44px;gap:6px;align-items:center}.setrow select{font-size:13px!important;padding-inline:2px!important}
 .setrow select{font-family:inherit;font-size:16px;font-weight:800;padding:7px 2px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);text-align:center;text-align-last:center;width:100%;-webkit-appearance:none;appearance:none}
 .rirhelp{font-size:11px;color:var(--mute);margin:4px 2px 0}
 .sets .sh{font-size:11px;color:var(--mute);font-weight:700;text-align:center}
@@ -1314,14 +1314,14 @@ function renderTrain(){
       else if(ps.length) h+='<div class="last">בפעם הקודמת: '+ps.map(function(x){ return '<bdi dir="ltr">'+x.kg+'×'+x.reps+'</bdi>'; }).join(' · ')+'</div>';
       var gr=growthLine(L); if(gr) h+=gr;
       else h+='<div class="exnote">פעם ראשונה בתרגיל: בוחרים משקל שאפשר לעשות איתו את כל החזרות בטכניקה נקייה.</div>';
-      h+='<div class="sets"><div class="sh"><span>סט</span><span>ק״ג</span><span>חזרות</span><span>RIR</span><span></span></div>';
+      h+='<div class="sets"><div class="sh"><span>סט</span><span>ק״ג</span><span>חזרות</span><span>כמה קשה</span><span></span></div>';
       for(var k=0;k<Math.max(n,today.length);k++){
         var dn=today[k], pv=ps[k]||ps[ps.length-1], li=LASTIN[e.ex]||{};
         var kg=dn?dn.kg:(li.kg!=null?li.kg:(sg?sg.kg:(pv?pv.kg:''))), rp=dn?dn.reps:(li.reps!=null?li.reps:(sg?sg.reps:(R?R[1]:(pv?pv.reps:''))));
-        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal"'+(sg&&sg.up&&!dn?' class="upk"':'')+' value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select aria-label="כמה חזרות עוד יכולת לעשות בסט '+(k+1)+'"'+(dn?' disabled':'')+'>'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):''; return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+(o===''?'—':(o==='4'?'4+':o))+'</option>'; }).join('')+'</select>'+(dn?'<button type="button" class="sundo" aria-label="ביטול סט '+(k+1)+' שסומן">'+IC_CHECK+'</button>':'<button type="submit" aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button>')+'</form>';
+        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal"'+(sg&&sg.up&&!dn?' class="upk"':'')+' value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select aria-label="כמה חזרות עוד יכולת לעשות בסט '+(k+1)+'"'+(dn?' disabled':'')+'>'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):''; return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+({'':'איך היה?','0':'קשה ממש','1':'קשה','2':'מאתגר','3':'בינוני','4':'קל'})[o]+'</option>'; }).join('')+'</select>'+(dn?'<button type="button" class="sundo" aria-label="ביטול סט '+(k+1)+' שסומן">'+IC_CHECK+'</button>':'<button type="submit" aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button>')+'</form>';
       }
       h+='</div>';
-      if(!ls('aviel_rir_seen',0)&&!rirHelp&&(rirHelp=1)) h+='<div class="rirhelp">RIR = כמה חזרות עוד יכולת לעשות בסוף הסט (0 = כשל). לא חובה, אבל ככה ההמלצה מדויקת יותר</div>';
+      if(!ls('aviel_rir_seen',0)&&!rirHelp&&(rirHelp=1)) h+='<div class="rirhelp">"כמה קשה": קשה ממש = לא הייתה עוד חזרה, קשה = עוד 1, מאתגר = עוד 2, בינוני = עוד 3, קל = עוד 4 ומעלה. לא חובה, אבל ככה ההמלצה מדויקת יותר</div>';
     }
     h+='</div>';
   });
@@ -2397,7 +2397,7 @@ var HELP={
  intro:{t:'ככה זה עובד',l:['כל בוקר נשקלים פעם אחת. זה לוקח 10 שניות.','באימון רושמים משקל וחזרות בכל סט, והאפליקציה אומרת מתי לעלות במשקל.','באוכל מסמנים מה אכלת מהתפריט, או רושמים ביומן.','פעם בשבועיים, בסוף השבוע, ממלאים צ׳ק-אין קצר ואני מכוון אותך הלאה.','משהו לא ברור? לוחצים על סימן השאלה למעלה, או כותבים לי.']},
  home:{t:'המסך הראשי',l:['כאן רואים את היום והשבוע שלך במבט אחד.','נשקלים בבוקר, אחרי שירותים ולפני אוכל ושתייה.','מסמנים את ההרגלים היומיים ושומרים על הרצף.','הודעות ממני מופיעות כאן למעלה, כולל הודעות קוליות.','פעם בשבועיים ממלאים צ׳ק-אין, ואני מקבל אותו ישר.']},
  menu:{t:'התפריט',l:['בכל ארוחה בוחרים אפשרות אחת מהרשימה.','עוברים בין האפשרויות עם החצים, ומה שבחרת עולה ראשון בפעם הבאה.','לחיצה על אפשרות מסמנת אותה, ו״אכלתי״ סוגר את הארוחה.','הסדר גמיש. העיקר שהכל נאכל עד סוף היום.']},
- train:{t:'האימון',l:['בוחרים את האימון של היום למעלה.','בכל סט רושמים משקל וחזרות ולוחצים על הסימון.','RIR הוא כמה חזרות עוד יכולת לעשות. לא חובה, אבל זה מדייק את ההמלצה.','הגעת לחזרות המקסימליות בכל הסטים? בפעם הבאה עולים במשקל.','"חלופה" מחליפה תרגיל כשהמכשיר תפוס, ו"טכניקה" שולחת לי סרטון קצר ואני עונה בקולית.','מתחת לכל תרגיל יש סרטון שמראה איך עושים אותו.']},
+ train:{t:'האימון',l:['בוחרים את האימון של היום למעלה.','בכל סט רושמים משקל וחזרות ולוחצים על הסימון.','"כמה קשה": קשה ממש = לא הייתה עוד חזרה, קל = עוד 4 ומעלה. ככה האפליקציה יודעת מתי להעלות משקל.','הגעת לחזרות המקסימליות בכל הסטים? בפעם הבאה עולים במשקל.','"חלופה" מחליפה תרגיל כשהמכשיר תפוס, ו"טכניקה" שולחת לי סרטון קצר ואני עונה בקולית.','מתחת לכל תרגיל יש סרטון שמראה איך עושים אותו.']},
  food:{t:'יומן האוכל',l:['מחפשים מאכל או סורקים ברקוד, בוחרים כמות ולאיזו ארוחה.','הטבעת מראה כמה נשאר להיום מול היעד שלך.','"אחרונים" מוסיף בלחיצה אחת, ו"העתקת אתמול" חוסכת יום שלם של הקלדה.','מוצר שלא נמצא? מצלמים את התווית ואני מוסיף אותו למאגר.']},
  prog:{t:'ההתקדמות',l:['הגרף מחליק את התנודות היומיות ומראה את הכיוון האמיתי.','תמונות והיקפים מעדכנים פעם בחודש, באותו מקום ובאותה תאורה.','הכוח שלך מתעדכן לבד מכל אימון שרשמת.']}
 };
