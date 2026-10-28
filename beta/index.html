@@ -319,6 +319,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
 .sugg{background:var(--soft);border-color:var(--gold-d)}
 .toast{background:var(--cta);color:var(--cta-t);border-radius:14px;box-shadow:0 10px 30px -10px rgba(0,0,0,.35);font-weight:700}
 nav.tabs{background:var(--panel)!important;border-top:1px solid var(--line);box-shadow:none!important}
+html,body{overscroll-behavior-y:none}nav.tabs{-webkit-transform:translateZ(0);transform:translateZ(0);will-change:transform;z-index:50}
 nav.tabs button{position:relative;min-height:0;color:var(--mute);font-weight:700}
 nav.tabs button[aria-selected="true"]{color:var(--text)}
 nav.tabs button[aria-selected="true"]::before{content:"";position:absolute;top:0;left:calc(50% - 14px);width:28px;height:2px;border-radius:2px;background:var(--gold)}
@@ -2350,10 +2351,10 @@ function wireCardio(el){ if(!el) return; el.querySelectorAll('[data-cmin]').forE
   el.querySelectorAll('[data-cother]').forEach(function(b){ b.onclick=function(){ var box=b.closest('.cardio'); if(box.querySelector('.cin')) return; b.insertAdjacentHTML('afterend','<form class="cin"><input inputmode="numeric" placeholder="דקות" aria-label="דקות"><button type="submit" class="ghost sm">הוספה</button></form>'); var f=box.querySelector('.cin'); f.querySelector('input').focus(); f.onsubmit=function(ev){ ev.preventDefault(); var v=+f.querySelector('input').value; if(v>0&&v<=300) cardioLog(Math.round(v)); }; }; });
   el.querySelectorAll('[data-cdel]').forEach(function(x){ x.onclick=function(){ cardioLog(0,+x.dataset.cdel); }; }); }
 function renderCardio(){ ['home','train'].forEach(function(w){ var host=w==='home'?document.getElementById('wvCard'):document.getElementById('progBox'); if(!host) return; var old=document.querySelector('.cardio[data-where="'+w+'"]'); var h=cardioHtml(w); if(!h){ if(old) old.remove(); return; }
-  var tmp=document.createElement('div'); tmp.innerHTML=h; var n=tmp.firstChild; if(old) old.replaceWith(n); else if(w==='home') host.parentNode.insertBefore(n,host.nextSibling); else host.appendChild(n); wireCardio(n); }); }
+  var tmp=document.createElement('div'); tmp.innerHTML=h; var n=tmp.firstChild; var fin=w==='train'&&document.getElementById('finish'); if(old) old.replaceWith(n); else if(w==='home') host.parentNode.insertBefore(n,host.nextSibling); else if(fin&&fin.parentNode===host) host.insertBefore(n,fin); else host.appendChild(n); if(fin&&fin.parentNode===host&&n.nextSibling!==fin) host.insertBefore(n,fin); wireCardio(n); }); } /* באימון: לפני "סיימתי" — חלק מהאימון, לא אחריו (שני, 28.10) */
 var _rtCardio=renderTodayCard; renderTodayCard=function(){ _rtCardio.apply(this,arguments); try{ var w=cardioWeek(); if(w) renderCardio(); }catch(e){} };
 var _trCardio=renderTrain; renderTrain=function(){ var r=_trCardio.apply(this,arguments); try{ renderCardio(); }catch(e){} return r; };
-var _tiCardio=todayItems; todayItems=function(){ var it=_tiCardio.apply(this,arguments), w=cardioWeek(); if(w) it.push({k:'cd', t:w.cfg.type, s:w.tot+'/'+w.cfg.weekly+' דק׳ השבוע', done:w.tot>=w.cfg.weekly}); return it; };
+var _tiCardio=todayItems; todayItems=function(){ var it=_tiCardio.apply(this,arguments), w=cardioWeek(); if(w){ var td=w.today.reduce(function(a,x){ return a+(+x.min||0); },0); it.push({k:'cd', t:w.cfg.type+' היום', s:(td?'היום '+td+' דק׳ · ':'')+w.tot+'/'+w.cfg.weekly+' דק׳ השבוע', done:td>0||w.tot>=w.cfg.weekly}); } return it; }; /* תזכורת יומית: מסומן כשנעשה היום */
 (function(){ var st=document.createElement('style'); st.textContent='.cardio .wvbtn{display:flex;gap:8px}.cardio .wvbtn button:first-child{flex:1}.cardio .cin{display:flex;gap:6px;margin-top:8px}.cardio .cin input{flex:1;min-width:0}.cchip{display:inline-flex;gap:6px;align-items:center;padding:2px 10px;border-radius:99px;background:var(--panel2,#202026);margin-inline-end:4px}.cchip b{cursor:pointer;color:var(--mute,#9d9aa6)}#progBox .cardio{margin-top:12px}'; document.head.appendChild(st); })();
 </script>
 <script>
