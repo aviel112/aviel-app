@@ -2561,6 +2561,12 @@ function perfectStory(o){ var c=document.createElement('canvas'); c.width=1080; 
   x.fillStyle=G; x.font='800 48px '+sans; x.save(); x.direction='ltr'; x.fillText('@avielife1',W/2,1760); x.restore(); return c; }
 
 function perfShare(b){ var g=window.PERF_GOALS||[]; shareStory(b,{canvas:function(){ return perfectStory({goals:g}); }}); }
+
+/* ===== מסך מאמן — רק באפליקציה של אביאל (29.10.26): השרת שולח קישור רק לו ===== */
+var _renderCoachBtn=render; render=function(){ _renderCoachBtn.apply(this,arguments); try{ var u=D&&D.coach, el=document.getElementById('coachGo'); if(!u){ if(el) el.remove(); return; } if(el) return;
+  var home=document.querySelector('section[data-view="home"]')||document.querySelector('section[data-view]'); if(!home) return;
+  el=document.createElement('a'); el.id='coachGo'; el.href=u; el.target='_blank'; el.rel='noopener'; el.className='installbtn'; el.style.cssText='display:block;text-align:center;text-decoration:none;margin:0 0 12px'; el.textContent='מסך מאמן · ניהול המתאמנים ↗';
+  home.insertBefore(el,home.firstChild); }catch(e){} };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
