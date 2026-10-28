@@ -1498,13 +1498,15 @@ var _show0=show; show=function(t){ _show0.apply(this,arguments); if(t==='home') 
 var _renderTrainTC=renderTrain; renderTrain=function(){ _renderTrainTC.apply(this,arguments); renderTodayCard(); };
 
 /* ===== מסך סיום אימון: כמה הרמת, ולמה זה שווה ===== */
-var LIFTED=[{w:12000,n:'אוטובוס',p:'אוטובוסים'},{w:6000,n:'פיל',p:'פילים'},{w:2500,n:'טנדר',p:'טנדרים'},{w:1300,n:'מכונית',p:'מכוניות'},{w:500,n:'סוס',p:'סוסים'},{w:250,n:'פסנתר',p:'פסנתרים'},{w:100,n:'מקרר',p:'מקררים'},{w:35,n:'כלב גדול',p:'כלבים גדולים'}];
+var LIFTED=[{w:12000,n:'אוטובוס',p:'אוטובוסים',e:'🚌'},{w:6000,n:'פיל',p:'פילים',e:'🐘'},{w:2500,n:'טנדר',p:'טנדרים',e:'🛻'},{w:1300,n:'מכונית',p:'מכוניות',e:'🚗'},{w:500,n:'סוס',p:'סוסים',e:'🐎'},{w:250,n:'פסנתר',p:'פסנתרים',e:'🎹'},{w:100,n:'פנדה',p:'פנדות',e:'🐼'},{w:35,n:'כלב גדול',p:'כלבים גדולים',e:'🐕'}];
+/* תמונה של מה שהרימו (28.10.26, אביאל): האייקון של ההשוואה, כמה פעמים שהוא נכנס בנפח (עד 10) */
+function liftedPic(v){ var big=LIFTED.filter(function(o){ return v/o.w>=2; })[0], o=big&&v/big.w<12?big:LIFTED.filter(function(o){ return v/o.w>=1; })[0]; if(!o) return null; var n=Math.max(1,Math.min(10,Math.round(v/o.w))); return {e:o.e,n:n}; }
 function liftedLike(v){ var big=LIFTED.filter(function(o){ return v/o.w>=2; })[0]; if(big&&v/big.w<12) return liftedLike1(v,big); for(var i=0;i<LIFTED.length;i++){ var o=LIFTED[i], c=v/o.w; if(c>=1){ var r=c<10?Math.round(c*2)/2:Math.round(c); return r===1?o.n+' שלם':(String(r).replace('.5','.5')+' '+o.p); } } return ''; }
 function liftedLike1(v,o){ var c=v/o.w, r=c<10?Math.round(c*2)/2:Math.round(c); return r+' '+o.p; }
 function showFinish(day,sets,vol,prs,rdy){
   var like=liftedLike(vol), s=document.createElement('div'); s.className='sheet'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true'); s.setAttribute('aria-labelledby','fnT');
   s.innerHTML='<div class="sheet-in fin"><div class="label" id="fnT">אימון '+day+' הושלם</div><div class="fbig num">'+Math.round(vol).toLocaleString('he-IL')+'<small> ק״ג</small></div>'+
-    (like?'<div class="flike">הרמת היום בערך כמו <b>'+esc(like)+'</b></div>':'')+
+    (like?'<div class="flike">הרמת היום בערך כמו <b>'+esc(like)+'</b></div>'+(function(){ var pc=liftedPic(vol); return pc?'<div class="fpic" aria-hidden="true">'+new Array(pc.n+1).join(pc.e)+'</div>':''; })():'')+
     '<div class="fstats"><div><b class="num">'+sets+'</b><span>סטים</span></div><div><b class="num">'+prs+'</b><span>שיאים חדשים</span></div><div><b class="num">'+rdy+'</b><span>מוכנים להעלאה</span></div></div>'+
     (prs>0?'<div class="fpr">שיא חדש. שווה סטורי: לשתף ולתייג את <b dir="ltr">@avielife1</b>, ואני משתף בחזרה.</div>':'')+
     '<div class="wfeel" role="group" aria-label="איך היה האימון"><span>איך היה?</span>'+[[1,'קל מדי'],[2,'בדיוק'],[3,'קשה מדי']].map(function(o){ return '<button type="button" class="chip" data-wf="'+o[0]+'" aria-pressed="false">'+o[1]+'</button>'; }).join('')+'</div>'+
@@ -1524,17 +1526,17 @@ function storyCanvas(o){
   x.strokeStyle='rgba(214,176,102,.55)'; x.lineWidth=3; x.strokeRect(54,54,W-108,1920-108);
   x.direction='rtl'; x.textAlign='center'; x.textBaseline='alphabetic';
   var serif="'Frank Ruhl Libre', Georgia, serif", sans="'Assistant', Arial, sans-serif";
-  x.fillStyle=G; x.font='800 44px '+sans; x.save(); x.direction='ltr'; x.fillText('A V I E L',W/2,230); x.restore();
-  x.fillStyle=MU; x.font='600 36px '+sans; x.fillText('ליווי אישי',W/2,290);
+  x.fillStyle=G; x.font='800 46px '+sans; x.save(); x.direction='ltr'; x.fillText('A V I E L   A M I R A',W/2,200); x.restore();
+  x.fillStyle=IV; x.font='700 58px '+serif; x.fillText('אביאל עמירה',W/2,280); x.fillStyle=MU; x.font='600 32px '+sans; x.fillText('ליווי אישי · מתאמן איתך',W/2,330);
   x.fillStyle=G; x.fillRect(W/2-60,340,120,3);
   x.fillStyle=IV; x.font='700 92px '+serif; x.fillText('הרמתי היום',W/2,640);
   var num=Math.round(o.vol).toLocaleString('he-IL'); x.fillStyle=G; x.font='700 250px '+serif; x.save(); x.direction='ltr'; x.fillText(num,W/2,920); x.restore();
   x.fillStyle=IV; x.font='700 76px '+sans; x.fillText('ק״ג',W/2,1030);
-  if(o.like){ x.fillStyle=IV; x.font='600 64px '+sans; x.fillText('בערך כמו '+o.like,W/2,1200); }
-  x.fillStyle='rgba(214,176,102,.35)'; x.fillRect(180,1290,W-360,2);
-  x.fillStyle=MU; x.font='600 46px '+sans; x.fillText(o.sets+' סטים'+(o.prs?'  ·  '+o.prs+' שיאים חדשים':'')+'  ·  אימון '+o.day,W/2,1380);
-  var d=new Date(); x.fillStyle=MU; x.font='600 40px '+sans; x.save(); x.direction='ltr'; x.fillText(('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear(),W/2,1640); x.restore();
-  x.fillStyle=G; x.font='800 48px '+sans; x.save(); x.direction='ltr'; x.fillText('@avielife1',W/2,1720); x.restore();
+  if(o.like){ x.fillStyle=IV; x.font='600 60px '+sans; x.fillText('בערך כמו '+o.like,W/2,1130); var pc=liftedPic(o.vol); if(pc){ var per=Math.min(5,pc.n), sz=pc.n>5?96:130, rows=Math.ceil(pc.n/per); x.save(); x.font=sz+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; x.textAlign='center'; for(var k=0;k<pc.n;k++){ var row=Math.floor(k/per), inRow=Math.min(per,pc.n-row*per), col=k%per, gx=W/2+(col-(inRow-1)/2)*(sz+18); x.fillText(pc.e,gx,1150+sz+row*(sz+14)); } x.restore(); } }
+  x.fillStyle='rgba(214,176,102,.35)'; x.fillRect(180,1500,W-360,2);
+  x.fillStyle=MU; x.font='600 46px '+sans; x.fillText(o.sets+' סטים'+(o.prs?'  ·  '+o.prs+' שיאים חדשים':'')+'  ·  אימון '+o.day,W/2,1580);
+  var d=new Date(); x.fillStyle=MU; x.font='600 40px '+sans; x.save(); x.direction='ltr'; x.fillText(('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear(),W/2,1680); x.restore();
+  x.fillStyle=G; x.font='800 48px '+sans; x.save(); x.direction='ltr'; x.fillText('@avielife1',W/2,1760); x.restore();
   return c;
 }
 function shareStory(btn,o){
@@ -2457,6 +2459,7 @@ function mChart(m){ var tb=document.getElementById('mTable'); if(!tb) return; va
   tb.insertAdjacentHTML('afterend',h); document.querySelectorAll('#mChart [data-mch]').forEach(function(b){ b.onclick=function(){ MCH_SEL=b.dataset.mch; mChart(m); }; }); }
 (function(){ var st=document.createElement('style'); st.textContent='.mchips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}.mchips button{flex:none;min-height:0;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--mute);font-size:13px;font-weight:700}.mchips button.on{background:var(--gold);border-color:var(--gold);color:#16130c}'; document.head.appendChild(st); })();
 var _drawMeasCh=drawMeasures; drawMeasures=function(m){ var r=_drawMeasCh.apply(this,arguments); try{ mChart(m); }catch(e){} return r; };
+(function(){ var st=document.createElement('style'); st.textContent='.fpic{font-size:34px;letter-spacing:4px;text-align:center;margin:6px 0 10px;line-height:1.3}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
