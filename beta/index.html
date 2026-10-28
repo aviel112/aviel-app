@@ -1322,7 +1322,7 @@ function renderTrain(){
       for(var k=0;k<Math.max(n,today.length);k++){
         var dn=today[k], pv=ps[k]||ps[ps.length-1], li=LASTIN[e.ex]||{};
         var kg=dn?dn.kg:(li.kg!=null?li.kg:(sg?sg.kg:(pv?pv.kg:''))), rp=dn?dn.reps:(li.reps!=null?li.reps:(sg?sg.reps:(R?R[1]:(pv?pv.reps:''))));
-        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal"'+(sg&&sg.up&&!dn?' class="upk"':'')+' value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select aria-label="כמה חזרות עוד יכולת לעשות בסט '+(k+1)+'"'+(dn?' disabled':'')+'>'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):''; return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+({'':'איך היה?','0':'קשה ממש','1':'קשה','2':'מאתגר','3':'בינוני','4':'קל'})[o]+'</option>'; }).join('')+'</select>'+(dn?'<button type="button" class="sundo" aria-label="ביטול סט '+(k+1)+' שסומן">'+IC_CHECK+'</button>':'<button type="submit" aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button>')+'</form>';
+        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal"'+(sg&&sg.up&&!dn?' class="upk"':'')+' value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select data-rk="'+k+'" aria-label="כמה קשה היה סט '+(k+1)+'">'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):(RIRD[e.ex+'|'+k]!=null?String(RIRD[e.ex+'|'+k]):''); return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+({'':'איך היה?','0':'קשה ממש','1':'קשה','2':'מאתגר','3':'בינוני','4':'קל'})[o]+'</option>'; }).join('')+'</select>'+(dn?'<button type="button" class="sundo" aria-label="ביטול סט '+(k+1)+' שסומן">'+IC_CHECK+'</button>':'<button type="submit" aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button>')+'</form>';
       }
       h+='</div>';
       if(!ls('aviel_rir_seen',0)&&!rirHelp&&(rirHelp=1)) h+='<div class="rirhelp">"כמה קשה": קשה ממש = לא הייתה עוד חזרה, קשה = עוד 1, מאתגר = עוד 2, בינוני = עוד 3, קל = עוד 4 ומעלה. לא חובה, אבל ככה ההמלצה מדויקת יותר</div>';
@@ -1344,7 +1344,7 @@ function renderTrain(){
     // המשקל עובר מיד לסטים הבאים שעוד לא בוצעו — בלי לחכות לשמירה
     var nx=f.nextElementSibling; while(nx&&nx.classList.contains('setrow')){ if(!nx.classList.contains('ok')){ var ni=nx.querySelectorAll('input'); if(ni[0]&&!ni[0].value) ni[0].value=kg; } nx=nx.nextElementSibling; }
     if(rir!=null) lsSet('aviel_rir_seen',1);
-    ins.forEach(function(x){ x.disabled=true; }); if(rs) rs.disabled=true; restStart(restMin(e.rest));
+    ins.forEach(function(x){ x.disabled=true; }); restStart(restMin(e.rest)); /* "כמה קשה" נשאר פתוח: אפשר לבחור גם אחרי הסימון */
     api('lift',{ex:e.ex,mu:e.mu,kg:kg,reps:reps,rir:rir}).then(function(r){ P.lifts=normLifts(r); LASTIN[e.ex]={kg:kg,reps:reps};
       var R2=/כשל/.test(e.r)?null:rng(e.r), L2=P.lifts&&P.lifts[e.ex], td=L2?L2.hist.filter(function(x){ return x.d===TODAY&&x.kg===kg; }):[], ns=parseInt(e.s,10)||0;
       var done=R2&&ns&&td.length>=ns&&td.every(function(x){ return x.reps>=R2[1]; });
@@ -1354,7 +1354,12 @@ function renderTrain(){
       drawStrength(); })
     .catch(function(er){ toast(er.message||'לא נשמר',1); btn.disabled=false; f.classList.remove('ok'); ins.forEach(function(x){ x.disabled=false; }); if(rs) rs.disabled=false; });
   }; });
+  /* "כמה קשה" (28.10.26): בחירה נזכרת גם כשעוברים תרגיל, ובסט שכבר נרשם היא נשמרת מיד בשרת */
+  box.querySelectorAll('select[data-rk]').forEach(function(sl){ sl.onchange=function(){ var f=sl.closest('form.setrow'), e=d.ex[+f.dataset.i], k=+sl.dataset.rk, v=sl.value===''?null:+sl.value; RIRD[e.ex+'|'+k]=v; if(v!=null) lsSet('aviel_rir_seen',1);
+    if(!f.classList.contains('ok')) return; var L=P.lifts&&P.lifts[e.ex], td=L?L.hist.filter(function(x){ return x.d===TODAY; }):[]; if(td[k]) td[k].rir=v;
+    api('liftrir',{ex:e.ex,d:TODAY,idx:k,rir:v==null?'':v}).then(function(r){ if(r) P.lifts=normLifts(r); toast('נשמר'); }).catch(function(er){ toast(er.message||'לא נשמר',1); }); }; });
 }
+var RIRD={};
 /* תפריט: לוחצים על האפשרות שבחרת — ההחלפה נשמרת להיום */
 var _renderMenuBase=renderMenu;
 var MEAL_RE=/ארוח|בוקר|צהר|ערב|ביניים|נשנוש|אימון|לילה|שייק/;
