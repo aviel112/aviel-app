@@ -641,7 +641,7 @@ input,select,textarea{font-size:16px}
       </div>
       <div class="card" id="meetCard" hidden><div class="meet"><div class="cal"><i id="calM"></i><b class="num" id="calD"></b></div><div><div class="label">פגישת סיכום חודשית</div><div style="font-weight:700" id="meetTxt"></div></div></div></div>
       <div class="card" id="checkin">
-        <div class="row"><span class="label">צ׳ק-אין שבועי</span><span class="sub" id="ciState">2 דקות</span></div>
+        <div class="row"><span class="label">צ׳ק-אין</span><span class="sub" id="ciState">2 דקות</span></div>
         <form id="ciForm" class="ci">
           <div class="q"><span>איך האנרגיה השבוע?</span><div class="scale" data-q="energy"></div></div>
           <div class="q"><span>רעב במהלך היום</span><div class="scale" data-q="hunger"></div></div>
@@ -1405,7 +1405,7 @@ function todayItems(){
     it.push({k:'t', t:finToday?'האימון של היום הושלם':setsToday?'אימון בתהליך':'האימון הבא: אימון '+(nx+1), s:setsToday&&!finToday?'בסוף לוחצים "סיימתי" כדי שייספר':wkDone+' מתוך '+days.length+' השבוע', done:finToday}); }
   var ate=(ls('aviel_ate_'+TODAY,[])||[]).length, fd=(typeof FDAY!=='undefined'&&FDAY&&FDAY.d===TODAY&&FDAY.items)?FDAY.items.length:0;
   it.push({k:'f', t:'אוכל', s:ate?ate+' ארוחות סומנו':fd?fd+' רישומים ביומן':'מסמנים מה אכלת', done:!!(ate||fd)});
-  it.push({k:'c', t:'צ׳ק-אין שבועי', s:d.checkinDone?'נשלח השבוע':'2 דקות, פעם בשבוע', done:!!d.checkinDone});
+  it.push({k:'c', t:'צ׳ק-אין', s:d.checkinDone?'נשלח':'2 דקות, פעם בשבועיים', done:!!d.checkinDone});
   var hb=habitsToday(); if(hb.total) it.push({k:'h', t:'הרגלים', s:hb.done+' מתוך '+hb.total+(hb.done===hb.total?' · יום מלא':''), done:hb.done===hb.total});
   var wv=waterNow(); it.push({k:'wa', t:'מים', s:litres(wv.ml)+' מתוך '+litres(wv.goal)+' ליטר', done:wv.ml>=wv.goal});
   return it;
@@ -1766,7 +1766,7 @@ var FIRST_WEEK=[
  ['הרגלים יומיים','מסמנים בבית את ההרגלים: מים, שינה, חלבון, צעדים. כל סימון בונה רצף.'],
  ['צעדים','רושמים בערב את הצעדים של היום. רואים את עצמך באתגר השבועי.'],
  ['שואלים את אביאל','משהו לא ברור בתפריט או בתרגיל? "טכניקה" בכרטיס התרגיל שולחת לי סרטון, ואני עונה בקול.'],
- ['צ׳ק-אין ראשון','בסוף השבוע ממלאים צ׳ק-אין קצר. ככה אני מכוון אותך לשבוע הבא. סיימת שבוע ראשון, כל הכבוד.']];
+ ['צ׳ק-אין ראשון','פעם בשבועיים, בסוף השבוע, ממלאים צ׳ק-אין קצר. ככה אני מכוון אותך הלאה. סיימת שבוע ראשון, כל הכבוד.']];
 function firstWeekHtml(){ if(!D||D.weekNo==null||D.weekNo>1||D.lastKg!=null&&D.firstKg!=null&&(D.week||[]).length&&D.weekNo>0) { if(!D||D.weekNo==null||D.weekNo>1) return ''; } var f=ls('aviel_first_day',''); if(!f){ f=TODAY; lsSet('aviel_first_day',f); }
   var n=Math.round((new Date(TODAY+'T12:00:00')-new Date(f+'T12:00:00'))/864e5); if(n<0||n>6) return ''; if(ls('aviel_fw_seen','')===TODAY) return '';
   var it=FIRST_WEEK[n]; return '<div class="news fw"><div class="row"><b>שבוע ראשון · יום '+(n+1)+' מתוך 7</b><button type="button" class="linkbtn" onclick="lsSet(\'aviel_fw_seen\',TODAY); renderExtras(document.getElementById(\'todayCard\'));">בוצע</button></div><p><b>'+esc(it[0])+'.</b> '+esc(it[1])+'</p><div class="tdbar"><i style="width:'+Math.round((n+1)/7*100)+'%"></i></div></div>'; }
@@ -2270,7 +2270,7 @@ function renderGuides(){ var box=document.getElementById('gdBox'); if(!box) retu
 var _showGd=show; show=function(v){ _showGd.apply(this,arguments); if(v==='guides') renderGuides(); };
 (function(){ var st=document.createElement('style'); st.textContent='.gdc{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}.gdc .gdn{flex:0 0 34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--panel2,#202026);color:var(--gold,#d4ac5b);font-weight:800}.gdc .gdt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.gdc small{color:var(--mute,#9d9aa6)}.gdc .gdo{color:var(--gold,#d4ac5b);font-weight:700;font-size:14px}.board .bbar{display:block;height:5px;margin-top:5px;border-radius:9px;background:var(--line,#2c2c34);overflow:hidden}.board .bbar i{display:block;height:100%;background:var(--gold,#d4ac5b);border-radius:9px}.board .bname{display:flex;flex-direction:column}.board .bgap{text-align:center;color:var(--mute,#9d9aa6);line-height:1}'; document.head.appendChild(st); })();
 /* ===== צ׳ק-אין שבועי פתוח רק משבת בערב (17:00) עד ראשון בערב (21:00) — אביאל, 28.10.26 ===== */
-function ciOpen(){ var d=new Date(), w=d.getDay(), h=d.getHours(); return (w===6&&h>=17)||(w===0&&h<21); }
+function ciOpen(){ var d=new Date(), w=d.getDay(), h=d.getHours(); if(D&&D.ciDue===false) return false; return (w===6&&h>=17)||(w===0&&h<21); } /* כל שבועיים: השרת קובע אם הסופ״ש הזה בתור */
 var _renderCi=render; render=function(){ _renderCi.apply(this,arguments); try{ var f=document.getElementById('ciForm'), card=f&&f.closest('.card'); if(card) card.hidden=!ciOpen()&&!(D&&D.checkinDone&&new Date().getDay()===0); }catch(e){} };
 var _todayItemsCi=todayItems; todayItems=function(){ var it=_todayItemsCi.apply(this,arguments); return ciOpen()?it:it.filter(function(x){ return x.k!=='c'; }); };
 
