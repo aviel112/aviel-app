@@ -242,12 +242,21 @@ main>section[data-v="clients"]:not([hidden]){grid-template-columns:repeat(3,minm
   <section data-v="leads" hidden></section>
   <div class="foot adv"><a href="https://script.google.com/macros/s/AKfycbxSkxJJ1ODs067IOfDkuosXzKX-pVi2W7uTcWKAS-7YFuh8PW9mrjSS8bNC4SaiRTkP/exec?page=dashboard" target="_top">לדשבורד המלא</a></div>
 </main>
+<script>/* 29.10.26: כפתור בולט בכותרת להתקנת אפליקציית המאמן בטלפון (קודם היה קבור בלשונית המשימות) */
+function coachAppBtn(){ try{ if(!CK||MODE||location.hostname.indexOf('github.io')>=0||document.getElementById('coachApp')) return; var my=document.getElementById('myApp'); if(!my) return;
+  var a=document.createElement('a'); a.id='coachApp'; a.className='btn p'; a.target='_blank'; a.rel='noopener'; a.href='https://aviel112.github.io/aviel-app/coach/?k='+encodeURIComponent(CK); a.textContent='📲 אפליקציית המאמן לטלפון'; a.style.cssText='display:inline-block;margin:8px 0 0 8px;padding:7px 12px;font-size:13px;font-weight:800;text-decoration:none';
+  my.parentNode.insertBefore(a,my); }catch(e){} }</script>
 <nav role="tablist">
   <button role="tab" data-t="onb" aria-selected="false">קליטה<span class="bd" id="bOnb" hidden></span></button>
   <button role="tab" data-t="today" aria-selected="true">משימות<span class="bd" id="bToday" hidden></span></button>
   <button role="tab" data-t="clients" aria-selected="false">מתאמנים</button>
   <button role="tab" data-t="leads" aria-selected="false">לידים<span class="bd" id="bLeads" hidden></span></button>
+  <a class="navApp" href="https://aviel112.github.io/aviel-app/aviel-2280" target="_blank" rel="noopener">האפליקציה שלי</a>
 </nav>
+<style>/* קיצור קבוע לאפליקציית המתאמן של אביאל (29.10.26) — בתפריט, לא רק בכותרת */
+nav a.navApp{flex:1;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;font-weight:800;color:var(--gold,#c9a24a);border-radius:12px;padding:8px 4px}
+@media (min-width:900px){ nav a.navApp{flex:none;justify-content:flex-start;padding:12px 14px;font-size:15px;margin-top:auto;border:1px solid currentColor} }
+body.w nav a.navApp, body.w #myApp{display:none!important}</style>
 <div class="toast" id="toast" hidden></div>
 <script>
 if(!window.__AUTH){ window.addEventListener('error',function(e){ e.preventDefault(); }); /* בלי מפתח: עוצרים את הדשבורד בשקט (בלי שגיאות בקונסול מהסקריפטים שאחרי) */ document.body.innerHTML='<div style="max-width:420px;margin:18vh auto;padding:24px;text-align:center;font-family:Heebo,Arial,sans-serif"><h1 style="font-size:22px">AVIEL ניהול</h1><p style="color:#667085;line-height:1.6">פותחים פעם אחת את הקישור האישי (מהדשבורד הישן, או מאביאל), ומאז הטלפון זוכר.</p></div>'; throw new Error('no key'); }
@@ -1072,7 +1081,7 @@ loadOnb(); reloadWap(); loadSys(); setInterval(loadSys,5*60000); setTimeout(load
     if(keep.length) document.querySelectorAll('section[data-v="today"] details').forEach(function(d){ if(!d.open&&keep.indexOf(key(d))>=0) d.open=true; }); }; })();
 google.script.run.withSuccessHandler(function(d){ TM=d||{}; swrSave('tm',TM); renderClients(); }).withFailureHandler(function(){}).dashboardTrackModes();
 google.script.run.withSuccessHandler(function(d){ L=d; swrSave('list',d); renderAll(); stampUp(); }).withFailureHandler(function(e){ $('section[data-v="today"]').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }).dashboardList();
-google.script.run.withSuccessHandler(function(k){ CK=k||''; renderToday(); }).withFailureHandler(function(){}).dashboardCoachKey();
+google.script.run.withSuccessHandler(function(k){ CK=k||''; renderToday(); coachAppBtn(); }).withFailureHandler(function(){}).dashboardCoachKey();
 google.script.run.withSuccessHandler(function(w){ WV=w; renderToday(); }).withFailureHandler(function(){}).dashboardWeeklyVoice();
 google.script.run.withSuccessHandler(function(l){ SL=l||[]; renderToday(); }).withFailureHandler(function(){ SL=[]; }).dashboardSuppLinks(null);
 google.script.run.withSuccessHandler(function(l){ SP=l||[]; }).withFailureHandler(function(){ SP=[]; }).dashboardSuppList();

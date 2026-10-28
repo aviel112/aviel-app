@@ -818,7 +818,10 @@ function sugg(e,L){
 var LASTIN={}, RT=null;
 function normLifts(o){ o=o||{}; Object.keys(o).forEach(function(k){ var x=o[k]; if(x&&!x.hist){ var e={d:'',kg:Number(x.kg)||0,reps:Number(x.reps)||0}; o[k]={first:e,best:e.kg,hist:[e]}; } }); return o; }
 /* צפצופים בסוף המנוחה (28.10.26, אביאל): טון בכל אחת מ-3 השניות האחרונות וטון ארוך בסוף, כל עוד האפליקציה פתוחה */
-var ACX=null; function beep(f,ms){ try{ if(!ACX) return; var o=ACX.createOscillator(), g=ACX.createGain(), t=ACX.currentTime; o.type='sine'; o.frequency.value=f; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.35,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+ms/1000); o.connect(g); g.connect(ACX.destination); o.start(t); o.stop(t+ms/1000+0.05); }catch(e){} }
+var ACX=null; /* צליל פעמון רך (29.10.26, אביאל: "משהו יותר טוב" מהצפצוף): צליל יסוד + עליונים שדועכים, כמו פעמון/מרימבה */
+function bell(f,at,dur,vol){ try{ if(!ACX) return; var t=ACX.currentTime+(at||0), out=ACX.createGain(); out.gain.value=vol||0.3; out.connect(ACX.destination);
+  [[1,1],[2.01,0.35],[3.98,0.12]].forEach(function(h){ var o=ACX.createOscillator(), g=ACX.createGain(), d=dur/(h[0]>1?h[0]*0.8:1); o.type='sine'; o.frequency.value=f*h[0]; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(h[1],t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+d); o.connect(g); g.connect(out); o.start(t); o.stop(t+d+0.05); }); }catch(e){} }
+function beep(f,ms){ if(f<1000) bell(1047,0,0.35,0.18); /* ספירה: טיק עדין */ else { bell(784,0,1.1,0.26); bell(988,0.13,1.1,0.26); bell(1319,0.26,1.6,0.3); } /* סוף: שלושה תווים עולים */ }
 function restStart(min){
   var sec=Math.round(min*60); if(!(sec>0)) return; clearInterval(RT); var end=Date.now()+sec*1000, lastB=-1; $('#rest').hidden=false;
   try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){} /* אייפון: מנגן גם כשהטלפון על שקט */
@@ -1385,7 +1388,7 @@ function renderTrain(){
     // המשקל עובר מיד לסטים הבאים שעוד לא בוצעו — בלי לחכות לשמירה
     var nx=f.nextElementSibling; while(nx&&nx.classList.contains('setrow')){ if(!nx.classList.contains('ok')){ var ni=nx.querySelectorAll('input'); if(ni[0]&&!ni[0].value) ni[0].value=kg; } nx=nx.nextElementSibling; }
     if(rir!=null) lsSet('aviel_rir_seen',1);
-    ins.forEach(function(x){ x.disabled=true; }); restStart(restMin(e.rest)); /* "כמה קשה" נשאר פתוח: אפשר לבחור גם אחרי הסימון */
+    ins.forEach(function(x){ x.disabled=true; }); restStart(restMin(e.rest)); restNext(f,d,kg); /* "כמה קשה" נשאר פתוח: אפשר לבחור גם אחרי הסימון */
     api('lift',{ex:e.ex,mu:e.mu,kg:kg,reps:reps,rir:rir}).then(function(r){ P.lifts=normLifts(r); LASTIN[e.ex]={kg:kg,reps:reps};
       var R2=/כשל/.test(e.r)?null:rng(e.r), L2=P.lifts&&P.lifts[e.ex], td=L2?L2.hist.filter(function(x){ return x.d===TODAY&&x.kg===kg; }):[], ns=parseInt(e.s,10)||0;
       var done=R2&&ns&&td.length>=ns&&td.every(function(x){ return x.reps>=R2[1]; });
@@ -2330,8 +2333,8 @@ var _renderPL=render; render=function(){ _renderPL.apply(this,arguments); try{ i
 /* ===== לשונית המדריכים (28.10.26) ===== */
 function renderGuides(){ var box=document.getElementById('gdBox'); if(!box) return; if(GUIDES==null){ guidesHtml(); return; }
   if(!GUIDES.length){ box.innerHTML='<div class="card"><div class="sub">המדריכים יעלו לכאן בקרוב.</div></div>'; return; }
-  var tp=function(g){ var x=(g.t||'')+' '+(g.d||''); return /מתכונ|ארוח|בישול/.test(x)?'מתכונים':/תוסף|קריאטין|ויטמין/.test(x)?'תוספים':/אימון|ידיים|בטן|גב|שריר|כוח/.test(x)?'אימון':/סופר|קני|נקניק|חלבון|מזונ|קלורי|תזונ|אוכל|שבת|חג|כיפור|טסים|חופש/.test(x)?'תזונה':'כללי'; };
-  var T=['הכל'].concat(['תזונה','אימון','תוספים','מתכונים','כללי'].filter(function(k){ return GUIDES.some(function(g){ return tp(g)===k; }); }));
+  var tp=function(g){ var x=(g.t||'')+' '+(g.d||''); return /מתכונ|בישול/.test(x)?'מתכונים':/תוסף|תוספי|קריאטין|ויטמין/.test(x)?'תוספים':/פסח|מימונה|חנוכה|כיפור|העצמאות|שבת|שישי|טסים|חופש|אלכוהול|יציאות|בחוץ/.test(x)?'חגים ויציאות':/אימון|ידיים|בטן|גב|חזה|רגליים|ישבן|שריר|כוח|מסה|פיק|תחרות/.test(x)?'אימון':/סופר|עגלה|עגלת|קני|נקניק|מעדני|חלבון|מזונ|קלורי|תזונ|אוכל|נשנוש|ארוח/.test(x)?'תזונה':'אורח חיים'; }; /* 29.10.26: 40 מדריכים → קטגוריות */
+  var T=['הכל'].concat(['תזונה','אימון','חגים ויציאות','תוספים','מתכונים','אורח חיים'].filter(function(k){ return GUIDES.some(function(g){ return tp(g)===k; }); }));
   var gid=function(u){ var m=String(u||'').match(/\/d\/([\w-]{20,})|[?&]id=([\w-]{20,})/); return m?(m[1]||m[2]):''; };
   box.innerHTML='<input type="search" id="gdQ" class="gdq" placeholder="חיפוש מדריך…" aria-label="חיפוש מדריך"><div class="gdt2">'+T.map(function(k,i){ return '<button type="button" data-gt="'+k+'" class="'+(i?'':'on')+'">'+k+'</button>'; }).join('')+'</div><div class="gdgrid" id="gdGrid"></div>';
   var cur='הכל', draw=function(){ var q=String($('#gdQ').value||'').trim(), L=GUIDES.filter(function(g){ return (cur==='הכל'||tp(g)===cur)&&(!q||((g.t||'')+' '+(g.d||'')).indexOf(q)>=0); });
@@ -2512,6 +2515,16 @@ function vReview(r){ var L=(r&&r.items)||[]; if(!L.length){ vSheet('<h2>לא ז�
 (function(){ var sc=document.getElementById('fScan'); if(!sc||document.getElementById('fMic')) return; var b=document.createElement('button'); b.type='button'; b.className='ghost'; b.id='fMic'; b.setAttribute('aria-label','הקלטה של מה שאכלתי'); b.title='הקלטה של מה שאכלתי';
   b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'; b.onclick=vStart; sc.parentNode.insertBefore(b,sc);
   var st=document.createElement('style'); st.textContent='.vsh h2{margin:0 0 6px}.vtime{font-size:40px;text-align:center;margin:16px 0;color:var(--gold)}.vrows{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow-y:auto}.vrow{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px}.vrow.off{opacity:.45}.sheet .vsh .vrow button.vck{width:32px!important;height:32px!important;min-height:0!important;margin:0!important;padding:0!important;border-radius:50%!important;border:1.5px solid var(--gold)!important;background:none!important;color:var(--gold)!important;font-weight:800;flex:none;box-shadow:none!important}.sheet .vsh .vrow button.vck[aria-pressed=true]{background:var(--gold)!important;color:#16130c!important}.sheet .vsh .vrow button.vfix{width:auto!important;margin:0!important;padding:4px!important;min-height:0!important;background:none!important;border:0!important;color:var(--gold)!important;font-size:12px!important;flex:none;box-shadow:none!important}.sheet .vsh .vrow input{width:56px;margin:0}.sheet .vsh .vtx input{width:100%}.vtx{flex:1;min-width:0;display:flex;flex-direction:column}.vtx small{color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vtx input{margin-top:4px}.vg{display:flex;align-items:center;gap:3px;font-size:12px;color:var(--mute)}.vg input{width:56px;padding:6px;text-align:center}.vk{min-width:36px;text-align:center;font-weight:700}.vfix{font-size:12px}'; document.head.appendChild(st); })();
+
+/* מה הבא במנוחה (29.10.26): סט נוסף באותו תרגיל, או התרגיל הבא עם המשקל מהפעם הקודמת — ניגשים מוכנים */
+function restNext(f,d,kg){ try{ var r=document.getElementById('rest'); if(!r) return; var n=document.getElementById('restN'); if(!n){ n=document.createElement('small'); n.id='restN'; r.insertBefore(n,document.getElementById('restX')); }
+  var more=false, x=f.nextElementSibling; while(x&&x.classList.contains('setrow')){ if(!x.classList.contains('ok')){ more=true; break; } x=x.nextElementSibling; }
+  var t='';
+  if(more) t='הבא: עוד סט · '+kg+' ק״ג';
+  else { var i=+f.dataset.i, ne=null; for(var j=i+1;j<(d.ex||[]).length;j++){ ne=d.ex[j]; break; }
+    if(ne){ var L=P.lifts&&P.lifts[ne.ex], h=L&&L.hist&&L.hist.length?L.hist[L.hist.length-1]:null; t='הבא: '+ne.ex+(h&&h.kg?' · בפעם הקודמת '+h.kg+' ק״ג × '+h.reps:''); } else t='סט אחרון באימון. עוד רגע מסיימים'; }
+  n.textContent=t; }catch(e){} }
+(function(){ var st=document.createElement('style'); st.textContent='#rest{flex-wrap:wrap}#restN{flex-basis:100%;order:3;font-size:13px;color:var(--mute,#9d9aa6);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
