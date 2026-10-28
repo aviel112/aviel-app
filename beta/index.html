@@ -1550,7 +1550,7 @@ function storyCanvas(o){
 function shareStory(btn,o){
   btn.disabled=true; var old=btn.textContent; btn.textContent='מכין תמונה...';
   var ready=(document.fonts&&document.fonts.load)?Promise.all([document.fonts.load("700 100px 'Frank Ruhl Libre'"),document.fonts.load("800 40px 'Assistant'"),document.fonts.load("600 40px 'Assistant'")]).catch(function(){}):Promise.resolve();
-  ready.then(function(){ var c=storyCanvas(o); c.toBlob(function(b){ btn.disabled=false; btn.textContent=old; if(!b){ toast('לא הצלחנו ליצור תמונה',1); return; }
+  ready.then(function(){ var c=o&&o.canvas?o.canvas():storyCanvas(o); c.toBlob(function(b){ btn.disabled=false; btn.textContent=old; if(!b){ toast('לא הצלחנו ליצור תמונה',1); return; }
     var f; try{ f=new File([b],'aviel-workout.png',{type:'image/png'}); }catch(e){}
     if(f&&navigator.canShare&&navigator.canShare({files:[f]})){ navigator.share({files:[f]}).catch(function(){}); return; }
     var u=URL.createObjectURL(b), v=document.createElement('div'); v.className='sheet'; v.setAttribute('role','dialog'); v.setAttribute('aria-modal','true'); v.setAttribute('aria-label','תמונה לסטורי');
@@ -1683,7 +1683,7 @@ function recapHtml(){ var d=D||{}, wk=d.week||[], keys=weekKeys(), ws=weekStart(
   if(!days&&!weighs&&!fdays&&!wv) return '';
   var done=goals.filter(function(g){ return g.n>=g.g; }).length, left=7-keys.length;
   return '<div class="recap"><div class="row"><b>היעדים של השבוע</b><small>'+(left>0?'עוד '+left+' ימים':'היום האחרון')+'</small></div><div class="goals">'+goals.map(function(g){ var pc=Math.min(100,Math.round(g.n/g.g*100)), ok=g.n>=g.g; return '<div class="goal'+(ok?' ok':'')+'"><div class="row"><span>'+g.t+'</span><b class="num">'+g.n+'/'+g.g+'</b></div><div class="tdbar"><i style="width:'+pc+'%"></i></div></div>'; }).join('')+'</div>'+
-    (done===goals.length?'<div class="rbest">סגרת את כל היעדים של השבוע. ככה נראית התמדה.</div>':best?'<div class="rbest">שיא חדש השבוע: <b>'+esc(best.ex)+'</b> · '+best.kg+' ק״ג</div>':'')+(sAvg!=null?'<div class="swaphint">צעדים: '+sAvg.toLocaleString('he-IL')+' ליום בממוצע</div>':'')+'</div>'; }
+    (done===goals.length?(window.PERF_GOALS=goals,'<div class="rbest">סגרת את כל היעדים של השבוע. ככה נראית התמדה.</div><button type="button" class="installbtn" id="perfShare" onclick="perfShare(this)">שבוע מושלם · תמונה לסטורי</button>'):best?'<div class="rbest">שיא חדש השבוע: <b>'+esc(best.ex)+'</b> · '+best.kg+' ק״ג</div>':'')+(sAvg!=null?'<div class="swaphint">צעדים: '+sAvg.toLocaleString('he-IL')+' ליום בממוצע</div>':'')+'</div>'; }
 /* ===== אתגר צעדים שבועי: מי הולך הכי הרבה (שמות פרטיים בלבד) ===== */
 var BOARD=null, BOARD_TRIED=false;
 function boardHtml(){ if(!BOARD||!BOARD.list||!BOARD.list.length) return ''; var L=BOARD.list, n=L.length, rk=BOARD.rank, mine=BOARD.mine||0, top=L[0].avg||1, t3=L[Math.min(2,n-1)].avg, f=function(v){ return (+v||0).toLocaleString('he-IL'); };
@@ -1699,7 +1699,7 @@ function renderExtras(el){ var x=document.getElementById('extras'), wf=document.
   if(!x){ x=document.createElement('div'); x.id='extras'; } if(x.previousSibling!==at) at.parentNode.insertBefore(x,at.nextSibling);
   var x2=document.getElementById('extras2'); if(!x2){ x2=document.createElement('div'); x2.id='extras2'; } if(x2.parentNode!==at.parentNode||x2.nextSibling) at.parentNode.appendChild(x2);
   /* למעלה: רק מה שדורש פעולה עכשיו. השקילה מעליהם. למטה: שבועי, אתגר, מדריכים ושאלה */
-  x.innerHTML=videoMeetHtml()+payHtml()+ctasksHtml()+firstWeekHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+photoDueHtml()+reportHtml();
+  x.innerHTML=videoMeetHtml()+payHtml()+guideSentHtml()+ctasksHtml()+firstWeekHtml()+consentHtml()+monthlyHtml()+bloodHtml()+suppHtml()+photoDueHtml()+reportHtml();
   x2.innerHTML=recapHtml()+boardHtml(); guidesHtml(); /* 28.10.26: שאלה לאביאל הוסרה (וואטסאפ), המדריכים בלשונית משלהם */
   wireAsk(x2);
   wireMonthly(x); wireCtasks(x);
@@ -2524,6 +2524,43 @@ function restNext(f,d,kg){ try{ var r=document.getElementById('rest'); if(!r) re
     if(ne){ var L=P.lifts&&P.lifts[ne.ex], h=L&&L.hist&&L.hist.length?L.hist[L.hist.length-1]:null; t='הבא: '+ne.ex+(h&&h.kg?' · בפעם הקודמת '+h.kg+' ק״ג × '+h.reps:''); } else t='סט אחרון באימון. עוד רגע מסיימים'; }
   n.textContent=t; }catch(e){} }
 (function(){ var st=document.createElement('style'); st.textContent='#rest{flex-wrap:wrap}#restN{flex-basis:100%;order:3;font-size:13px;color:var(--mute,#9d9aa6);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'; document.head.appendChild(st); })();
+
+/* ===== ארוחות קבועות (29.10.26, אביאל): שומרים ארוחה שחוזרת על עצמה, ואחר כך מוסיפים אותה ליומן בלחיצה אחת ===== */
+function favMeals(){ var a=ls('aviel_fav_meals',[]); return Array.isArray(a)?a:[]; }
+var _renderFoodFav=renderFood; renderFood=function(){ _renderFoodFav.apply(this,arguments); try{ favDraw(); }catch(e){} };
+function favDraw(){ var box=document.getElementById('fItems'); if(!box||!FDAY) return; var past=!!FVIEW, it=FDAY.items||[], F=favMeals();
+  var old=document.getElementById('favBox'); if(old) old.remove();
+  if(!past&&F.length){ var fb=document.createElement('div'); fb.id='favBox'; fb.className='favbox'; fb.innerHTML='<div class="sub">הארוחות הקבועות שלי · לחיצה מוסיפה ליומן</div><div class="favrow">'+F.map(function(f,i){ return '<span class="favc"><button type="button" data-fav="'+i+'">'+esc(f.n)+' <small class="num">'+f.k+'</small></button><button type="button" class="favx" data-favx="'+i+'" aria-label="מחיקת '+esc(f.n)+'">×</button></span>'; }).join('')+'</div>'; box.parentNode.insertBefore(fb,box); }
+  if(!past) box.querySelectorAll('.fmeal').forEach(function(m){ var ml=(m.querySelector('.fmh b')||{}).textContent, xs=it.filter(function(x){ return (x.m||mealByTime(x.t))===ml&&!x._p; }); if(xs.length<1||m.querySelector('.favsave')) return;
+    var b=document.createElement('button'); b.type='button'; b.className='favsave'; b.textContent='שמירה כארוחה קבועה'; b.onclick=function(){ favSave(ml,xs,b); }; m.appendChild(b); });
+  document.querySelectorAll('#favBox [data-fav]').forEach(function(b){ b.onclick=function(){ favAdd(F[+b.dataset.fav],b); }; });
+  document.querySelectorAll('#favBox [data-favx]').forEach(function(b){ b.onclick=function(){ if(b.dataset.arm!=='1'){ b.dataset.arm='1'; b.textContent='מחיקה?'; setTimeout(function(){ if(b.isConnected){ b.dataset.arm=''; b.textContent='×'; } },3000); return; } var a=favMeals(); a.splice(+b.dataset.favx,1); lsSet('aviel_fav_meals',a); favDraw(); }; }); }
+function favSave(ml,xs,b){ var box=document.createElement('div'); box.className='favnm'; var def={'בוקר':'הבוקר הרגיל שלי','צהריים':'הצהריים הרגיל שלי','ערב':'הערב הרגיל שלי'}[ml]||(ml+' קבוע');
+  box.innerHTML='<input type="text" maxlength="30" value="'+esc(def)+'" aria-label="שם לארוחה"><button type="button">שמירה</button>'; b.replaceWith(box); var inp=box.querySelector('input'); inp.focus(); inp.select();
+  box.querySelector('button').onclick=function(){ var n=String(inp.value||'').trim().slice(0,30)||def, a=favMeals().filter(function(f){ return f.n!==n; });
+    var items=xs.map(function(x){ return {f:x.f,g:+x.g||0,k:+x.k||0,p:+x.p||0,c:+x.c||0,fat:+x.fat||0}; }); a.unshift({n:n,m:ml,k:Math.round(items.reduce(function(s,x){ return s+x.k; },0)),items:items}); lsSet('aviel_fav_meals',a.slice(0,8)); toast('נשמר: '+n); favDraw(); }; }
+function favAdd(f,b){ if(!f||!f.items||!f.items.length) return; b.disabled=true; var ml=f.m||fMeal();
+  f.items.reduce(function(pr,x){ return pr.then(function(){ return api('food',{f:x.f,g:x.g,k:x.k,p:x.p,c:x.c,fat:x.fat,m:ml}).then(function(r){ FDAY=r; }); }); },Promise.resolve())
+   .then(function(){ renderFood(); toast('נוסף ליומן: '+f.n); }).catch(function(e){ b.disabled=false; try{ renderFood(); }catch(er){} toast(e.message||'לא נוסף',1); }); }
+(function(){ var st=document.createElement('style'); st.textContent='.favbox{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}.favrow{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}.favc{flex:none;display:inline-flex;align-items:center;border:1px solid var(--gold-d,var(--line));border-radius:999px;background:var(--panel)}.favc button{min-height:0;border:0;background:none;color:var(--text);font:inherit;font-weight:700;font-size:14px;padding:8px 6px 8px 12px;width:auto}.favc small{color:var(--gold);margin-inline-start:4px}.favc .favx{color:var(--mute);padding:8px 10px 8px 4px;font-size:16px}.favsave{min-height:0;width:auto;background:none;border:0;color:var(--gold);font:inherit;font-size:13px;font-weight:700;padding:6px 0;text-decoration:underline;text-underline-offset:3px}.favnm{display:flex;gap:6px;margin-top:6px}.favnm input{flex:1;min-width:0;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:16px}.favnm button{width:auto;min-height:0;padding:9px 14px}'; document.head.appendChild(st); })();
+
+/* ===== מדריך שאביאל שלח לכולם (29.10.26): כרטיס במסך הבית עד שפותחים ===== */
+function guideSentHtml(){ var g=INBOX&&INBOX.guide; if(!g||!g.u||!g.at) return ''; if(ls('aviel_guide_seen','')===g.at) return '';
+  if((Date.now()-Date.parse(g.at))>14*864e5) return '';
+  return '<div class="news gsent"><div class="row"><b>אביאל שלח לך מדריך</b><button type="button" class="linkbtn" onclick="lsSet(\'aviel_guide_seen\',\''+esc(g.at)+'\'); renderExtras(document.getElementById(\'todayCard\'));">סגירה</button></div><p>'+esc(g.t)+'</p><a class="btn-link" target="_blank" rel="noopener" href="'+esc(g.u)+'" onclick="lsSet(\'aviel_guide_seen\',\''+esc(g.at)+'\');">לקריאה</a></div>'; }
+
+/* ===== שבוע מושלם (29.10.26): כל היעדים של השבוע סגורים → כרטיס סטורי ממותג לשיתוף ===== */
+function perfectStory(o){ var c=document.createElement('canvas'); c.width=1080; c.height=1920; var x=c.getContext('2d'), W=1080, G='#d6b066', IV='#f3ede2', MU='#a59c8d';
+  x.fillStyle='#0e0d0b'; x.fillRect(0,0,W,1920); x.strokeStyle='rgba(214,176,102,.55)'; x.lineWidth=3; x.strokeRect(54,54,W-108,1920-108);
+  x.direction='rtl'; x.textAlign='center'; var serif="'Frank Ruhl Libre', Georgia, serif", sans="'Assistant', Arial, sans-serif";
+  x.fillStyle=G; x.font='800 46px '+sans; x.save(); x.direction='ltr'; x.fillText('A V I E L   A M I R A',W/2,200); x.restore();
+  x.fillStyle=IV; x.font='700 58px '+serif; x.fillText('אביאל עמירה',W/2,280); x.fillStyle=MU; x.font='600 32px '+sans; x.fillText('ליווי אישי · מתאמן איתך',W/2,330); x.fillStyle=G; x.fillRect(W/2-60,385,120,3);
+  x.fillStyle=IV; x.font='700 110px '+serif; x.fillText('שבוע מושלם',W/2,620); x.fillStyle=MU; x.font='600 48px '+sans; x.fillText('סגרתי את כל היעדים של השבוע',W/2,710);
+  var y=850; o.goals.forEach(function(g){ x.fillStyle='rgba(214,176,102,.12)'; x.fillRect(200,y-62,W-400,92); x.fillStyle=IV; x.font='700 50px '+sans; x.textAlign='right'; x.fillText(g.t,W-240,y); x.textAlign='left'; x.fillStyle=G; x.save(); x.direction='ltr'; x.fillText('✓ '+g.n+'/'+g.g,240,y); x.restore(); x.textAlign='center'; y+=124; });
+  var d=new Date(); x.fillStyle=MU; x.font='600 40px '+sans; x.save(); x.direction='ltr'; x.fillText(('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear(),W/2,1680); x.restore();
+  x.fillStyle=G; x.font='800 48px '+sans; x.save(); x.direction='ltr'; x.fillText('@avielife1',W/2,1760); x.restore(); return c; }
+
+function perfShare(b){ var g=window.PERF_GOALS||[]; shareStory(b,{canvas:function(){ return perfectStory({goals:g}); }}); }
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
