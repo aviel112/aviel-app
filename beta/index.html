@@ -1177,7 +1177,7 @@ $('#fAdd').addEventListener('submit',function(e){ e.preventDefault(); var g=Math
 var MOHL=null; function loadMoh(){ if(MOHL) return; fetch('../data/foods-moh.json').then(function(r){ return r.json(); }).then(function(d){ MOHL=d; }).catch(function(){}); }
 function mohLocal(q){ if(!MOHL) return null; var ws=q.split(/\s+/).filter(Boolean);
   return MOHL.filter(function(f){ return ws.every(function(w){ return f[0].indexOf(w)>=0; }); })
-    .sort(function(a,b){ var sa=(a[0].indexOf(q)===0?0:1)*1000+a[0].length, sb=(b[0].indexOf(q)===0?0:1)*1000+b[0].length; return sa-sb; }).slice(0,25)
+    .sort(function(a,b){ var sc=function(n){ return (n.indexOf(q)===0?0:n.indexOf(ws[0])===0?300:800)+(ws.some(function(w){ return n.indexOf('לא '+w)>=0; })?3000:0)+n.length; }; return sc(a[0])-sc(b[0]); }).slice(0,25) /* "אורז מבושל": מבושל קודם, "לא מבושל" בסוף */
     .map(function(f){ return {shmmitzrach:f[0], protein:f[1], carbohydrates:f[2], total_fat:f[3], food_energy:f[4], Code:f[5]}; }); }
 var EXTRA=[]; function loadExtra(){ loadMoh(); api('foods',{}).then(function(r){ EXTRA=r||[]; }).catch(function(){}); }
 function ematch(q){ q=String(q||'').trim(); if(q.length<2) return []; return EXTRA.filter(function(f){ return f.name.indexOf(q)>=0||(f.brand&&f.brand.indexOf(q)>=0); }).slice(0,6); }
