@@ -1522,7 +1522,8 @@ renderPhotos=function(L){ PHOTOS_L=L||[]; try{ var te=document.getElementById('t
 
 /* ===== חלופות לתרגילים: חץ להחלפה, מהמאגר של אביאל, ולומד אילו חלופות בוחרים ===== */
 var LIB=null, SWAP_LEARN={};
-try{ fetch('data/exercise-library.json').then(function(r){ return r.json(); }).then(function(d){ LIB=d; }).catch(function(){}); }catch(e){}
+function loadLib(cb){ if(LIB){ if(cb) cb(); return; } var u=/\/beta\//.test(location.pathname)?'data/exercise-library.json':(location.pathname.replace(/[^\/]*$/,'')+'data/exercise-library.json').replace(/^\/(?!aviel-app)/,'/aviel-app/'); fetch(u,{cache:'no-cache'}).then(function(r){ return r.json(); }).then(function(d){ LIB=d; if(cb) cb(); }).catch(function(){ if(cb) cb(); }); } /* חלופות: נטען גם מקישור קצר, ובלחיצה אם עוד לא נטען */
+try{ loadLib(); }catch(e){}
 function swapStore(){ var m=ls('aviel_swaps',{}); return {day:(m.day&&m.day.d===TODAY)?m.day.m:{}, perm:m.perm||{}}; }
 function swapSave(day,perm){ lsSet('aviel_swaps',{day:{d:TODAY,m:day},perm:perm}); }
 function applySwaps(d){ if(!d||!d.ex) return d; var st=swapStore();
@@ -1538,7 +1539,8 @@ function altsFor(e){ if(!LIB) return []; var orig=e._orig||e.ex, g=grpOf({mu:e.m
       return {n:x[2],s:x[3],r:x[4],sc:sc,pop:(+learnG[x[2]]||0)+(+learnL[x[2]]||0)}; })
     .sort(function(a,b){ return b.sc-a.sc; }).slice(0,8); }
 function openSwap(i,e){ var box=document.getElementById('swb'+i); if(!box) return; if(!box.hidden){ box.hidden=true; return; }
-  var L=altsFor(e); if(!L.length){ box.hidden=false; box.innerHTML='<div class="exnote">'+(LIB?'אין חלופות במאגר לתרגיל הזה.':'טוען את מאגר התרגילים... נסו שוב בעוד רגע')+'</div>'; return; }
+  if(!LIB){ box.hidden=false; box.innerHTML='<div class="exnote">טוען חלופות…</div>'; loadLib(function(){ box.hidden=true; if(LIB) openSwap(i,e); else box.hidden=false, box.innerHTML='<div class="exnote">אין חיבור כרגע. נסו שוב בעוד רגע</div>'; }); return; }
+  var L=altsFor(e); if(!L.length){ box.hidden=false; box.innerHTML='<div class="exnote">אין חלופות במאגר לתרגיל הזה.</div>'; return; }
   var k=0, draw=function(){ var a=L[k]; box.innerHTML='<div class="swnav"><button type="button" class="swarr" data-d="1" aria-label="החלופה הבאה">'+IC_GO+'</button><div class="swcur"><b>'+esc(a.n)+'</b><small>'+(k+1)+' מתוך '+L.length+(a.pop?' · נבחר '+a.pop+' פעמים':'')+'</small></div><button type="button" class="swarr prev" data-d="-1" aria-label="החלופה הקודמת">'+IC_GO+'</button></div><div class="swact"><button type="button" data-pick="day">להיום</button><button type="button" class="ghost" data-pick="perm">קבוע</button></div>';
     box.querySelectorAll('.swarr').forEach(function(b){ b.onclick=function(){ k=(k+(+b.dataset.d)+L.length)%L.length; draw(); }; });
     box.querySelectorAll('[data-pick]').forEach(function(b){ b.onclick=function(){ var orig=e._orig||e.ex, st=swapStore(); if(b.dataset.pick==='perm'){ st.perm[orig]=a.n; delete st.day[orig]; } else st.day[orig]=a.n; swapSave(st.day,st.perm);
@@ -2356,6 +2358,19 @@ var _rtCardio=renderTodayCard; renderTodayCard=function(){ _rtCardio.apply(this,
 var _trCardio=renderTrain; renderTrain=function(){ var r=_trCardio.apply(this,arguments); try{ renderCardio(); }catch(e){} return r; };
 var _tiCardio=todayItems; todayItems=function(){ var it=_tiCardio.apply(this,arguments), w=cardioWeek(); if(w){ var td=w.today.reduce(function(a,x){ return a+(+x.min||0); },0); it.push({k:'cd', t:w.cfg.type+' היום', s:(td?'היום '+td+' דק׳ · ':'')+w.tot+'/'+w.cfg.weekly+' דק׳ השבוע', done:td>0||w.tot>=w.cfg.weekly}); } return it; }; /* תזכורת יומית: מסומן כשנעשה היום */
 (function(){ var st=document.createElement('style'); st.textContent='.cardio .wvbtn{display:flex;gap:8px}.cardio .cqk{display:flex;gap:6px;margin-top:8px}.cardio .cqk button{flex:1;min-height:0;padding:7px 0}.cardio .wvbtn button:first-child{flex:1}.cardio .cin{display:flex;gap:6px;margin-top:8px}.cardio .cin input{flex:1;min-width:0}.cchip{display:inline-flex;gap:6px;align-items:center;padding:2px 10px;border-radius:99px;background:var(--panel2,#202026);margin-inline-end:4px}.cchip b{cursor:pointer;color:var(--mute,#9d9aa6)}#progBox .cardio{margin-top:12px}'; document.head.appendChild(st); })();
+
+/* ===== תמונות חובה (28.10.26, אביאל): כשהגיע הזמן (התחלה / כל 30 יום) מסך הבית חסום עד 3 תמונות — חזית, גב, צד. באמצע אימון: דחייה של שעתיים ===== */
+function phGate(){ var g=document.getElementById('phGate'), n=+ls('aviel_ph_up_'+TODAY,'0')||0, sn=+ls('aviel_ph_gate','0')||0;
+  var need=D&&D.photoDue&&FEAT('photos')&&n<3&&Date.now()>sn&&curTab()==='home';
+  if(!need){ if(g) g.remove(); return; }
+  var h='<div class="phg"><b>תמונות החודש</b><p>'+(PHOTOS_L&&PHOTOS_L.length?'עבר חודש. ':'')+'3 תמונות: חזית, גב וצד. באותו מקום ובאותה תאורה, ככה רואים את השינוי האמיתי. זה לוקח דקה, ורק אביאל רואה אותן.</p><div class="phn">'+[0,1,2].map(function(i){ return '<i class="'+(i<n?'on':'')+'">'+(i<n?'✓':['חזית','גב','צד'][i])+'</i>'; }).join('')+'</div><label for="phIn" class="installbtn" style="display:block;text-align:center;cursor:pointer">'+(n?'התמונה הבאה':'לצילום / העלאה')+'</label><button type="button" class="linkbtn" id="phLater">אני באמצע אימון · עוד שעתיים</button></div>';
+  if(!g){ g=document.createElement('div'); g.id='phGate'; g.className='phgate'; document.body.appendChild(g); } g.innerHTML=h;
+  g.querySelector('#phLater').onclick=function(){ lsSet('aviel_ph_gate',String(Date.now()+2*36e5)); phGate(); }; }
+(function(){ var st=document.createElement('style'); st.textContent='.phgate{position:fixed;inset:0;z-index:80;background:rgba(10,10,12,.86);display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}.phg{background:var(--panel);border:1px solid var(--gold-d);border-radius:20px;padding:20px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:12px}.phg b{font-size:20px}.phg p{margin:0;color:var(--mute);line-height:1.6}.phn{display:flex;gap:8px}.phn i{flex:1;font-style:normal;text-align:center;border:1px dashed var(--line);border-radius:12px;padding:12px 0;color:var(--mute);font-weight:700}.phn i.on{border:1px solid var(--good);color:var(--good)}.phg .linkbtn{align-self:center;color:var(--mute)}'; document.head.appendChild(st); })();
+var _rpGate=renderPhotos; renderPhotos=function(){ var r=_rpGate.apply(this,arguments); try{ if(D&&D.photoDue){ lsSet('aviel_ph_up_'+TODAY,String((+ls('aviel_ph_up_'+TODAY,'0')||0)+(window.__phUp?1:0))); window.__phUp=false; phGate(); } }catch(e){} return r; };
+document.addEventListener('change',function(e){ if(e.target&&e.target.id==='phIn'&&e.target.files&&e.target.files.length) window.__phUp=true; },true);
+var _renderPhG=render; render=function(){ _renderPhG.apply(this,arguments); try{ phGate(); }catch(e){} };
+var _showPhG=show; show=function(){ var r=_showPhG.apply(this,arguments); try{ phGate(); }catch(e){} return r; };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
