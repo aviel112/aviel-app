@@ -1067,10 +1067,10 @@ function renderFood(){
   var fs=document.querySelector('.fsearch'); if(fs) fs.hidden=past;
   var it=FDAY.items||[], s={k:0,p:0,c:0,fat:0}; it.forEach(function(x){ s.k+=+x.k||0; s.p+=+x.p||0; s.c+=+x.c||0; s.fat+=+x.fat||0; });
   var T=targets(), bar=function(v,t){ if(!t) return ''; var pc=Math.min(100,Math.round(v/t*100)); return '<div class="bar"><i class="'+(v>t*1.05?'over':'')+'" style="width:'+pc+'%"></i></div>'; };
-  var row=function(lbl,v,t,u){ return '<div><b class="num">'+Math.round(v)+'</b>'+(t?' / '+t:'')+' '+u+'<div class="sub">'+lbl+'</div>'+bar(v,t)+'</div>'; };
+  var row=function(lbl,v,t,u){ var l=t?Math.round(t-v):null; return '<div><b class="num">'+(t?Math.abs(l):Math.round(v))+'</b> '+u+'<div class="sub">'+(t?(l>=0?lbl+' · נשאר':lbl+' · מעל'):lbl)+'</div>'+bar(v,t)+'</div>'; }; /* אביאל: מראים כמה נשאר, לא כמה אכלו */
   var tk=T['קלוריות'], left=tk?tk-Math.round(s.k):null;
   $('#fTot').innerHTML='<div class="row fnav"><button type="button" class="swarr" data-fn="-1" aria-label="יום קודם">'+IC_GO+'</button><b>'+vlab+'</b><button type="button" class="swarr prev" data-fn="1" aria-label="יום הבא"'+(past?'':' disabled')+'>'+IC_GO+'</button></div><div class="ftop"><div class="fringw">'+ring(s.k,tk)+'<div class="fringt"><b class="num">'+(tk?Math.abs(left):Math.round(s.k))+'</b><small>'+(tk?(left>=0?'נשארו':'מעל היעד'):'קק״ל')+'</small></div></div>'+
-    '<div class="feq"><div><span class="sub">יעד</span><b class="num">'+(tk||'עוד לא')+'</b></div><div><span class="sub">אכלת</span><b class="num">'+Math.round(s.k)+'</b></div><div class="sub">'+it.length+' רישומים היום</div></div></div>'+
+    '<div class="feq"><div><span class="sub">יעד</span><b class="num">'+(tk||'עוד לא')+'</b></div><div class="sub">'+it.length+' רישומים היום</div></div></div>'+
     '<div class="mac">'+row('חלבון',s.p,T['חלבון'],'ג׳')+row('פחמימה',s.c,T['פחמימות'],'ג׳')+row('שומן',s.fat,T['שומן'],'ג׳')+'</div>'+
     (it.length||past?'':'<button type="button" class="ghost fcopy" id="fCopy">העתקת היומן של אתמול</button>');
   document.querySelectorAll('#fTot [data-fn]').forEach(function(b){ b.onclick=function(){ foodNav(+b.dataset.fn); }; });
