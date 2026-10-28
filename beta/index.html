@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="he"><head><meta charset="utf-8">
+<link rel="preconnect" href="https://script.google.com"><link rel="preconnect" href="https://script.googleusercontent.com" crossorigin><link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 <title>AVIEL · בטא</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="האפליקציה האישית של המתאמנים של אביאל עמירה">
@@ -2334,6 +2335,26 @@ function coachRules(){ try{ lsSet('aviel_goal_kg',(D&&+D.goalKg)||0); }catch(e){
 var _renderMenuCR=renderMenu; renderMenu=function(){ if(P&&P.menu&&P.menu.blocks) P.menu.blocks=P.menu.blocks.filter(function(b){ return !/סיכום ערכים/.test(b.title||''); }); _renderMenuCR.apply(this,arguments); try{ coachRules(); }catch(e){} };
 var _renderCR=render; render=function(){ try{ lsSet('aviel_goal_kg',(D&&+D.goalKg)||0); }catch(e){} _renderCR.apply(this,arguments); try{ coachRules(); }catch(e){} };
 (function(){ var st=document.createElement('style'); st.textContent='#trkGoal,#goalSet{display:none!important}.mhide{display:none!important}'; document.head.appendChild(st); })();
+
+/* ===== אירובי (28.10.26, אביאל): אחרי כל אימון X דקות, יעד שבועי. מה שמפספסים — משלימים ביום אחר, נספר בשבוע ===== */
+function cardioWeek(){ var C=D&&D.cardio; if(!C||!C.cfg) return null; var lg=C.log||{}, ws=weekStart(), tot=0, today=[];
+  Object.keys(lg).forEach(function(k){ var t=new Date(k+'T12:00:00'); if(t>=ws){ (lg[k]||[]).forEach(function(x){ tot+=+x.min||0; }); } }); today=lg[TODAY]||[]; return {cfg:C.cfg, tot:tot, today:today}; }
+function cardioLog(min,del){ var C=D&&D.cardio; if(!C) return; C.log=C.log||{}; var L=(C.log[TODAY]||[]).slice(); if(del!=null) L.splice(del,1); else L.push({min:min,type:C.cfg.type}); if(L.length) C.log[TODAY]=L; else delete C.log[TODAY];
+  try{ renderCardio(); renderTodayCard(); }catch(e){} api('cardio',del!=null?{d:TODAY,del:del}:{d:TODAY,min:min,type:C.cfg.type}).then(function(r){ if(r&&r.log&&D.cardio) D.cardio.log=r.log; }).catch(function(e){ toast(e.message||'לא נשמר',1); }); }
+function cardioHtml(where){ var w=cardioWeek(); if(!w) return ''; var c=w.cfg, pc=Math.min(100,Math.round(w.tot/c.weekly*100)), left=Math.max(0,c.weekly-w.tot), per=c.per||10;
+  return '<div class="card cardio" data-where="'+where+'"><div class="row"><h2 class="tdh">'+esc(c.type)+(where==='train'?' אחרי האימון':' השבוע')+'</h2><span class="tdn num">'+w.tot+'/'+c.weekly+' דק׳</span></div><div class="tdbar"><i style="width:'+pc+'%"></i></div>'+
+    '<div class="sub" style="margin:6px 0 10px">'+(left?(c.note?esc(c.note)+' · ':'')+'עוד '+left+' דקות השבוע. פספסת? משלימים בכל יום':'סגרת את היעד השבועי')+'</div>'+
+    '<div class="wvbtn"><button type="button" data-cmin="'+per+'">עשיתי '+per+' דק׳</button><button type="button" class="ghost sm" data-cother>אחר</button></div>'+
+    (w.today.length?'<div class="sub" style="margin-top:8px">היום: '+w.today.map(function(x,i){ return '<span class="cchip">'+x.min+' דק׳ <b data-cdel="'+i+'" role="button" aria-label="מחיקה">×</b></span>'; }).join(' ')+'</div>':'')+'</div>'; }
+function wireCardio(el){ if(!el) return; el.querySelectorAll('[data-cmin]').forEach(function(b){ b.onclick=function(){ cardioLog(+b.dataset.cmin); toast('נרשם'); }; });
+  el.querySelectorAll('[data-cother]').forEach(function(b){ b.onclick=function(){ var box=b.closest('.cardio'); if(box.querySelector('.cin')) return; b.insertAdjacentHTML('afterend','<form class="cin"><input inputmode="numeric" placeholder="דקות" aria-label="דקות"><button type="submit" class="ghost sm">הוספה</button></form>'); var f=box.querySelector('.cin'); f.querySelector('input').focus(); f.onsubmit=function(ev){ ev.preventDefault(); var v=+f.querySelector('input').value; if(v>0&&v<=300) cardioLog(Math.round(v)); }; }; });
+  el.querySelectorAll('[data-cdel]').forEach(function(x){ x.onclick=function(){ cardioLog(0,+x.dataset.cdel); }; }); }
+function renderCardio(){ ['home','train'].forEach(function(w){ var host=w==='home'?document.getElementById('wvCard'):document.getElementById('progBox'); if(!host) return; var old=document.querySelector('.cardio[data-where="'+w+'"]'); var h=cardioHtml(w); if(!h){ if(old) old.remove(); return; }
+  var tmp=document.createElement('div'); tmp.innerHTML=h; var n=tmp.firstChild; if(old) old.replaceWith(n); else if(w==='home') host.parentNode.insertBefore(n,host.nextSibling); else host.appendChild(n); wireCardio(n); }); }
+var _rtCardio=renderTodayCard; renderTodayCard=function(){ _rtCardio.apply(this,arguments); try{ var w=cardioWeek(); if(w) renderCardio(); }catch(e){} };
+var _trCardio=renderTrain; renderTrain=function(){ var r=_trCardio.apply(this,arguments); try{ renderCardio(); }catch(e){} return r; };
+var _tiCardio=todayItems; todayItems=function(){ var it=_tiCardio.apply(this,arguments), w=cardioWeek(); if(w) it.push({k:'cd', t:w.cfg.type, s:w.tot+'/'+w.cfg.weekly+' דק׳ השבוע', done:w.tot>=w.cfg.weekly}); return it; };
+(function(){ var st=document.createElement('style'); st.textContent='.cardio .wvbtn{display:flex;gap:8px}.cardio .wvbtn button:first-child{flex:1}.cardio .cin{display:flex;gap:6px;margin-top:8px}.cardio .cin input{flex:1;min-width:0}.cchip{display:inline-flex;gap:6px;align-items:center;padding:2px 10px;border-radius:99px;background:var(--panel2,#202026);margin-inline-end:4px}.cchip b{cursor:pointer;color:var(--mute,#9d9aa6)}#progBox .cardio{margin-top:12px}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
