@@ -1149,7 +1149,7 @@ var UNITN={};
 /* כמות במילים (28.10.26, אביאל: "הקטע של הביצה לא נוח"): בוחרים יחידה (ביצה L / פרוסה / גרם) ולוחצים − 1 +. הגרמים מחושבים לבד */
 var FU=null, FQTY=1;
 function pick(it){ FSEL=it; UNITN={}; var hu=allUnits(it); $('#fAdd').hidden=false; FU=hu.length?{n:hu[0][0],g:+hu[0][1]}:null; FQTY=1; $('#fG').value=FU?FU.g:(it.g||100); $('#fList').innerHTML=''; $('#fQ').value=it.name; drawUnits(); updPick(); if(!FU) $('#fG').focus(); }
-function allUnits(it){ var hu=houseUnits(it); return hu.concat((it.units||[]).filter(function(x){ return !hu.some(function(h){ return h[0]===x[0]||Math.abs(+h[1]-+x[1])<1; }); })).filter(function(x){ return +x[1]>0; }); } /* בלי "יחידה / מנה · 13 ג׳" כשכבר יש "כף" */
+function allUnits(it){ var hu=houseUnits(it); if(it.own){ var own=(it.units||[]).filter(function(x){ return +x[1]>0; }); return own.concat(hu.filter(function(h){ return !own.some(function(o){ return o[0]===h[0]||Math.abs(+o[1]-+h[1])<1; }); })); } return hu.concat((it.units||[]).filter(function(x){ return !hu.some(function(h){ return h[0]===x[0]||Math.abs(+h[1]-+x[1])<1; }); })).filter(function(x){ return +x[1]>0; }); } /* בלי "יחידה / מנה · 13 ג׳" כשכבר יש "כף" */
 function drawUnits(){ var it=FSEL; if(!it) return; var u=allUnits(it);
   $('#fUnits').innerHTML=u.map(function(x){ return '<button type="button" class="chip'+(FU&&FU.n===x[0]?' on':'')+'" data-u="'+esc(x[0])+'" data-g="'+x[1]+'">'+esc(x[0])+'</button>'; }).join('')+'<button type="button" class="chip'+(FU?'':' on')+'" data-u="" data-g="">גרם</button>';
   var st=document.getElementById('fStep'); if(!st){ st=document.createElement('div'); st.id='fStep'; st.className='fstep'; $('#fUnits').parentNode.insertBefore(st,$('#fUnits').nextSibling); }
@@ -1181,7 +1181,7 @@ function mohLocal(q){ if(!MOHL) return null; var ws=q.split(/\s+/).filter(Boolea
     .map(function(f){ return {shmmitzrach:f[0], protein:f[1], carbohydrates:f[2], total_fat:f[3], food_energy:f[4], Code:f[5]}; }); }
 var EXTRA=[]; function loadExtra(){ loadMoh(); api('foods',{}).then(function(r){ EXTRA=r||[]; }).catch(function(){}); }
 function ematch(q){ q=String(q||'').trim(); if(q.length<2) return []; return EXTRA.filter(function(f){ return f.name.indexOf(q)>=0||(f.brand&&f.brand.indexOf(q)>=0); }).slice(0,6); }
-function pickExtra(f){ pick({name:f.name+(f.brand?' '+f.brand:''), p:f.p, c:f.c, fat:f.fat, k100:f.k100, units:[['מנה',f.g||100]], g:f.g||100}); }
+function pickExtra(f){ var g=+f.g||100, un=g!==100?((String(f.name).match(/פיתה|גביע|פרוסה|לחמניה|טורטיה|חטיף|יחידה|קופסה|בקבוק|פחית/)||['יחידה'])[0]):'מנה'; pick({name:f.name+(f.brand?' '+f.brand:''), p:f.p, c:f.c, fat:f.fat, k100:f.k100, units:[[un,g]], g:g, own:g!==100}); } /* מוצר מהמאגר של אביאל עם משקל יחידה: היחידה שלו קודמת (פיתה 55 ג׳, לא 90) */
 var SCAN={reader:null,stream:null};
 function scanStop(){ try{ if(SCAN.reader) SCAN.reader.reset(); }catch(e){} try{ (SCAN.stream&&SCAN.stream.getTracks()||[]).forEach(function(t){ t.stop(); }); }catch(e){} SCAN.stream=null; $('#scan').hidden=true; }
 function camFail(){ scanStop(); toast('אין גישה למצלמה. מאשרים מצלמה בהגדרות הטלפון ומנסים שוב.',1); }
