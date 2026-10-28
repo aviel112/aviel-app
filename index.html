@@ -2385,6 +2385,22 @@ var _rpGate=renderPhotos; renderPhotos=function(){ var r=_rpGate.apply(this,argu
 document.addEventListener('change',function(e){ if(e.target&&e.target.id==='phIn'&&e.target.files&&e.target.files.length) window.__phUp=true; },true);
 var _renderPhG=render; render=function(){ _renderPhG.apply(this,arguments); try{ phGate(); }catch(e){} };
 var _showPhG=show; show=function(){ var r=_showPhG.apply(this,arguments); try{ phGate(); }catch(e){} return r; };
+
+/* ===== צעדים מהבריאות בלחיצה (28.10.26, אביאל: "כמה שפחות להם"): באייפון, קיצור דרך אחד שמקבל את הקוד מהאפליקציה, קורא את הצעדים של היום ושולח.
+   חד-פעמי: "חיבור" (מוסיפים את הקיצור). מאז: כפתור אחד. כשחוזרים לאפליקציה, הצעדים מתרעננים לבד ===== */
+var SC_LINK='', SC_NAME='צעדים לאביאל', SC_RAN=0;
+function scHtml(){ if(!SC_LINK||!/iphone|ipad|ipod/i.test(navigator.userAgent)) return ''; var on=!!ls('aviel_sc_on',false);
+  return '<div class="card scc"><div class="row"><span class="label">צעדים מהבריאות</span>'+(on?'<button type="button" class="linkbtn" id="scRe">חיבור מחדש</button>':'')+'</div>'+
+    (on?'<button type="button" class="installbtn" id="scRun">עדכון הצעדים של היום</button><div class="sub" style="margin-top:6px">נפתח לרגע מסך של אפל, ואז חוזרים לכאן והצעדים מעודכנים.</div>'
+       :'<div class="sub" style="margin:6px 0 10px">פעם אחת בלבד: לוחצים, ובמסך שנפתח לוחצים "הוספת קיצור דרך". זהו.</div><button type="button" class="installbtn" id="scAdd">חיבור הצעדים מהאייפון</button>')+'</div>'; }
+function renderSc(){ var h=scHtml(), old=document.querySelector('.scc'); if(!h){ if(old) old.remove(); return; } var sf=document.getElementById('sForm'), host=sf&&sf.closest('.card'); if(!host) return;
+  var tmp=document.createElement('div'); tmp.innerHTML=h; var n=tmp.firstChild; if(old) old.replaceWith(n); else host.parentNode.insertBefore(n,host.nextSibling);
+  var add=n.querySelector('#scAdd'), run=n.querySelector('#scRun'), re=n.querySelector('#scRe');
+  if(add) add.onclick=function(){ lsSet('aviel_sc_on',true); window.location.href=SC_LINK; setTimeout(renderSc,800); };
+  if(re) re.onclick=function(){ window.location.href=SC_LINK; };
+  if(run) run.onclick=function(){ SC_RAN=Date.now(); window.location.href='shortcuts://run-shortcut?name='+encodeURIComponent(SC_NAME)+'&input=text&text='+encodeURIComponent(T); }; }
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&SC_RAN&&Date.now()-SC_RAN<5*60000){ SC_RAN=0; setTimeout(function(){ api('data').then(function(r){ D=r; render(); toast('הצעדים עודכנו'); }).catch(function(){}); },1500); } });
+var _renderSc=render; render=function(){ _renderSc.apply(this,arguments); try{ renderSc(); }catch(e){} };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
