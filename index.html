@@ -2699,6 +2699,29 @@ document.addEventListener('click',function(e){ var a=e.target.closest&&e.target.
   var prev=EXN[k2]; if(t) EXN[k2]={t:t,d:TODAY}; else delete EXN[k2]; lsSet('aviel_exn',EXN); w2.remove(); exnDecor();
   api('exnote',{ex:k2,t:t}).then(function(){ toast(t?'ההערה נשמרה. תופיע גם באימון הבא':'ההערה נמחקה'); }).catch(function(er){ if(prev) EXN[k2]=prev; else delete EXN[k2]; lsSet('aviel_exn',EXN); document.querySelectorAll('.exn').forEach(function(x){ x.remove(); }); exnDecor(); toast((er&&er.message)||'לא נשמר, נסו שוב',1); }); });
 if(typeof T!=='undefined'&&T) setTimeout(function(){ api('exnotes',{}).then(function(r){ if(r&&typeof r==='object'){ EXN=r; lsSet('aviel_exn',EXN); document.querySelectorAll('.exn').forEach(function(x){ x.remove(); }); exnDecor(); } }).catch(function(){}); },1500);
+
+/* ===== מצב אימון (29.10.26, אביאל: "ברגע שהתחלתי אימון — שידע שאני באימון ולא יציג לי עוד אימונים"):
+   מהסט הראשון ועד "סיימתי": רק האימון הזה, בלי בחירת אימונים אחרים; בכל מסך אחר — כפתור "חזרה לאימון"; פתיחת האפליקציה מחזירה לאימון. 3 שעות בלי סט = נסגר לבד */
+function woGet(){ var w=ls('aviel_wo',null); return w&&w.d===TODAY&&Date.now()-(+w.last||0)<3*36e5?w:null; }
+function woMin(w){ return Math.max(1,Math.round((Date.now()-(+w.start||+w.last))/6e4)); }
+(function(){ var st=document.createElement('style'); st.textContent='.wobar{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--gold);border-radius:16px;padding:12px 14px;margin-bottom:10px}.wobar b{font-size:15px}.wobar .sub{margin:2px 0 0}.wobar button{background:none;border:0;padding:4px 0;font:inherit;font-size:12.5px;color:var(--mute);text-decoration:underline;cursor:pointer;width:auto;min-height:0;flex:none}#woPill{position:fixed;left:50%;transform:translateX(-50%);z-index:40;background:var(--gold);color:var(--cta-t,#16130c);border:0;border-radius:999px;padding:11px 20px;font:inherit;font-weight:800;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.35);white-space:nowrap;width:auto;min-height:0}'; document.head.appendChild(st); })();
+var _apiWo=api; api=function(a,p){ var r=_apiWo.apply(this,arguments); if(a==='lift'){ try{ var w=woGet(); lsSet('aviel_wo',{day:w?w.day:DAY,d:TODAY,start:w?w.start:Date.now(),last:Date.now()}); woPill(); }catch(e){} } return r; };
+document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('#finish')){ try{ localStorage.removeItem('aviel_wo'); }catch(er){} SHOWALL=false; setTimeout(woPill,0); } },true);
+var _renderTrainWo=renderTrain; renderTrain=function(){ var w=woGet(); if(w){ DAY=w.day; SHOWALL=true; }
+  var r=_renderTrainWo.apply(this,arguments);
+  try{ var box=$('#progBox'); if(w&&box&&!box.querySelector('.wobar')){ box.querySelectorAll('[aria-label="בחירת אימון"]').forEach(function(x){ x.remove(); }); var s0=box.firstElementChild; if(s0&&s0.classList.contains('sub')&&/השבוע:/.test(s0.textContent)) s0.remove();
+      var b=document.createElement('div'); b.className='wobar'; b.innerHTML='<div><b>מצב אימון · אימון '+(w.day+1)+'</b><div class="sub" id="woT">'+woMin(w)+' דק׳ · מסיימים עם "סיימתי" למטה</div></div><button type="button" id="woExit">יציאה</button>'; box.insertBefore(b,box.firstChild);
+      $('#woExit').onclick=function(){ try{ localStorage.removeItem('aviel_wo'); }catch(e){} SHOWALL=false; renderTrain(); woPill(); toast('יצאת ממצב אימון'); }; } }catch(e){}
+  return r; };
+function woPill(){ var w=woGet(), p=document.getElementById('woPill'), onTrain=!document.querySelector('section[data-view="train"]')||!document.querySelector('section[data-view="train"]').hidden;
+  if(!w||onTrain){ if(p) p.remove(); return; }
+  if(!p){ p=document.createElement('button'); p.type='button'; p.id='woPill'; p.onclick=function(){ show('train'); renderTrain(); }; document.body.appendChild(p); }
+  var tb=document.getElementById('tabs'); p.style.bottom=((tb?tb.offsetHeight:70)+12)+'px'; p.textContent='חזרה לאימון '+(w.day+1)+' · '+woMin(w)+' דק׳'; }
+var _showWo=show; show=function(tab){ var r=_showWo.apply(this,arguments); try{ woPill(); }catch(e){} return r; };
+function woResume(){ try{ if(woGet()){ var sec=document.querySelector('section[data-view="train"]'); if(sec&&sec.hidden){ show('train'); renderTrain(); } } woPill(); }catch(e){} }
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') woResume(); });
+setInterval(function(){ try{ var w=woGet(), t=document.getElementById('woT'); if(w&&t) t.textContent=woMin(w)+' דק׳ · מסיימים עם "סיימתי" למטה'; if(!w&&document.querySelector('.wobar')) renderTrain(); woPill(); }catch(e){} },30000);
+setTimeout(woResume,1200);
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
