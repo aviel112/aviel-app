@@ -2454,7 +2454,7 @@ var _showPhG=show; show=function(){ var r=_showPhG.apply(this,arguments); try{ p
 var SC_LINK='https://www.icloud.com/shortcuts/6316f070639f48c69b1c5e90911f9d39', SC_NAME='צעדים אביאל', SC_RAN=0;
 function scHtml(){ if(!SC_LINK||!/iphone|ipad|ipod/i.test(navigator.userAgent)) return ''; var on=!!ls('aviel_sc_on',false);
   return '<div class="card scc"><div class="row"><span class="label">צעדים מהבריאות</span>'+(on?'<button type="button" class="linkbtn" id="scRe">חיבור מחדש</button>':'')+'</div>'+
-    (on?'<button type="button" class="installbtn" id="scRun">עדכון הצעדים של היום</button><div class="sub" style="margin-top:6px">נפתח לרגע מסך של אפל, ואז חוזרים לכאן והצעדים מעודכנים.</div>'
+    (on?'<button type="button" class="installbtn" id="scRun">עדכון הצעדים של היום</button><div class="sub" style="margin-top:6px">מעכשיו זה קורה לבד: כשפותחים את האפליקציה ועברו 4 שעות, הצעדים מתעדכנים מהבריאות. הכפתור למי שרוצה עכשיו.</div>'
        :'<div class="sub" style="margin:6px 0 10px">פעם אחת בלבד: לוחצים, ובמסך שנפתח לוחצים "הוספת קיצור דרך". זהו.</div><button type="button" class="installbtn" id="scAdd">חיבור הצעדים מהאייפון</button>')+'</div>'; }
 function renderSc(){ var h=scHtml(), old=document.querySelector('.scc'); if(!h){ if(old) old.remove(); return; } var sf=document.getElementById('sForm'), host=sf&&sf.closest('.card'); if(!host) return;
   var tmp=document.createElement('div'); tmp.innerHTML=h; var n=tmp.firstChild; if(old) old.replaceWith(n); else host.parentNode.insertBefore(n,host.nextSibling);
@@ -2638,6 +2638,17 @@ var _homeStepsG=homeSteps; homeSteps=function(){ _homeStepsG.apply(this,argument
   var b=document.getElementById('sGoalBig'); if(!g){ if(b) b.remove(); return; } if(!b){ b=document.createElement('div'); b.id='sGoalBig'; b.className='sgb'; var f=document.getElementById('sForm'); f.parentNode.insertBefore(b,f); }
   b.innerHTML=n>=g?'<b>סגרת את יעד הצעדים היום</b> · '+n.toLocaleString('he-IL'):'<b>היעד שלך: '+g.toLocaleString('he-IL')+' צעדים ביום</b>'+(n?' · עוד '+(g-n).toLocaleString('he-IL'):''); }catch(e){} };
 (function(){ var st=document.createElement('style'); st.textContent='.sgb{margin:10px 0 6px;font-size:14px;color:var(--mute)}.sgb b{color:var(--gold);font-size:15px}'; document.head.appendChild(st); })();
+
+/* ===== צעדים אוטומטיים בפתיחה (29.10.26, אביאל: "כמו StepApp"): מי שחיבר את הקיצור — כל פתיחה של האפליקציה, אם עברו 4+ שעות מהעדכון האחרון, הקיצור רץ לבד ===== */
+var SC_AUTO_GAP=4*36e5, SC_AUTO_T=null;
+function scAuto(){ try{ if(!SC_LINK||!/iphone|ipad|ipod/i.test(navigator.userAgent)||!ls('aviel_sc_on',false)||!T||document.visibilityState!=='visible') return;
+  var last=+ls('aviel_sc_last',0)||0; if(Date.now()-last<SC_AUTO_GAP) return; if(document.getElementById('phGate')||document.getElementById('vSheet')) return;
+  var h=new Date().getHours(); if(h<7) return; /* לא באמצע הלילה */
+  clearTimeout(SC_AUTO_T); SC_AUTO_T=setTimeout(function(){ if(document.visibilityState!=='visible') return; lsSet('aviel_sc_last',Date.now()); SC_RAN=Date.now(); toast('מעדכן צעדים מהבריאות…'); setTimeout(function(){ window.location.href='shortcuts://run-shortcut?name='+encodeURIComponent(SC_NAME)+'&input=text&text='+encodeURIComponent(T); },900); },2500); }catch(e){} }
+var _renderScA=render; render=function(){ _renderScA.apply(this,arguments); scAuto(); };
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&!(SC_RAN&&Date.now()-SC_RAN<5*60000)) scAuto(); });
+/* גם לחיצה ידנית מאפסת את השעון */
+document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('#scRun,#scAdd'); if(b) lsSet('aviel_sc_last',Date.now()); },true);
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
