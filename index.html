@@ -626,7 +626,7 @@ input,select,textarea{font-size:16px}
 </style><script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script><script>(function(){var t=null;try{t=localStorage.getItem('aviel_theme');}catch(e){}if(t!=='light'&&t!=='dark')t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#f7f3ec':'#0d0d0f';})();</script><style id="restyle">
 /* Hallmark · redesign: restyle v2 · direction: Apple-native (by request: "like Apple") · face: the system font (SF Pro / SF Hebrew on iPhone), Assistant as fallback · 30.10.26 */
 /* critique: v1 still read as generated, the serif and the cards. Now: no borders, grouped surfaces in system greys, one face in heavy weights with tight tracking, gold as the single tint, translucent tab bar */
-:root{--ink:#000;--panel:#1c1c1e;--panel2:#2c2c2e;--line:rgba(84,84,88,.6);--line2:rgba(84,84,88,.9);--text:#fff;--mute:rgba(235,235,245,.62);--gold:#d9b46e;--gold-d:#8a7043;--cta:#d9b46e;--cta-t:#1a1408;--soft:rgba(217,180,110,.14);--sh:none;--good:#30d158;--warn:#ffb340;--bad:#ff6961;--f-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Hebrew','Assistant',system-ui,sans-serif;--f-body:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Hebrew','Assistant',system-ui,sans-serif;--r-card:22px;--r-ctl:14px;--nav-bg:rgba(10,10,12,.72)}
+:root{--ink:#000;--panel:#1c1c1e;--panel2:#2c2c2e;--line:rgba(84,84,88,.6);--line2:rgba(84,84,88,.9);--text:#fff;--mute:rgba(235,235,245,.62);--gold:#d9b46e;--gold-d:#8a7043;--cta:#d9b46e;--cta-t:#1a1408;--soft:rgba(217,180,110,.14);--sh:none;--good:#30d158;--warn:#ffb340;--bad:#ff6961;--f-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Hebrew','Assistant',system-ui,sans-serif;--f-body:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Hebrew','Assistant',system-ui,sans-serif;--r-card:22px;--r-ctl:14px;--nav-bg:rgba(10,10,12,.72);--gold-hi:#e8cc8f;--gold-lo:#c39d55;--gold-edge:rgba(255,240,205,.45);--edge:rgba(255,255,255,.06)}
 :root[data-theme="light"]{--ink:#f2f2f7;--panel:#fff;--panel2:#f2f2f7;--line:rgba(60,60,67,.18);--line2:rgba(60,60,67,.3);--text:#000;--mute:rgba(60,60,67,.66);--gold:#8a6420;--gold-d:#b39253;--cta:#000;--cta-t:#fff;--soft:rgba(138,100,32,.10);--good:#248a3d;--warn:#b25000;--bad:#d70015;--nav-bg:rgba(249,249,251,.78)}
 html,body{overflow-x:clip}
 body{font-family:var(--f-body);background:var(--ink);color:var(--text);-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
@@ -663,6 +663,31 @@ input,select,textarea{border-radius:12px;border-color:var(--line)!important;back
 .ghost,.swarr,.thbtn,.fsearch button,.fcopy,.ghost.sm{border:0!important}
 .swarr,.fsearch button,.fcopy{background:var(--panel2)}
 .swarr[disabled]{opacity:.35}
+/* מסך הבית: טבעת מובילה, רשימה בסגנון הגדרות של אייפון, שורה עליונה שקטה */
+.thbtn{width:36px;height:36px;background:transparent}
+#coachGo{font-size:14px;margin:0 0 4px!important}
+#hello{font-size:40px;margin-top:6px}
+#helloSub{font-size:15px;margin-bottom:18px}
+.today{padding:20px 20px 6px}
+.today>.row,.today>.tdbar{display:none}
+#tRing{display:flex;align-items:center;gap:16px;margin:2px 0 14px}
+#tRing svg{flex:none}
+#tRing .trt{display:flex;flex-direction:column;gap:2px;min-width:0}
+#tRing .trt b{font-family:var(--f-display);font-weight:800;font-size:28px;letter-spacing:-.025em}
+#tRing .trt span{color:var(--mute);font-size:15px}
+#tRing .trt em{font-style:normal;color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+.tdi{min-height:58px;padding:10px 0;border-top:.5px solid var(--line)}
+.tdi .tdt b{font-weight:600;font-size:17px;letter-spacing:-.01em}
+.tdi .tdt small{color:var(--mute);font-size:13px}
+.tdi .tdc{width:26px;height:26px;border:2px solid var(--line2);background:transparent}
+.tdi.ok .tdc{background:var(--gold);border-color:var(--gold);color:var(--cta-t)}
+.tdi .tdg{color:var(--mute)}
+#pushCard{padding:16px 18px}
+#pushCard .label{color:var(--text);font-weight:700;font-size:15px}
+/* יוקרה: זהב מתכתי עדין על הכפתור הראשי (רק במצב כהה), קו אור דק בראש הכרטיסים */
+:root:not([data-theme="light"]) button.installbtn,:root:not([data-theme="light"]) label.installbtn{background:linear-gradient(180deg,var(--gold-hi),var(--gold) 55%,var(--gold-lo));box-shadow:inset 0 1px 0 var(--gold-edge)}
+:root:not([data-theme="light"]) .card,:root:not([data-theme="light"]) .kpi{box-shadow:inset 0 1px 0 var(--edge)}
+#tRing svg circle:last-child{stroke:var(--gold)}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style></head>
@@ -2882,6 +2907,15 @@ function homeWorkout(){ var old=document.getElementById('hWo'), tc=document.getE
   document.getElementById('hWoGo').onclick=function(){ if(!w){ DAY=i; ONEDAY=i; SHOWALL=false; } show('train'); renderTrain(); window.scrollTo(0,0); }; }catch(e){ if(old) old.remove(); } }
 (function(){ var st=document.createElement('style'); st.textContent='.hwo{display:flex;flex-direction:column;gap:6px}.hwo-t{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}.hwo-t b{font-size:17px}.hwo-t span{color:var(--mute);font-size:13.5px}.hwo .sub{margin:0}.hwo .installbtn{margin-top:4px}'; document.head.appendChild(st); })();
 var _renderTodayHW=renderTodayCard; renderTodayCard=function(){ var r=_renderTodayHW.apply(this,arguments); try{ homeWorkout(); }catch(e){} return r; };
+
+/* ===== מסך בית בסגנון אפל (30.10.26, אביאל: "שייראה כמו אפל"): טבעת התקדמות של היום מובילה את "היום שלך" (מאותם נתונים, x מתוך y) ===== */
+function homeRing(){ var tc=document.getElementById('todayCard'); if(!tc) return; var n=tc.querySelector('.tdn'), row=tc.querySelector('.row'); if(!n||!row) return;
+  var m=String(n.textContent).match(/(\d+)\s*\/\s*(\d+)/); if(!m) return; var a=+m[1], b=+m[2]||1, f=Math.min(1,a/b), r=40, C=2*Math.PI*r;
+  var el=document.getElementById('tRing'); if(!el){ el=document.createElement('div'); el.id='tRing'; tc.insertBefore(el,row); }
+  el.innerHTML='<svg viewBox="0 0 100 100" width="96" height="96" aria-hidden="true"><circle cx="50" cy="50" r="'+r+'" fill="none" stroke="var(--panel2)" stroke-width="8"/><circle cx="50" cy="50" r="'+r+'" fill="none" stroke="var(--gold)" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+(C*f).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 50 50)"/></svg>'+
+    '<div class="trt"><b>היום שלך</b><span><em>'+a+'</em> מתוך '+b+(a>=b?', יום מלא':'')+'</span></div>';
+  el.setAttribute('role','img'); el.setAttribute('aria-label','היום שלך: '+a+' מתוך '+b); }
+var _renderTodayRing=renderTodayCard; renderTodayCard=function(){ var r=_renderTodayRing.apply(this,arguments); try{ homeRing(); }catch(e){} return r; };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
