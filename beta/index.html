@@ -1466,6 +1466,7 @@ function todayItems(){
   it.push({k:'c', t:'צ׳ק-אין', s:d.checkinDone?'נשלח':'2 דקות, פעם בשבועיים', done:!!d.checkinDone});
   var hb=habitsToday(); if(hb.total) it.push({k:'h', t:'הרגלים', s:hb.done+' מתוך '+hb.total+(hb.done===hb.total?' · יום מלא':''), done:hb.done===hb.total});
   var wv=waterNow(); it.push({k:'wa', t:'מים', s:litres(wv.ml)+' מתוך '+litres(wv.goal)+' ליטר', done:wv.ml>=wv.goal});
+  var sg=+(d.stepsGoal)||0, tw=wk.filter(function(x){ return x.d===TODAY; })[0], sn=tw&&tw.steps||0; if(sg||sn) it.push({k:'st', t:'צעדים', s:(sn?Number(sn).toLocaleString('he-IL'):'0')+(sg?' מתוך '+sg.toLocaleString('he-IL'):'')+(sg&&sn>=sg?' · סגרת':''), done:!!(sg&&sn>=sg)}); /* 29.10.26: צעדים כמו מים */
   return it;
 }
 /* הרגלים יומיים (נשמרים בטלפון וגם בקובץ המעקב) + רצף ימים */
@@ -1498,6 +1499,7 @@ function renderTodayCard(){ try{ applyMode(); }catch(e){}
   el.querySelectorAll('.tdi').forEach(function(b){ b.onclick=function(){ var k=b.dataset.k;
     if(k==='w'){ var w=document.getElementById('wIn'); w.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){ w.focus(); },350); }
     else if(k==='t') show('train'); else if(k==='f') show(P&&P.mode!=='ערכים'&&P.menu&&P.menu.blocks&&P.menu.blocks.length?'menu':'food'); /* מעקב לפי ערכים: תמיד ליומן */
+    else if(k==='st'){ var sf=document.getElementById('sForm'); if(sf) sf.closest('.card').scrollIntoView({behavior:'smooth',block:'center'}); }
     else if(k==='wa'){ var wc=document.getElementById('wvCard'); if(wc) wc.scrollIntoView({behavior:'smooth',block:'center'}); }
     else if(k==='h'){ var hx=el.querySelector('.habits'); if(hx) hx.scrollIntoView({behavior:'smooth',block:'center'}); }
     else { var c=document.getElementById('ciForm')||document.getElementById('ciDone'); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); } }; });
@@ -2636,8 +2638,8 @@ var _renderMS=render; render=function(){ _renderMS.apply(this,arguments); try{ v
 var _homeStepsG=homeSteps; homeSteps=function(){ _homeStepsG.apply(this,arguments); try{ var g=+(D&&D.stepsGoal)||0, i=document.getElementById('sIn'); if(!i) return; var t=(D.week||[]).filter(function(x){ return x.d===TODAY; })[0], n=t&&t.steps||0;
   i.placeholder=g?'צעדים היום · היעד שלך '+g.toLocaleString('he-IL'):'צעדים היום';
   var b=document.getElementById('sGoalBig'); if(!g){ if(b) b.remove(); return; } if(!b){ b=document.createElement('div'); b.id='sGoalBig'; b.className='sgb'; var f=document.getElementById('sForm'); f.parentNode.insertBefore(b,f); }
-  b.innerHTML=n>=g?'<b>סגרת את יעד הצעדים היום</b> · '+n.toLocaleString('he-IL'):'<b>היעד שלך: '+g.toLocaleString('he-IL')+' צעדים ביום</b>'+(n?' · עוד '+(g-n).toLocaleString('he-IL'):''); }catch(e){} };
-(function(){ var st=document.createElement('style'); st.textContent='.sgb{margin:10px 0 6px;font-size:14px;color:var(--mute)}.sgb b{color:var(--gold);font-size:15px}'; document.head.appendChild(st); })();
+  var pc=Math.min(100,Math.round(n/g*100)); b.innerHTML='<div class="sgn"><b class="num">'+n.toLocaleString('he-IL')+'</b><span>צעדים היום</span></div><div class="sgbar"><i style="width:'+pc+'%"></i></div><div class="sgs">'+(n>=g?'סגרת את היעד ('+g.toLocaleString('he-IL')+')':'היעד '+g.toLocaleString('he-IL')+' · עוד '+(g-n).toLocaleString('he-IL'))+'</div>'; }catch(e){} };
+(function(){ var st=document.createElement('style'); st.textContent='.sgb{margin:12px 0 8px}.sgn{display:flex;align-items:baseline;gap:8px}.sgn b{font-size:34px;color:var(--gold);line-height:1}.sgn span{color:var(--mute);font-size:14px}.sgbar{height:8px;border-radius:9px;background:var(--panel2,#202026);overflow:hidden;margin:8px 0 4px}.sgbar i{display:block;height:100%;background:var(--gold);border-radius:9px}.sgs{font-size:13px;color:var(--mute)}'; document.head.appendChild(st); })();
 
 /* ===== צעדים אוטומטיים בפתיחה (29.10.26, אביאל: "כמו StepApp"): מי שחיבר את הקיצור — כל פתיחה של האפליקציה, אם עברו 4+ שעות מהעדכון האחרון, הקיצור רץ לבד ===== */
 var SC_AUTO_GAP=4*36e5, SC_AUTO_T=null;
