@@ -2494,9 +2494,9 @@ function vSheet(html){ var s=document.getElementById('vSheet'); if(!s){ s=docume
 function vClose(){ var s=document.getElementById('vSheet'); if(s) s.remove(); if(VREC&&VREC.st){ VREC.st.getTracks().forEach(function(t){ t.stop(); }); } VREC=null; }
 function vStart(){ if(!navigator.mediaDevices||!window.MediaRecorder){ toast('הטלפון לא תומך בהקלטה כאן',1); return; }
   navigator.mediaDevices.getUserMedia({audio:true}).then(function(st){ var mt=['audio/mp4','audio/webm','audio/ogg'].filter(function(t){ return MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t); })[0]||'';
-    var rec=mt?new MediaRecorder(st,{mimeType:mt}):new MediaRecorder(st), ch=[], t0=Date.now(); VREC={st:st,rec:rec};
+    var rec=mt?new MediaRecorder(st,{mimeType:mt,audioBitsPerSecond:32000}):new MediaRecorder(st,{audioBitsPerSecond:32000}) /* 29.10.26: קובץ קטן פי 4 — עולה מהר יותר */, ch=[], t0=Date.now(); VREC={st:st,rec:rec};
     rec.ondataavailable=function(e){ if(e.data&&e.data.size) ch.push(e.data); };
-    rec.onstop=function(){ st.getTracks().forEach(function(t){ t.stop(); }); var bl=new Blob(ch,{type:rec.mimeType||mt||'audio/mp4'}); if(bl.size<1500){ vClose(); toast('לא נקלט קול. נסו שוב',1); return; } vSheet('<h2>מתמלל…</h2><div class="sub">כמה שניות</div>');
+    rec.onstop=function(){ st.getTracks().forEach(function(t){ t.stop(); }); var bl=new Blob(ch,{type:rec.mimeType||mt||'audio/mp4'}); if(bl.size<1500){ vClose(); toast('לא נקלט קול. נסו שוב',1); return; } vSheet('<h2>מתמלל…</h2><div class="sub">2-4 שניות</div><div class="mspin" aria-hidden="true"></div>');
       var fr=new FileReader(); fr.onload=function(){ api('foodvoice',{b64:String(fr.result).split(',')[1],mime:bl.type}).then(vReview).catch(function(er){ vClose(); toast((er&&er.message)||'לא הצלחנו לתמלל',1); }); }; fr.readAsDataURL(bl); };
     rec.start(); vSheet('<h2>מקליט…</h2><div class="sub">אומרים מה אכלתם, עם כמויות. למשל: "שתי ביצים, פרוסת לחם קל וכף טחינה"</div><div class="vtime num" id="vT">0:00</div><button type="button" class="installbtn" id="vStop">סיימתי</button><button type="button" class="linkbtn" id="vCancel">ביטול</button>');
     var tm=setInterval(function(){ var e=document.getElementById('vT'); if(!e||!VREC){ clearInterval(tm); return; } var s2=Math.round((Date.now()-t0)/1000); e.textContent=Math.floor(s2/60)+':'+('0'+s2%60).slice(-2); if(s2>=60&&rec.state==='recording') rec.stop(); },300);
@@ -2588,7 +2588,7 @@ window.addEventListener('online',liftQFlush); document.addEventListener('visibil
 /* ===== הקלטה כללית (29.10.26): צ׳ק-אין בקול. אותו מסך הקלטה כמו ביומן ===== */
 function recAsk(o){ if(!navigator.mediaDevices||!window.MediaRecorder){ toast('הטלפון לא תומך בהקלטה כאן',1); return; }
   navigator.mediaDevices.getUserMedia({audio:true}).then(function(st){ var mt=['audio/mp4','audio/webm','audio/ogg'].filter(function(t){ return MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t); })[0]||'';
-    var rec=mt?new MediaRecorder(st,{mimeType:mt}):new MediaRecorder(st), ch=[], t0=Date.now(); VREC={st:st,rec:rec};
+    var rec=mt?new MediaRecorder(st,{mimeType:mt,audioBitsPerSecond:32000}):new MediaRecorder(st,{audioBitsPerSecond:32000}) /* 29.10.26: קובץ קטן פי 4 — עולה מהר יותר */, ch=[], t0=Date.now(); VREC={st:st,rec:rec};
     rec.ondataavailable=function(e){ if(e.data&&e.data.size) ch.push(e.data); };
     rec.onstop=function(){ st.getTracks().forEach(function(t){ t.stop(); }); var bl=new Blob(ch,{type:rec.mimeType||mt||'audio/mp4'}); if(bl.size<1500){ vClose(); toast('לא נקלט קול. נסו שוב',1); return; } vSheet('<h2>'+esc(o.busy||'שולח…')+'</h2><div class="sub">כמה שניות</div>');
       var fr=new FileReader(); fr.onload=function(){ api(o.api,{b64:String(fr.result).split(',')[1],mime:bl.type}).then(o.done).catch(function(er){ vClose(); toast((er&&er.message)||'לא נשלח',1); }); }; fr.readAsDataURL(bl); };
