@@ -2270,7 +2270,10 @@ var _doneMap0=doneMap; doneMap=function(){ var out=_doneMap0();
     days.forEach(function(day,i){ if(out[i]) return; var names=[]; try{ applySwaps(day).ex.forEach(function(e){ names.push(e.ex); }); }catch(e){} day.ex.forEach(function(e){ if(names.indexOf(e.ex)<0) names.push(e.ex); });
       var nEx=day.ex.length; for(var j=0;j<dates.length;j++){ var D=dates[j]; if(used[D]) continue; var hit={};
         names.forEach(function(n){ var h=L[n]&&L[n].hist; if(h&&h.some(function(x){ return x.d===D; })) hit[n]=1; });
-        if(Object.keys(hit).length>=Math.max(2,Math.ceil(nEx*0.6))){ out[i]=D; add[i]=D; used[D]=1; break; } } });
+        /* 29.10.26: תרגיל שמופיע גם באימון אחר לא מוכיח שעשו דווקא את האימון הזה (אימון 4 של אביאל סומן בטעות) — סופרים רק תרגילים ייחודיים */
+        var uq=names.filter(function(n){ return days.every(function(d2,j2){ return j2===i||!d2.ex.some(function(e2){ return e2.ex===n; }); }); }), hu=uq.filter(function(n){ return hit[n]; }).length;
+        var ok=uq.length>=2?hu>=Math.max(2,Math.ceil(uq.length*0.6)):Object.keys(hit).length>=Math.max(3,Math.ceil(nEx*0.8));
+        if(ok){ out[i]=D; add[i]=D; used[D]=1; break; } } });
     if(Object.keys(add).length){ var m=ls('aviel_done',{}); Object.keys(add).forEach(function(k){ m[k]=add[k]; }); lsSet('aviel_done',m); } }catch(e){}
   return out; };
 
@@ -2809,6 +2812,14 @@ var _renderTrain1=renderTrain; renderTrain=function(){
     if(sub&&!sub.querySelector('button')){ var t=sub.textContent; sub.classList.add('wk1'); sub.innerHTML='<span>'+(SHOWALL?esc(t):'אימון '+(DAY+1)+' · '+esc(t.replace(/^השבוע:\s*/,'השבוע ')))+'</span><button type="button" id="wkAll">'+(SHOWALL?'רק האימון הבא':'כל האימונים')+'</button>';
       document.getElementById('wkAll').onclick=function(){ SHOWALL=!SHOWALL; ONEDAY=null; if(SHOWALL){} renderTrain(); window.scrollTo(0,0); }; } }catch(e){}
   return r; };
+
+/* ===== ברקוד שלא במאגר → קודם רמי לוי (ערכי התווית), ורק אז Open Food Facts / צילום תווית (29.10.26) ===== */
+var _onCodeRL=onCode; onCode=function(code){ code=String(code||'').replace(/\D/g,''); if(!code) return; var nz=function(c){ return String(c||'').replace(/^0+/,''); };
+  if(EXTRA.some(function(f){ return f.code&&nz(f.code)===nz(code); })) return _onCodeRL(code);
+  scanStop(); toast('מחפש את הברקוד…');
+  var done=false, t=setTimeout(function(){ if(!done){ done=true; _onCodeRL(code); } },9000);
+  api('ramibar',{code:code}).then(function(it){ if(done) return; done=true; clearTimeout(t); if(it&&it.k100){ pickExtra(it); toast('נמצא: '+it.name); try{ loadExtra(); }catch(e){} } else _onCodeRL(code); })
+    .catch(function(){ if(done) return; done=true; clearTimeout(t); _onCodeRL(code); }); };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
