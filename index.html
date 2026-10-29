@@ -769,8 +769,9 @@ function api(a,p){
   if(a==='foodday'&&!BOOTFD&&BOOTRES&&BOOTRES.foodday&&BOOTRES.foodday.d===TODAY&&(!p||!p.d||p.d===TODAY)){ BOOTFD=true; return Promise.resolve(BOOTRES.foodday); }
   return api0(a,p); }
 function api0(a,p){
-  var u=API+'?api='+a+'&t='+encodeURIComponent(T)+(p?'&p='+encodeURIComponent(JSON.stringify(p)):'')+'&_='+Date.now();
-  return fetch(u).then(function(r){ return r.json().catch(function(){ throw new Error('השרת לא זמין כרגע. נסו שוב בעוד רגע.'); }); }).then(function(j){ if(!j.ok){ if(j.exp) showExpired(j.exp); throw new Error(j.error||'שגיאה'); } return j.r; }, function(e){ if(e&&e.name!=='TypeError'&&e.message&&!/fetch|network|load failed|internet|offline/i.test(e.message)) throw e; throw new Error('אין חיבור לאינטרנט. נסו שוב בעוד רגע.'); }); /* TypeError = הבקשה לא יצאה (באייפון: Load failed) */
+  var pj=p?JSON.stringify(p):'', u=API+'?api='+a+'&t='+encodeURIComponent(T)+(pj&&pj.length<=1500?'&p='+encodeURIComponent(pj):'')+'&_='+Date.now();
+  var req=pj.length>1500?fetch(API,{method:'POST',body:JSON.stringify({api:a,t:T,p:p})}):fetch(u); /* 29.10.26: הקלטות ותמונות ארוכות מדי לכתובת — נשלחות בגוף הבקשה (אחרת "אין חיבור") */
+  return req.then(function(r){ return r.json().catch(function(){ throw new Error('השרת לא זמין כרגע. נסו שוב בעוד רגע.'); }); }).then(function(j){ if(!j.ok){ if(j.exp) showExpired(j.exp); throw new Error(j.error||'שגיאה'); } return j.r; }, function(e){ if(e&&e.name!=='TypeError'&&e.message&&!/fetch|network|load failed|internet|offline/i.test(e.message)) throw e; throw new Error('אין חיבור לאינטרנט. נסו שוב בעוד רגע.'); }); /* TypeError = הבקשה לא יצאה (באייפון: Load failed) */
 }
 var DAYS=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'], MON=['ינו׳','פבר׳','מרץ','אפר׳','מאי','יוני','יולי','אוג׳','ספט׳','אוק׳','נוב׳','דצמ׳'];
 function pd(s){ var p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
