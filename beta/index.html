@@ -657,7 +657,7 @@ input,select,textarea{font-size:16px}
       <div class="card" id="install" hidden>
         <div class="row"><span class="label">להוסיף למסך הבית</span><button class="ghost sm" type="button" id="instX" aria-label="סגירה"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
         <div style="margin-top:6px;font-size:14px" id="instTxt"></div>
-        <video src="https://aviel112.github.io/aviel-app/intro.mp4" controls playsinline muted preload="metadata" style="display:block;width:min(220px,62%);margin:10px auto 0;border-radius:14px;border:1px solid var(--line)" aria-label="סרטון: איך מוסיפים את האפליקציה למסך הבית"></video>
+        <video src="https://aviel112.github.io/aviel-app/intro.mp4" controls playsinline muted preload="none" style="display:block;width:min(220px,62%);margin:10px auto 0;border-radius:14px;border:1px solid var(--line)" aria-label="סרטון: איך מוסיפים את האפליקציה למסך הבית"></video>
         <button type="button" class="installbtn" id="instBtn" hidden>התקנה במסך הבית</button>
       </div>
       <div class="card sa" id="stepsAuto" hidden>
@@ -825,15 +825,18 @@ function bell(f,at,dur,vol){ try{ if(!ACX) return; var t=ACX.currentTime+(at||0)
 function beep(f,ms){ if(f<1000) bell(1047,0,0.35,0.18); /* ספירה: טיק עדין */ else { bell(784,0,1.1,0.26); bell(988,0.13,1.1,0.26); bell(1319,0.26,1.6,0.3); } /* סוף: שלושה תווים עולים */ }
 function restStart(min){
   var sec=Math.round(min*60); if(!(sec>0)) return; clearInterval(RT); var end=Date.now()+sec*1000, lastB=-1; $('#rest').hidden=false;
-  try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){} /* אייפון: מנגן גם כשהטלפון על שקט */
+  try{ if(navigator.audioSession) navigator.audioSession.type='transient'; }catch(e){} /* 29.10.26: transient — הצפצוף מנמיך את המוזיקה לרגע ולא עוצר אותה (playback עצר את המוזיקה) */
   try{ var AC=window.AudioContext||window.webkitAudioContext; if(AC&&!ACX) ACX=new AC(); if(ACX&&ACX.state==='suspended') ACX.resume(); if(ACX){ var sb=ACX.createBufferSource(); sb.buffer=ACX.createBuffer(1,1,22050); sb.connect(ACX.destination); sb.start(0); } }catch(e){} /* נפתח מתוך הלחיצה על הסט, אחרת הדפדפן חוסם צליל */
   wakeOn(); REST_END=end; /* המסך לא נכבה במנוחה; ואם יצאו מהאפליקציה — בחזרה רואים/שומעים שהמנוחה נגמרה */
   var tick=function(){ var l=Math.max(0,Math.round((end-Date.now())/1000)); $('#restT').textContent='מנוחה '+Math.floor(l/60)+':'+('0'+l%60).slice(-2);
     if(l>0&&l<=3&&lastB!==l){ lastB=l; beep(880,140); }
-    if(!l){ clearInterval(RT); REST_END=0; $('#rest').hidden=true; wakeOff(); beep(1320,450); try{ if(navigator.vibrate) navigator.vibrate([250,120,250]); }catch(e){} toast('יאללה, לסט הבא'); } };
+    if(!l){ clearInterval(RT); REST_END=0; $('#rest').hidden=true; wakeOff(); beep(1320,450); setTimeout(audioIdle,2500); try{ if(navigator.vibrate) navigator.vibrate([250,120,250]); }catch(e){} toast('יאללה, לסט הבא'); } };
   tick(); RT=setInterval(tick,500);
 }
-$('#restX').addEventListener('click',function(){ clearInterval(RT); REST_END=0; $('#rest').hidden=true; wakeOff(); });
+$('#restX').addEventListener('click',function(){ clearInterval(RT); REST_END=0; $('#rest').hidden=true; wakeOff(); audioIdle(); });
+/* בלי צליל פעיל: משחררים את הרמקול, כדי שהמוזיקה של המתאמן תמשיך כרגיל */
+function audioIdle(){ try{ if(ACX&&ACX.state==='running') ACX.suspend(); }catch(e){} try{ if(navigator.audioSession) navigator.audioSession.type='ambient'; }catch(e){} }
+try{ if(navigator.audioSession) navigator.audioSession.type='ambient'; }catch(e){}
 /* מסך דולק במנוחה (Wake Lock) — בלי זה האייפון ננעל והטיימר נעצר */
 var WL=null, REST_END=0; function wakeOn(){ try{ if(navigator.wakeLock&&!WL) navigator.wakeLock.request('screen').then(function(w){ WL=w; w.addEventListener('release',function(){ WL=null; }); }).catch(function(){}); }catch(e){} }
 function wakeOff(){ try{ if(WL) WL.release(); }catch(e){} WL=null; }
@@ -2674,6 +2677,13 @@ function feOpen(x){ var g0=+x.g||0, base={k:+x.k||0,p:+x.p||0,c:+x.c||0,fat:+x.f
     if(!f){ toast('כותבים מה אכלתם',1); return; } if(g0&&!(g>0&&g<3000)){ toast('כמות לא תקינה',1); return; }
     b.disabled=true; b.textContent='שומר…';
     api('foodedit',{row:x.row,of:x.f,d:FDAY.d,f:f,g:g,k:v('feK'),p:v('feP'),c:v('feC'),fat:v('feFat'),m:cur}).then(function(r){ vClose(); if(r&&r.edited===false){ toast('לא נשמר: היומן השתנה בינתיים. רעננו ונסו שוב',1); } else toast('עודכן'); FDAY=r; renderFood(); try{ renderTodayCard(); }catch(e){} }).catch(function(e){ b.disabled=false; b.textContent='שמירה'; toast(e.message||'לא נשמר',1); }); }; }
+
+/* ===== היומן נטען מיד (29.10.26, יהב: "כל מה שאכלתי היום נעלם" — היה ריק עד שהשרת ענה): עותק בטלפון, מוצג מיד ומתעדכן ברקע ===== */
+function fdKey(d){ return 'aviel_fday_'+d; }
+function fdSave(){ try{ if(!FDAY||!FDAY.d||FDAY._cached) return; lsSet(fdKey(FDAY.d),{d:FDAY.d,items:(FDAY.items||[]).filter(function(x){ return !x._p; })}); var y=dshift(TODAY,-2); try{ localStorage.removeItem(fdKey(y)); }catch(e){} }catch(e){} }
+var _renderFoodC=renderFood; renderFood=function(){ fdSave(); _renderFoodC.apply(this,arguments); try{ var t=document.getElementById('fTot'); if(t&&FDAY&&FDAY._cached&&!t.querySelector('.fdsync')){ var s=document.createElement('div'); s.className='sub fdsync'; s.style.cssText='text-align:center;margin-top:6px'; s.textContent='מתעדכן…'; t.appendChild(s); } }catch(e){} };
+var _renderTodayC=renderTodayCard; renderTodayCard=function(){ fdSave(); return _renderTodayC.apply(this,arguments); };
+(function(){ try{ if(FDAY&&!FDAY.d&&!(FDAY.items||[]).length){ var c=ls(fdKey(TODAY),null); if(c&&c.items&&c.items.length){ FDAY={d:c.d,items:c.items,_cached:true}; try{ renderFood(); }catch(e){} try{ renderTodayCard(); }catch(e){} } } }catch(e){} })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
