@@ -2826,6 +2826,20 @@ var _onCodeRL=onCode; onCode=function(code){ code=String(code||'').replace(/\D/g
   api('ramibar',{code:code}).then(function(it){ if(done) return; done=true; clearTimeout(t); if(it&&it.k100){ pickExtra(it); toast('נמצא: '+it.name); try{ loadExtra(); }catch(e){} } else _onCodeRL(code); })
     .catch(function(){ if(done) return; done=true; clearTimeout(t); _onCodeRL(code); }); };
 
+
+/* ===== האימון של היום במסך הבית (29.10.26, אביאל: "שיחשב באמת"): הזמן מחושב מהתוכנית —
+   לכל תרגיל: סטים × (כ-40 שנ׳ עבודה + המנוחה שכתובה), פחות מנוחה אחת אחרי הסט האחרון, +דקה מעבר בין תרגילים, +5 דק׳ חימום ===== */
+function woMinutes(day){ var t=5; (day.ex||[]).forEach(function(e){ if(/חימום/.test(e.mu||'')){ t+=3; return; } var s=parseInt(e.s,10)||3, r=restMin(e.rest)||1.5, work=/דק/.test(e.r||'')?(parseFloat(e.r)||1):0.67; t+=s*work+(s-1)*r+1; }); return Math.max(10,Math.round(t/5)*5); }
+function homeWorkout(){ var old=document.getElementById('hWo'), tc=document.getElementById('todayCard'); try{
+  var p=P&&P.program, days=p?(p.blocks||[]).filter(function(b){ return b.ex&&b.ex.length; }):[]; if(!tc||!days.length||p.file){ if(old) old.remove(); return; }
+  var dm=doneMap(), w=woGet(), i=w?w.day:-1; if(i<0){ for(var q=0;q<days.length;q++){ if(!dm[q]){ i=q; break; } } }
+  if(i<0){ if(old) old.remove(); return; } var d=applySwaps(days[i]), n=d.ex.filter(function(e){ return !/חימום/.test(e.mu||''); }).length, mins=woMinutes(d);
+  var title=String(d.title||'').replace(/^אימון\s*\d+\s*[–-]\s*/,'').replace(/\s*·\s*/g,', ');
+  var h='<div class="hwo-t"><b>'+(w?'באמצע אימון '+(i+1):'האימון הבא: אימון '+(i+1))+'</b><span>'+n+' תרגילים, כ-'+mins+' דק׳</span></div>'+(title?'<div class="sub">'+esc(title)+'</div>':'')+'<button type="button" class="installbtn" id="hWoGo">'+(w?'חזרה לאימון':'להתחלה')+'</button>';
+  if(!old){ old=document.createElement('div'); old.id='hWo'; old.className='card hwo'; tc.parentNode.insertBefore(old,tc.nextSibling); } old.innerHTML=h;
+  document.getElementById('hWoGo').onclick=function(){ if(!w){ DAY=i; ONEDAY=i; SHOWALL=false; } show('train'); renderTrain(); window.scrollTo(0,0); }; }catch(e){ if(old) old.remove(); } }
+(function(){ var st=document.createElement('style'); st.textContent='.hwo{display:flex;flex-direction:column;gap:6px}.hwo-t{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}.hwo-t b{font-size:17px}.hwo-t span{color:var(--mute);font-size:13.5px}.hwo .sub{margin:0}.hwo .installbtn{margin-top:4px}'; document.head.appendChild(st); })();
+var _renderTodayHW=renderTodayCard; renderTodayCard=function(){ var r=_renderTodayHW.apply(this,arguments); try{ homeWorkout(); }catch(e){} return r; };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;

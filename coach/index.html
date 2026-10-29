@@ -1283,6 +1283,8 @@ google.script.run.withSuccessHandler(function(d){ swrSave('leads',d||[]); LEADS=
 .om-n .rw{display:grid;grid-template-columns:52px 1fr auto;gap:8px;align-items:center;font-size:12.5px}
 .om-n .bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}.om-n .bar i{display:block;height:100%;border-radius:6px}
 .om-e{font-size:13px;color:var(--mute);padding:8px 0}
+.om-ph{margin-bottom:10px}.om-ph summary{cursor:pointer;list-style:none}.om-ph summary::-webkit-details-marker{display:none}.om-ph summary::after{content:'+';float:left;color:var(--mute);font-weight:700}.om-ph[open] summary::after{content:'−'}
+.om-pr{margin-top:10px}.om-pr small{color:var(--mute);font-weight:400}.om-pi{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:6px}.om-pi figure{margin:0}.om-pi img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;display:block;background:var(--chip)}.om-pi figcaption{font-size:11.5px;color:var(--mute);text-align:center;margin-top:3px}
 </style>
 <script>
 /* ===== מסך ראשי בכרטיס (29.10.26, בהשראת Progress — אביאל: "מה שיש להם שאין לנו, שיהיה לי כמה שיותר נוח") ===== */
@@ -1318,7 +1320,11 @@ google.script.run.withSuccessHandler(function(d){ swrSave('leads',d||[]); LEADS=
       (n&&n.days?'<div class="om-n">'+ring(n.k,tk)+'<div class="rows">'+row('חלבון',n.p,mc.p,'var(--blue)')+row('פחמימה',n.c,mc.c,'var(--green)')+row('שומן',n.f,mc.f,'var(--orange)')+'</div></div>':'<div class="om-e">'+(o.mode==='תפריט'?'עובד/ת לפי תפריט, ולא רשם/ה יומן אוכל השבוע.':'אין רישומים ביומן האוכל בשבוע האחרון.')+'</div>')+'</div>';
     box.querySelectorAll('[data-om] button').forEach(function(b){ b.onclick=function(){ var k=b.parentNode.dataset.om; if(k==='m') OVS.m=b.dataset.v; else OVS.r=+b.dataset.v; draw(box,o); }; }); }
   function mount(d){ var b=$('#cardBody'), bar=b&&b.querySelector('.ctabs'); if(!b||!bar||b.querySelector('#ovMain')) return; var box=document.createElement('div'); box.id='ovMain'; box.innerHTML='<div class="skel"></div>'; b.insertBefore(box,bar.nextSibling);
-    var vis=function(){ box.style.display=CTAB==='over'?'':'none'; }; vis(); var g0=window.__ctGo; if(g0&&!g0.__om){ window.__ctGo=function(k){ g0(k); vis(); }; window.__ctGo.__om=1; } bar.addEventListener('click',function(){ setTimeout(vis,0); });
+    var ph=document.createElement('details'); ph.className='om-c om-ph'; ph.innerHTML='<summary><b>השוואת תמונות לפי זווית</b></summary><div class="om-phb"></div>'; box.parentNode.insertBefore(ph,box.nextSibling);
+    ph.addEventListener('toggle',function(){ if(!ph.open||ph.dataset.ld) return; ph.dataset.ld=1; var pb=ph.querySelector('.om-phb'); pb.innerHTML='<div class="skel"></div>';
+      gsr('dashboardPhotoPoses',d.name).then(function(L){ if(!L||!L.length){ pb.innerHTML='<div class="om-e">עוד אין תמונות התקדמות.</div>'; return; } var dd=function(x){ return x.d.slice(8,10)+'/'+x.d.slice(5,7); };
+        pb.innerHTML=L.map(function(g){ return '<div class="om-pr"><b>'+esc(g.pose)+' <small>('+g.n+')</small></b><div class="om-pi"><figure><img src="'+g.first.data+'" alt="'+esc(g.pose)+' ראשונה"><figcaption>'+dd(g.first)+'</figcaption></figure>'+(g.last?'<figure><img src="'+g.last.data+'" alt="'+esc(g.pose)+' אחרונה"><figcaption>'+dd(g.last)+'</figcaption></figure>':'<div class="om-e">תמונה אחת עד עכשיו</div>')+'</div></div>'; }).join(''); }).catch(function(e){ pb.innerHTML='<div class="om-e">'+esc(e.message||String(e))+'</div>'; ph.dataset.ld=''; }); });
+    var vis=function(){ box.style.display=CTAB==='over'?'':'none'; ph.style.display=box.style.display; }; vis(); var g0=window.__ctGo; if(g0&&!g0.__om){ window.__ctGo=function(k){ g0(k); vis(); }; window.__ctGo.__om=1; } bar.addEventListener('click',function(){ setTimeout(vis,0); });
     var nm=d.name, show=function(o){ if(document.getElementById('ovMain')===box) draw(box,o); };
     if(OVC[nm]) show(OVC[nm]); gsr('dashboardOverview',nm).then(function(o){ OVC[nm]=o; show(o); }).catch(function(e){ if(!OVC[nm]) box.innerHTML='<div class="om-e">'+esc(e.message||String(e))+'</div>'; }); }
   var _ct=cardTabs; cardTabs=function(d){ var r=_ct.apply(this,arguments); try{ mount(d); }catch(e){} return r; };
