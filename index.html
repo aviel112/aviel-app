@@ -2460,7 +2460,7 @@ function renderSc(){ var h=scHtml(), old=document.querySelector('.scc'); if(!h){
   if(add) add.onclick=function(){ lsSet('aviel_sc_on',true); window.location.href=SC_LINK; setTimeout(renderSc,800); };
   if(re) re.onclick=function(){ window.location.href=SC_LINK; };
   if(run) run.onclick=function(){ SC_RAN=Date.now(); window.location.href='shortcuts://run-shortcut?name='+encodeURIComponent(SC_NAME)+'&input=text&text='+encodeURIComponent(T); }; }
-document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&SC_RAN&&Date.now()-SC_RAN<5*60000){ SC_RAN=0; setTimeout(function(){ api('data').then(function(r){ D=r; render(); toast('הצעדים עודכנו'); }).catch(function(){}); },1500); } });
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&SC_RAN&&Date.now()-SC_RAN<5*60000){ SC_RAN=0; setTimeout(function(){ api('data').then(function(r){ D=r; render(); var t=(D.week||[]).filter(function(x){ return x.d===TODAY; })[0], n=t&&t.steps; if(n) toast('הצעדים עודכנו: '+Number(n).toLocaleString('he-IL')); else toast('הקיצור רץ אבל לא הגיעו צעדים. בודקים: הגדרות ← בריאות ← גישה לנתונים ← קיצורים ← צעדים',1); }).catch(function(){}); },2500); } }); /* 29.10.26: לא אומרים "עודכנו" כשלא הגיע כלום */
 var _renderSc=render; render=function(){ _renderSc.apply(this,arguments); try{ renderSc(); }catch(e){} };
 
 /* ===== גרף היקפים במסך ההתקדמות (28.10.26, אביאל): לכל מתאמן, גם בלי הרשאה למדוד לבד. בוחרים היקף ורואים את הקו לאורך הזמן ===== */
