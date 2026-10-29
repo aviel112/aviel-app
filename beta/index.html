@@ -29,7 +29,10 @@ h1{font-family:var(--f-display);font-weight:400;font-size:27px;margin:4px 0 2px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
 .label{font-size:12px;color:var(--mute);letter-spacing:.4px;font-weight:700}
 button{font-family:inherit;cursor:pointer;border:none;border-radius:12px;font-weight:700;font-size:15px;padding:12px 16px;background:var(--gold);color:var(--ink)}
-button:disabled{opacity:.5}
+button:disabled{opacity:.5;cursor:not-allowed}
+:where(button:disabled){background-color:var(--panel2);color:var(--mute)} /* :where = משקל 0: כפתור עם עיצוב משלו (סט שבוצע, ספינר שמירה) שומר על הצבעים שלו */
+html,body{overflow-x:clip}
+h1,h2,h3{text-wrap:balance}
 button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
 button.sm{padding:6px 10px;font-size:13px}
 button:focus-visible,input:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -123,7 +126,7 @@ nav.tabs button[aria-selected="true"]{color:var(--gold)}
 .chip[aria-pressed="true"].done::after{color:var(--ink)}
 .rest{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));width:min(408px,calc(100% - 32px));display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel2);border:1px solid var(--gold-d);border-radius:14px;padding:10px 14px;z-index:8;font-weight:800;font-size:17px}
 .ate{background:var(--panel2);color:var(--mute);border:1px solid var(--line);padding:6px 12px;font-size:13px;border-radius:20px}
-.ate[aria-pressed="true"]{background:var(--good);color:var(--ink);border-color:var(--good)}
+.ate[aria-pressed="true"]{background:#23703f;color:#fff;border-color:#23703f}
 .mealhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .str{display:grid;grid-template-columns:1fr auto auto;gap:4px 10px;align-items:center;font-size:14px;margin-top:8px}
 .str .pct{font-weight:800}
@@ -138,7 +141,7 @@ nav.tabs .in{grid-template-columns:none!important;grid-auto-flow:column;grid-aut
 .fadd input{font-size:17px;padding:8px}
 .fnav{margin-bottom:10px}
 .fnav b{font-size:15px}
-.fnav .swarr[disabled]{opacity:.35}
+.fnav .swarr[disabled]{opacity:.35;cursor:not-allowed;color:var(--mute);background-color:transparent}
 .ftop{display:flex;align-items:center;gap:18px}
 .fringw{position:relative;width:118px;height:118px;flex:none}
 .fring{width:100%;height:100%}
@@ -258,7 +261,7 @@ button .ic{width:18px;height:18px}
 .label-form input{font-size:16px;padding:10px}
 .flist button .tag2{display:inline-block;font-size:11px;font-weight:800;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:0 5px;margin-left:6px;line-height:1.5;vertical-align:1px}
 
-#wBtn:disabled,#sBtn:disabled,#ciBtn:disabled,#mBtn:disabled,#fBtn:disabled,#pushBtn:disabled{color:transparent;position:relative;opacity:1}
+#wBtn:disabled,#sBtn:disabled,#ciBtn:disabled,#mBtn:disabled,#fBtn:disabled,#pushBtn:disabled{color:transparent;position:relative;opacity:1;cursor:progress}
 #wBtn:disabled::after,#sBtn:disabled::after,#ciBtn:disabled::after,#mBtn:disabled::after,#fBtn:disabled::after,#pushBtn:disabled::after{content:"";position:absolute;inset:0;margin:auto;width:18px;height:18px;border-radius:50%;border:2.5px solid var(--ink);border-top-color:transparent;animation:spin .7s linear infinite}
 #sBtn:disabled::after{border-color:var(--gold);border-top-color:transparent}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -338,7 +341,9 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .tdh{font-family:var(--f-display);font-weight:700;font-size:22px;margin:0}
 .tdn{font-weight:800;color:var(--gold);font-size:15px}
 .tdbar{height:4px;border-radius:4px;background:var(--panel2);overflow:hidden;margin:10px 0 6px}
-.tdbar i{display:block;height:100%;background:var(--gold);border-radius:4px;transition:width .5s cubic-bezier(.16,1,.3,1)}
+.tdbar i{display:block;height:100%;background:var(--gold);border-radius:4px;transform-origin:right center;animation:barIn .6s cubic-bezier(.16,1,.3,1) both}
+@keyframes barIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.tdbar i,.tbar i{animation:none}}
 .tdi{display:grid;grid-template-columns:28px 1fr 20px;gap:12px;align-items:center;width:100%;background:transparent;color:var(--text);border:0;border-top:1px solid var(--line);border-radius:0;padding:12px 2px;text-align:right;font-weight:600}
 .tdi:first-of-type{border-top:0}
 .tdc{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--gold-d);display:flex;align-items:center;justify-content:center;color:var(--cta-t)}
@@ -420,7 +425,7 @@ a.vplay{text-decoration:none}.vmeet .vplay{margin:8px 0 0}.paycard .vplay{margin
 .tgoal .row b{font-size:15.5px}
 .tgoal .tok{color:var(--good)}
 .tbar{position:relative;height:8px;border-radius:99px;background:var(--line);margin:6px 0 2px}
-.tbar i{position:absolute;inset-block:0;right:0;border-radius:99px;background:var(--gold);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.tbar i{position:absolute;inset-block:0;right:0;border-radius:99px;background:var(--gold);transform-origin:right center;animation:barIn .6s cubic-bezier(.2,.8,.2,1) both}
 .tbar.ok i{background:var(--good)}
 .tknob{position:absolute;top:50%;width:22px;height:22px;border-radius:50%;background:var(--panel);border:3px solid var(--gold);transform:translate(50%,-50%)}
 .tends .num{direction:ltr;unicode-bidi:isolate}
@@ -447,7 +452,7 @@ a.vplay{text-decoration:none}.vmeet .vplay{margin:8px 0 0}.paycard .vplay{margin
 .tnav b{font-size:16px}
 .tarr{width:40px;height:40px;padding:0;border-radius:50%;background:var(--panel2);color:var(--text);display:flex;align-items:center;justify-content:center}
 .tarr svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-.tarr[disabled]{opacity:.3;cursor:default}
+.tarr[disabled]{opacity:.3;cursor:not-allowed;color:var(--mute);background-color:transparent}
 .tchart{position:relative;color:var(--gold)}
 .tchart svg{width:100%;height:auto;display:block;cursor:pointer}
 .tgrid line{stroke:var(--line);stroke-width:1}
@@ -499,8 +504,8 @@ a.vplay{text-decoration:none}.vmeet .vplay{margin:8px 0 0}.paycard .vplay{margin
 .swr span:before{content:"↔";position:absolute;right:0;color:var(--gold)}
 .swa{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:right;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-weight:600;font-size:14px}
 .swa small{color:var(--mute);font-weight:600;white-space:nowrap}
-.swa:disabled{opacity:.5}
-.lvltag{display:inline-block;margin-inline-start:4px;padding:1px 8px;border-radius:99px;background:var(--good);color:var(--ink);font-size:11px;font-weight:800;letter-spacing:0}
+.swa:disabled{opacity:.6;cursor:not-allowed;color:var(--mute);background-color:var(--panel2)}
+.lvltag{display:inline-block;margin-inline-start:4px;padding:1px 8px;border-radius:99px;background:#23703f;color:#fff;font-size:11px;font-weight:800;letter-spacing:0}
 .kdelta{display:block;font-size:11.5px;font-weight:700;color:var(--mute);margin:-2px 0 2px}
 .kdelta.up{color:var(--good)}
 .kdelta.dn{color:var(--bad)}
@@ -555,7 +560,7 @@ a.vplay{text-decoration:none}.vmeet .vplay{margin:8px 0 0}.paycard .vplay{margin
 .brow:last-of-type{border:0}
 .brow.me{color:var(--gold)}
 .bn{width:26px;height:26px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
-.brow:first-of-type .bn{background:var(--gold);color:#1c1813}
+.brow:first-of-type .bn{background:var(--gold);color:var(--ink)}
 .streak{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--mute);margin:2px 0 8px}
 .streak svg{width:20px;height:20px;color:#d97b2b;flex:none}
 .streak b{color:var(--text);font-size:16px}
@@ -657,7 +662,7 @@ input,select,textarea{font-size:16px}
       <div class="card" id="install" hidden>
         <div class="row"><span class="label">להוסיף למסך הבית</span><button class="ghost sm" type="button" id="instX" aria-label="סגירה"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
         <div style="margin-top:6px;font-size:14px" id="instTxt"></div>
-        <video src="https://aviel112.github.io/aviel-app/intro.mp4" controls playsinline muted preload="none" style="display:block;width:min(220px,62%);margin:10px auto 0;border-radius:14px;border:1px solid var(--line)" aria-label="סרטון: איך מוסיפים את האפליקציה למסך הבית"></video>
+        <video src="https://aviel112.github.io/aviel-app/intro.mp4" poster="https://aviel112.github.io/aviel-app/intro.jpg" controls playsinline muted preload="none" style="display:block;width:min(220px,62%);margin:10px auto 0;border-radius:14px;border:1px solid var(--line)" aria-label="סרטון: איך מוסיפים את האפליקציה למסך הבית"></video>
         <button type="button" class="installbtn" id="instBtn" hidden>התקנה במסך הבית</button>
       </div>
       <div class="card sa" id="stepsAuto" hidden>
@@ -2820,6 +2825,7 @@ var _onCodeRL=onCode; onCode=function(code){ code=String(code||'').replace(/\D/g
   var done=false, t=setTimeout(function(){ if(!done){ done=true; _onCodeRL(code); } },9000);
   api('ramibar',{code:code}).then(function(it){ if(done) return; done=true; clearTimeout(t); if(it&&it.k100){ pickExtra(it); toast('נמצא: '+it.name); try{ loadExtra(); }catch(e){} } else _onCodeRL(code); })
     .catch(function(){ if(done) return; done=true; clearTimeout(t); _onCodeRL(code); }); };
+
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
