@@ -2850,13 +2850,14 @@ phGate=function(){ var g=document.getElementById('phGate'), dn=phDone(), sn=+ls(
 (function(){ var st=document.createElement('style'); st.textContent='.phs4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0}.phs{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:74px;border:1.5px dashed var(--gold-d);border-radius:14px;cursor:pointer;color:var(--text);text-align:center;padding:8px}.phs b{font-size:15px}.phs small{font-size:12px;color:var(--gold);font-weight:700}.phs.on{border:1.5px solid var(--good);cursor:default}.phs.on small{color:var(--good)}.phs.busy{opacity:.6;pointer-events:none}'; document.head.appendChild(st); })();
 
 /* ===== שינה בלחיצה אחת (29.10.26): מתחת לשקילת הבוקר, עד 16:00, פעם ביום. אביאל רואה בגרף בכרטיס ===== */
-var SLEEP_OPT=[['פחות מ-6',5.5],['6–7',6.5],['7–8',7.5],['8+',8.5]];
+var SLEEP_OPT=[['פחות מ-5',4.5],['5–6',5.5],['6–7',6.5],['7–8',7.5],['8+',8.5]]; /* 30.10.26: פחות מ-5 = השקילה של הבוקר לא נכנסת לממוצע */
 function sleepRow(){ var f=document.getElementById('wForm'); if(!f) return; var old=document.getElementById('slRow'), done=ls('aviel_sleep_'+TODAY,null);
   if(!done&&new Date().getHours()>=16){ if(old) old.remove(); return; }
-  var h=done?'<span class="sub">שינה הלילה: <b>'+esc(done)+'</b> שעות</span>':'<span class="sub">איך ישנת הלילה?</span><div class="slc">'+SLEEP_OPT.map(function(o,i){ return '<button type="button" class="chip" data-sl="'+i+'">'+o[0]+'</button>'; }).join('')+'</div>';
+  var short=done==='פחות מ-5'||((D&&D.shortSleep)||[]).indexOf(TODAY)>=0;
+  var h=done?'<span class="sub">שינה הלילה: <b>'+esc(done)+'</b> שעות'+(short?'. אחרי לילה קצר הגוף אוגר נוזלים, אז השקילה של היום לא נספרת בממוצע':'')+'</span>':'<span class="sub">איך ישנת הלילה?</span><div class="slc">'+SLEEP_OPT.map(function(o,i){ return '<button type="button" class="chip" data-sl="'+i+'">'+o[0]+'</button>'; }).join('')+'</div>';
   if(!old){ old=document.createElement('div'); old.id='slRow'; f.parentNode.insertBefore(old,f.nextSibling); } old.innerHTML=h;
   old.querySelectorAll('[data-sl]').forEach(function(b){ b.onclick=function(){ var o=SLEEP_OPT[+b.dataset.sl]; lsSet('aviel_sleep_'+TODAY,o[0]); sleepRow(); api('sleep',{h:o[1]}).catch(function(){ try{ localStorage.removeItem('aviel_sleep_'+TODAY); }catch(e){} sleepRow(); toast('לא נשמר, נסו שוב',1); }); }; }); }
-(function(){ var st=document.createElement('style'); st.textContent='#slRow{display:flex;flex-direction:column;gap:6px;margin-top:10px}#slRow .slc{display:flex;gap:6px}#slRow .slc .chip{flex:1 1 0;width:auto;min-width:0;margin:0;padding:7px 4px;font-size:13px}'; document.head.appendChild(st); })();
+(function(){ var st=document.createElement('style'); st.textContent='#slRow{display:flex;flex-direction:column;gap:6px;margin-top:10px}#slRow .slc{display:flex;gap:6px}#slRow .slc .chip{flex:1 1 0;width:auto;min-width:0;margin:0;padding:7px 2px;font-size:12.5px}'; document.head.appendChild(st); })();
 var _renderSl=render; render=function(){ _renderSl.apply(this,arguments); try{ sleepRow(); }catch(e){} };
 
 /* ===== ביטול סימון אימון (29.10.26, אביאל: "לא עשיתי את אימון 4 — איך מבטלים אם נלחץ בלי כוונה"):
