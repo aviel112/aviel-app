@@ -2783,6 +2783,18 @@ function sleepRow(){ var f=document.getElementById('wForm'); if(!f) return; var 
   old.querySelectorAll('[data-sl]').forEach(function(b){ b.onclick=function(){ var o=SLEEP_OPT[+b.dataset.sl]; lsSet('aviel_sleep_'+TODAY,o[0]); sleepRow(); api('sleep',{h:o[1]}).catch(function(){ try{ localStorage.removeItem('aviel_sleep_'+TODAY); }catch(e){} sleepRow(); toast('לא נשמר, נסו שוב',1); }); }; }); }
 (function(){ var st=document.createElement('style'); st.textContent='#slRow{display:flex;flex-direction:column;gap:6px;margin-top:10px}#slRow .slc{display:flex;gap:6px}#slRow .slc .chip{flex:1 1 0;width:auto;min-width:0;margin:0;padding:7px 4px;font-size:13px}'; document.head.appendChild(st); })();
 var _renderSl=render; render=function(){ _renderSl.apply(this,arguments); try{ sleepRow(); }catch(e){} };
+
+/* ===== ביטול סימון אימון (29.10.26, אביאל: "לא עשיתי את אימון 4 — איך מבטלים אם נלחץ בלי כוונה"):
+   באימון מסומן, לחיצה על "האימון הזה כבר סומן" → "לבטל את הסימון?" → מבטל גם סימון ידני וגם זיהוי אוטומטי, לשבוע הזה ===== */
+function wkKey(){ return trkYmd(weekStart()); }
+var _doneMapU=doneMap; doneMap=function(){ var out=_doneMapU(), u=ls('aviel_undone',{})||{}, wk=wkKey(); Object.keys(u).forEach(function(k){ if(u[k]===wk) delete out[k]; }); return out; };
+var _renderTrainU=renderTrain; renderTrain=function(){ var r=_renderTrainU.apply(this,arguments);
+  try{ var b=document.getElementById('finish'); if(b&&doneMap()[DAY]){ var day=DAY; b.classList.add('ghost'); b.textContent='✓ אימון '+(day+1)+' סומן השבוע · לביטול הסימון'; b.onclick=function(){ if(b.dataset.arm!=='1'){ b.dataset.arm='1'; b.textContent='לבטל את הסימון של אימון '+(day+1)+'? לחיצה נוספת'; return; }
+      var m=ls('aviel_done',{}); delete m[day]; lsSet('aviel_done',m); var u=ls('aviel_undone',{})||{}; u[day]=wkKey(); lsSet('aviel_undone',u); SHOWALL=true; renderTrain(); toast('הסימון בוטל. אימון '+(day+1)+' פתוח שוב'); }; } }catch(e){}
+  try{ document.querySelectorAll('#progBox .exthumb img').forEach(function(im){ if(im.dataset.oe) return; im.dataset.oe=1; var kill=function(){ var t=im.closest('.exthumb'); if(t) t.remove(); }; if(im.complete&&!im.naturalWidth) kill(); else im.addEventListener('error',kill); }); }catch(e){}
+  return r; };
+/* סיום אימון שבוטל קודם — הסימון חוזר כרגיל */
+document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('#finish')&&!doneMap()[DAY]){ var u=ls('aviel_undone',{})||{}; if(u[DAY]){ delete u[DAY]; lsSet('aviel_undone',u); } } },true);
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
