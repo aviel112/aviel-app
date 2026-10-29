@@ -366,7 +366,7 @@ function drawMorning(){ var ov=document.getElementById('morn'); if(!ov) return; 
   var mark=function(n,on){ var d2=[]; try{ d2=JSON.parse(localStorage.getItem(key)||'[]'); }catch(e){} d2=d2.filter(function(z){ return z!==n; }); if(on) d2.push(n); try{ localStorage.setItem(key,JSON.stringify(d2)); }catch(e){} drawMorning(); };
   ov.querySelectorAll('[data-mn]').forEach(function(a){ a.onclick=function(){ var n=a.dataset.mn, k=a.dataset.mk; try{ google.script.run.dashboardMessage(n,k); }catch(e){} setTimeout(function(){ mark(n,true); },300); }; });
   ov.querySelectorAll('[data-md]').forEach(function(b){ b.onclick=function(){ var n=b.dataset.md; mark(n, done.indexOf(n)<0); }; }); }
-document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('#mornBtn'); if(b) openMorning(); });
+document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('#mornBtn'); if(b) openQueue(); });
 var GD=null;
 function drawGuides(){ var el=document.getElementById('gdList'); if(!el) return; if(!GD){ el.innerHTML='<div class="skel"></div>'; return; }
   el.innerHTML=(GD.length?GD.map(function(g){ return '<div class="item"><div class="t"><div class="n">'+esc(g.t)+'</div><div class="s">'+esc(g.d||'')+'</div></div><a class="btn" target="_blank" rel="noopener" href="'+esc(g.u)+'">פתיחה</a><button class="btn p" data-gsend="'+esc(g.t)+'" data-gu="'+esc(g.u)+'">לכולם</button><button class="btn x" data-gdr="'+esc(g.t)+'">הסרה</button></div>'; }).join(''):'<div class="empty">אין עדיין מדריכים</div>')+
@@ -488,7 +488,7 @@ function renderToday(){
   var nr=PU?act.filter(function(c){ var p=PU[c.name]; if(!p||!p.app||!p.nudge||!p.nudge.at) return false; var at=new Date(p.nudge.at), hrs=(Date.now()-at)/36e5; if(hrs<6||hrs>72) return false; var nd=at.toISOString().slice(0,10); return !p.seen||p.seen<nd; }):[]; /* 6 שעות חסד, עד 3 ימים אחורה */
   if(nr.length) pulse+='<div class="card"><div class="gh"><i class="o"></i>קיבלו הודעה ולא נכנסו</div><div class="s" style="font-size:13px;color:var(--mute);margin-bottom:4px">התראה מהאפליקציה לא הזיזה אותם. כאן הודעה אישית עובדת יותר.</div>'+nr.map(function(c){ var p=PU[c.name], hrs=Math.round((Date.now()-new Date(p.nudge.at))/36e5); return '<div class="item"><div class="t"><div class="n">'+esc(c.name)+'</div><div class="s" style="white-space:normal">'+esc(p.nudge.t)+' · לפני '+(hrs<24?hrs+' שעות':Math.round(hrs/24)+' ימים')+'</div></div><button class="wa" data-wa="'+esc(c.name)+'" data-k="app">וואטסאפ</button><button class="btn" data-card="'+esc(c.name)+'">כרטיס</button></div>'; }).join('')+'</div>';
   if(reds.length) pulse+='<div class="card"><div class="gh"><i class="r"></i>'+(reds.length===1?'מתאמן/ת אחד/ת באדום':reds.length+' מתאמנים באדום')+'</div><div class="s" style="font-size:13px;color:var(--mute);margin-bottom:4px">כמה סימנים יחד. שיחה או הודעה אישית היום.</div>'+reds.map(function(c){ var p=PU[c.name]; return '<div class="item"><div class="t"><div class="n">'+esc(c.name)+'</div><div class="s" style="white-space:normal">'+esc(p.risk.why.join(' · '))+'</div></div><button class="wa" data-wa="'+esc(c.name)+'" data-k="'+(p.never||p.gap>=3?'weigh':'app')+'">וואטסאפ</button><button class="btn" data-card="'+esc(c.name)+'">כרטיס</button></div>'; }).join('')+'</div>';
-  pulse=(CK&&!MODE&&location.hostname.indexOf('github.io')<0?'<a class="btn p" style="width:100%;margin-bottom:10px;padding:13px;font-weight:800;font-size:15px" target="_blank" rel="noopener" href="https://aviel112.github.io/aviel-app/coach/?k='+encodeURIComponent(CK)+'">פתיחת הדשבורד המהיר (שומרים במסך הבית)</a>':'')+'<button class="btn morn" id="mornBtn">מצב בוקר · מי צריך הודעה היום</button>'+(CK?'<a class="btn" style="width:100%;margin-bottom:10px;padding:11px;font-weight:700" target="_blank" rel="noopener" href="https://aviel112.github.io/aviel-app/coach/builder.html?k='+encodeURIComponent(CK)+'">בונה תפריטים ותוכניות</a>':'')+(MODE?'':'<details class="box" id="igBox" style="margin-bottom:10px"><summary>בדיקת סדר בלוח</summary><div id="igL"></div></details>')+'<details class="box" id="gdBox" style="margin-bottom:10px"><summary>מדריכים באפליקציה של המתאמנים</summary><div id="gdList"></div></details>'+(MODE?'':'<details class="box" id="wkBox" style="margin-bottom:10px"><summary>אפליקציית ניהול לעובד (יובל)</summary><div id="wkL"></div></details>')+pulse;
+  pulse=(CK&&!MODE&&location.hostname.indexOf('github.io')<0?'<a class="btn p" style="width:100%;margin-bottom:10px;padding:13px;font-weight:800;font-size:15px" target="_blank" rel="noopener" href="https://aviel112.github.io/aviel-app/coach/?k='+encodeURIComponent(CK)+'">פתיחת הדשבורד המהיר (שומרים במסך הבית)</a>':'')+'<button class="btn morn" id="mornBtn">תור פעולות · מי צריך הודעה היום</button>'+(CK?'<a class="btn" style="width:100%;margin-bottom:10px;padding:11px;font-weight:700" target="_blank" rel="noopener" href="https://aviel112.github.io/aviel-app/coach/builder.html?k='+encodeURIComponent(CK)+'">בונה תפריטים ותוכניות</a>':'')+(MODE?'':'<details class="box" id="igBox" style="margin-bottom:10px"><summary>בדיקת סדר בלוח</summary><div id="igL"></div></details>')+'<details class="box" id="gdBox" style="margin-bottom:10px"><summary>מדריכים באפליקציה של המתאמנים</summary><div id="gdList"></div></details>'+(MODE?'':'<details class="box" id="wkBox" style="margin-bottom:10px"><summary>אפליקציית ניהול לעובד (יובל)</summary><div id="wkL"></div></details>')+pulse;
   if(AP&&AP.length) pulse='<div class="card" id="apCard" style="border:2px solid var(--blue)"><div class="gh">לאישור · '+AP.length+'</div><div class="s" style="font-size:13px;color:var(--mute);margin-bottom:6px">הצעות שהמערכת הכינה. אישור = מתבצע ונשלח למתאמן/ת.</div>'+AP.map(function(a,i){ if(a.kind==='prep') return '<div class="item" style="align-items:flex-start"><div class="t"><div class="n">'+esc(a.name)+' · '+esc(a.title)+'</div><div class="s" style="white-space:normal">'+esc(a.why||'')+'</div></div><button class="btn p" data-card="'+esc(a.name)+'">לכרטיס</button></div>'; if(a.kind==='guide') return '<div class="item" style="align-items:flex-start"><div class="t"><div class="n">'+esc(a.title)+'</div><div class="s" style="white-space:normal">'+esc(a.why)+'</div></div><button class="btn" data-apskip="'+i+'">דילוג</button><button class="btn p" data-gsend="'+esc(a.gt)+'" data-gu="'+esc(a.gu)+'">שליחה לכולם</button></div>'; if(a.kind==='msg') return '<div class="item" style="align-items:flex-start"><div class="t"><div class="n">'+esc(a.name)+' · '+esc(a.why)+'</div><div class="s" style="white-space:normal">'+esc(String(a.text||'').slice(0,110))+'</div></div><button class="btn" data-apskip="'+i+'">דילוג</button><button class="wa" data-apwa="'+i+'">שליחה</button></div>'; return '<div class="item" style="align-items:flex-start"><div class="t"><div class="n">'+esc(a.name)+' · '+esc(a.title)+'</div><div class="s" style="white-space:normal">'+esc(a.why)+(a.act==='kcal'&&a.to?' · '+(a.from?a.from+' ← ':'')+a.to+' קק״ל':'')+'</div></div><button class="btn" data-apno="'+i+'">לא</button><button class="btn p" data-apok="'+i+'">אישור</button></div>'; }).join('')+'</div>'+pulse;
   pulse=sysBanner()+cpPrompt()+pulse;
   var h=pulse+'<div class="thead"><b>'+(op.length===1?'משימה אחת פתוחה':op.length+' פתוחות')+(hot?' · <span style="color:var(--red)">'+(hot===1?'אחת דחופה':hot+' דחופות')+'</span>':'')+'</b><button class="btn" id="addT">'+(ADD?'סגירה':'+ משימה')+'</button></div>';
@@ -1165,4 +1165,94 @@ google.script.run.withSuccessHandler(function(d){ PU=d||{}; swrSave('pulse',PU);
 google.script.run.withSuccessHandler(function(d){ TK=d; swrSave('tasks',d); renderToday(); }).withFailureHandler(function(e){ if(!TK) TK={open:[],done:[],rules:[]}; renderToday(); toast(e.message); }).dashboardTasks();
 google.script.run.withSuccessHandler(function(d){ swrSave('leads',d||[]); LEADS=(d||[]).slice().reverse(); renderLeads(); }).withFailureHandler(function(){ LEADS=[]; renderLeads(); }).dashboardLeads();
 </script>
+<style>
+#qsW{display:flex;gap:8px;margin-top:10px;position:relative;max-width:520px}
+#qsI{flex:1;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
+#qsMic{flex:none;padding:0 14px;border-radius:12px;font-weight:700}
+#qsMic.on{background:var(--red);border-color:var(--red);color:#fff}
+#qsR{position:absolute;top:calc(100% + 4px);right:0;left:0;z-index:15;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);overflow:hidden}
+#qsR button{display:flex;justify-content:space-between;width:100%;text-align:right;padding:11px 12px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:15px;cursor:pointer}
+#qsR button:last-child{border-bottom:0}
+#qsR button span{color:var(--mute);font-size:12.5px}
+#qsSt{font-size:12.5px;color:var(--mute);margin-top:4px;min-height:1em}
+.qq-n{font-size:12.5px;color:var(--mute)}
+.qq-c{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:10px}
+.qq-c h3{margin:0;font-size:20px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.qq-c textarea{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:10px;border:1px solid var(--line);border-radius:12px;margin-top:10px;background:var(--surface);color:var(--ink)}
+.qq-b{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.qq-b .btn{padding:11px;font-weight:700}
+.qq-bar{height:4px;border-radius:4px;background:var(--line);margin-top:8px;overflow:hidden}
+.qq-bar i{display:block;height:100%;background:var(--blue)}
+.qq-l{display:flex;justify-content:space-between;margin-top:12px;font-size:13px}
+.qq-l button{background:none;border:0;color:var(--mute);font:inherit;text-decoration:underline;cursor:pointer;padding:4px}
+</style>
+<script>
+/* ===== 29.10.26: תור פעולות, חיפוש מהיר, פקודה קולית (אביאל: "לשפר את החוויה שלי כמאמן") ===== */
+(function(){
+  var today=function(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); };
+  var ls=function(k,v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||'null'); localStorage.setItem(k,JSON.stringify(v)); }catch(e){ return null; } };
+  /* --- תור פעולות: כרטיס אחד בכל פעם, שליחה מהעסקי בלי לצאת --- */
+  var QQ=null, QI=0, QD='';
+  function qDone(){ return ls('m_morn_'+QD)||[]; }
+  function qMark(n){ var d=qDone(); if(d.indexOf(n)<0) d.push(n); ls('m_morn_'+QD,d); }
+  function qSnoozed(n){ var s=ls('m_qsnz')||{}; return s[n]&&s[n]>today(); }
+  window.openQueue=function(){ var ov=document.getElementById('qq'); if(ov) ov.remove(); ov=document.createElement('div'); ov.id='qq'; ov.className='ov'; ov.innerHTML='<div class="sheet"><div class="sh"><h2>תור פעולות</h2><button class="x" aria-label="סגירה">×</button></div><div class="skel"></div></div>'; document.body.appendChild(ov);
+    ov.querySelector('.x').onclick=function(){ ov.remove(); }; ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+    google.script.run.withSuccessHandler(function(r){ MORN=r||{d:'',items:[]}; QD=MORN.d||today(); var seen={}, items=[];
+      (MORN.items||[]).forEach(function(x){ if(!seen[x.name]){ seen[x.name]=1; items.push({name:x.name, why:x.why, text:x.text, wa:x.wa, kind:x.kind, red:x.risk==='red'}); } });
+      (window.AP||[]).forEach(function(a){ if(a.kind==='msg'&&a.wa&&!seen[a.name]){ seen[a.name]=1; items.push({name:a.name, why:a.why, text:a.text, wa:a.wa, kind:'ap', red:false}); } });
+      var dn=qDone(); QQ=items.filter(function(x){ return dn.indexOf(x.name)<0&&!qSnoozed(x.name); }); QQ.sort(function(a,b){ return (b.red?1:0)-(a.red?1:0); }); QI=0; qDraw(); }).withFailureHandler(function(e){ ov.querySelector('.skel').outerHTML='<div class="empty">'+esc(e.message)+'</div>'; }).dashboardMorning(); };
+  function qDraw(){ var ov=document.getElementById('qq'); if(!ov) return; var sh=ov.querySelector('.sheet'), total=QQ.length;
+    if(QI>=total){ sh.innerHTML='<div class="sh"><h2>תור פעולות</h2><button class="x" aria-label="סגירה">×</button></div><div class="empty" style="padding:28px 8px">'+(total?'סיימת את התור להיום.':'אין מי שצריך הודעה כרגע.')+'</div><div class="qq-l"><button id="qqList">תצוגת רשימה</button></div>'; sh.querySelector('.x').onclick=function(){ ov.remove(); }; sh.querySelector('#qqList').onclick=function(){ ov.remove(); openMorning(); }; return; }
+    var x=QQ[QI], p=parseWa(x.wa);
+    sh.innerHTML='<div class="sh"><h2>תור פעולות</h2><button class="x" aria-label="סגירה">×</button></div><div class="qq-n">'+(QI+1)+' מתוך '+total+'</div><div class="qq-bar"><i style="width:'+Math.round(QI/total*100)+'%"></i></div>'+
+      '<div class="qq-c"><h3><span>'+esc(x.name)+'</span><span class="tag'+(x.red?' r':'')+'">'+esc(x.why||'')+'</span></h3>'+
+      (p?'<textarea id="qqT" rows="6">'+esc(stripEmo(p.text||x.text||''))+'</textarea>':'<div class="s" style="margin-top:10px;color:var(--orange)">אין טלפון בכרטיס. פותחים את הכרטיס ומטפלים משם.</div>')+
+      '<button class="btn p big1" id="qqS">'+(p?'שליחה מהווטסאפ העסקי':'לכרטיס')+'</button><div class="qq-b"><button class="btn" id="qqK">דלג</button><button class="btn" id="qqZ">מחר</button></div></div>'+
+      '<div class="qq-l"><button id="qqC">לכרטיס של '+esc(String(x.name).split(' ')[0])+'</button><button id="qqD">טופל בלי הודעה</button><button id="qqList">תצוגת רשימה</button></div>';
+    sh.querySelector('.x').onclick=function(){ ov.remove(); };
+    var next=function(){ QI++; qDraw(); };
+    sh.querySelector('#qqK').onclick=function(){ QQ.push(QQ.splice(QI,1)[0]); if(QQ.length===1){ next(); return; } qDraw(); };
+    sh.querySelector('#qqZ').onclick=function(){ var s=ls('m_qsnz')||{}, t=new Date(); t.setDate(t.getDate()+1); s[x.name]=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2); ls('m_qsnz',s); QQ.splice(QI,1); toast('נדחה למחר: '+x.name.split(' ')[0]); qDraw(); };
+    sh.querySelector('#qqD').onclick=function(){ qMark(x.name); QQ.splice(QI,1); qDraw(); };
+    sh.querySelector('#qqC').onclick=function(){ ov.remove(); openCard(x.name); };
+    sh.querySelector('#qqList').onclick=function(){ ov.remove(); openMorning(); };
+    sh.querySelector('#qqS').onclick=function(){ if(!p){ ov.remove(); openCard(x.name); return; } var b=this, t=sh.querySelector('#qqT').value.trim(); if(!t){ toast('ההודעה ריקה'); return; } b.disabled=true; b.textContent='שולח…';
+      google.script.run.withSuccessHandler(function(r){ try{ if(x.kind!=='ap') google.script.run.dashboardMessage(x.name,x.kind,true); }catch(e){} qMark(x.name); QQ.splice(QI,1); toast('נשלח ל'+x.name.split(' ')[0]); try{ waTrack(r.id,x.name); }catch(e){} qDraw(); }).withFailureHandler(function(e){ b.disabled=false; b.textContent='שליחה מהווטסאפ העסקי'; toast(e.message); }).dashboardWaSend(p.phone,t,x.name); }; }
+  /* --- חיפוש מהיר + פקודה קולית: שורה אחת למעלה --- */
+  function clients(){ return (window.L&&L.clients)||[]; }
+  function qsFind(q){ q=String(q||'').trim(); if(!q) return []; var dg=q.replace(/\D/g,''); return clients().filter(function(c){ return String(c.name).indexOf(q)>=0||(dg.length>=3&&String(c.phone||'').replace(/\D/g,'').indexOf(dg)>=0); }).sort(function(a,b){ return (b.status==='פעיל')-(a.status==='פעיל'); }).slice(0,7); }
+  function qsMount(){ var top=document.querySelector('.top'); if(!top||document.getElementById('qsW')) return;
+    var w=document.createElement('div'); w.innerHTML='<div id="qsW"><input id="qsI" type="search" placeholder="חיפוש מתאמן · שם או טלפון" autocomplete="off" enterkeyhint="go"><button class="btn" id="qsMic" aria-label="פקודה קולית">פקודה קולית</button><div id="qsR" hidden></div></div><div id="qsSt"></div>';
+    top.appendChild(w.firstChild); top.appendChild(w.lastChild);
+    var I=$('#qsI'), R=$('#qsR');
+    var draw=function(){ var r=qsFind(I.value); if(!r.length){ R.hidden=true; R.innerHTML=''; if(I.value.trim()&&clients().length) { R.hidden=false; R.innerHTML='<button disabled>לא נמצא</button>'; } return; } R.hidden=false; R.innerHTML=r.map(function(c){ return '<button data-qs="'+esc(c.name)+'">'+esc(c.name)+'<span>'+esc(c.status||'')+'</span></button>'; }).join(''); };
+    I.addEventListener('input',draw); I.addEventListener('focus',draw);
+    I.addEventListener('keydown',function(e){ if(e.key==='Enter'){ var r=qsFind(I.value); if(r[0]) go(r[0].name); } if(e.key==='Escape'){ I.value=''; draw(); I.blur(); } });
+    var go=function(n){ I.value=''; R.hidden=true; I.blur(); openCard(n); };
+    R.addEventListener('click',function(e){ var b=e.target.closest('[data-qs]'); if(b) go(b.dataset.qs); });
+    document.addEventListener('click',function(e){ if(!e.target.closest('#qsW')) R.hidden=true; });
+    $('#qsMic').onclick=function(){ var b=this, st=$('#qsSt'); if(!REC){ st.textContent='מדברים, למשל: "ליהב יעד צעדים עשרת אלפים". לוחצים שוב לסיום'; b.classList.add('on'); }
+      recordAudio(b,st,function(blob,mime){ st.textContent='מבין מה אמרת…'; var fr=new FileReader(); fr.onload=function(){ var b64=String(fr.result).split(',')[1];
+        google.script.run.withSuccessHandler(function(c){ st.textContent=''; vcConfirm(c); }).withFailureHandler(function(e){ st.textContent=e.message; }).dashboardVoiceCmd(b64,mime); }; fr.readAsDataURL(blob); }); };
+  }
+  var ACT={steps:'יעד צעדים',kcal:'יעד קלוריות',water:'יעד מים (מ״ל)',goalKg:'משקל יעד',focus:'יעד לשבוע',note:'הודעה באפליקציה',wa:'וואטסאפ מהעסקי',card:'פתיחת כרטיס'};
+  function vcConfirm(c){ c=c||{}; var ov=document.createElement('div'); ov.className='ov'; var txt=c.action==='note'||c.action==='wa'||c.action==='focus';
+    var ok=c.name&&ACT[c.action];
+    ov.innerHTML='<div class="sheet"><div class="sh"><h2>פקודה קולית</h2><button class="x" aria-label="סגירה">×</button></div><div class="s" style="font-size:13px;color:var(--mute)">שמעתי: '+esc(c.text||'')+'</div>'+
+      (ok?'<div class="qq-c"><h3><span>'+esc(c.name)+'</span><span class="tag">'+esc(ACT[c.action])+'</span></h3>'+(c.action==='card'?'':(txt?'<textarea id="vcV" rows="4">'+esc(c.value||'')+'</textarea>':'<input id="vcV" inputmode="decimal" value="'+esc(c.value||'')+'" style="width:100%;box-sizing:border-box;font:inherit;font-size:22px;font-weight:800;padding:10px;margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink)">'))+'<button class="btn p big1" id="vcGo">'+(c.action==='card'?'לפתוח':'ביצוע')+'</button></div>'
+        :'<div class="empty">'+esc(c.name?'לא הבנתי מה לעשות. אפשר: יעד צעדים, קלוריות, מים, משקל יעד, יעד לשבוע, הודעה, וואטסאפ, או לפתוח כרטיס.':'לא זיהיתי שם של מתאמן. מנסים שוב עם השם המלא.')+'</div>')+'</div>';
+    document.body.appendChild(ov); var close=function(){ ov.remove(); }; ov.querySelector('.x').onclick=close; ov.onclick=function(e){ if(e.target===ov) close(); };
+    var g=ov.querySelector('#vcGo'); if(!g) return;
+    g.onclick=function(){ var v=ov.querySelector('#vcV'), val=v?v.value.trim():'', num=Number(String(val).replace(/[^\d.]/g,'')), n=c.name, f=n.split(' ')[0];
+      if(c.action==='card'){ close(); openCard(n); return; }
+      if(!txt&&!(num>0)){ toast('צריך מספר'); return; } if(txt&&!val){ toast('ריק'); return; }
+      g.disabled=true; g.textContent='מבצע…';
+      var job= c.action==='steps'?gsr('dashboardStepsGoal',n,num):c.action==='kcal'?gsr('dashboardKcalSet',n,num):c.action==='water'?gsr('dashboardWaterGoal',n,num):c.action==='goalKg'?gsr('dashboardGoalKg',n,num):c.action==='focus'?gsr('dashboardFocus',n,val):c.action==='note'?gsr('dashboardNote',n,val):(c.phone?gsr('dashboardWaSend',c.phone,val,n):Promise.reject(new Error('אין טלפון ל'+f)));
+      job.then(function(){ close(); try{ delete CARD[n]; }catch(e){} toast('בוצע: '+ACT[c.action]+' ל'+f); }).catch(function(e){ g.disabled=false; g.textContent='ביצוע'; toast(e.message||String(e)); }); };
+  }
+  var t0=setInterval(function(){ if(document.querySelector('.top')){ qsMount(); clearInterval(t0); } },300);
+})();
+</script>
+
 </body></html>
