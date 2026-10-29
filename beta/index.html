@@ -2744,6 +2744,12 @@ setTimeout(woResume,1200);
 /* הסבר שחוזר בכל תרגיל ("פעם ראשונה בתרגיל…", "כמה קשה…") — רק בתרגיל הראשון */
 function exDedupe(){ var seen={}; document.querySelectorAll('#progBox .card.ex .exnote').forEach(function(n){ var t=n.textContent.trim(), k=/^פעם ראשונה בתרגיל/.test(t)?'first':/^"?כמה קשה"?/.test(t)?'rir':''; if(!k) return; if(seen[k]) n.remove(); else seen[k]=1; }); }
 var _renderTrainDd=renderTrain; renderTrain=function(){ var r=_renderTrainDd.apply(this,arguments); try{ exDedupe(); }catch(e){} return r; };
+
+/* ===== לחיצה על ק״ג/חזרות מסמנת את המספר (29.10.26, אביאל: "שאני לוחץ — ישר מקליד מספר והוא דורס את הקודם") ===== */
+(function(){ var sel=function(el){ try{ el.setSelectionRange(0,String(el.value).length); }catch(e){ try{ el.select(); }catch(er){} } }, armed=null;
+  document.addEventListener('focusin',function(e){ var el=e.target; if(!el||!el.matches||!el.matches('.setrow input')) return; armed=el; sel(el); setTimeout(function(){ sel(el); },0); setTimeout(function(){ if(document.activeElement===el) sel(el); },60); });
+  document.addEventListener('mouseup',function(e){ if(armed&&e.target===armed){ e.preventDefault(); sel(armed); armed=null; } },true);
+  document.addEventListener('touchend',function(e){ var el=e.target; if(armed&&el===armed){ setTimeout(function(){ sel(el); },0); armed=null; } },true); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
