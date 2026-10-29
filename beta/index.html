@@ -1466,7 +1466,7 @@ function todayItems(){
   it.push({k:'c', t:'צ׳ק-אין', s:d.checkinDone?'נשלח':'2 דקות, פעם בשבועיים', done:!!d.checkinDone});
   var hb=habitsToday(); if(hb.total) it.push({k:'h', t:'הרגלים', s:hb.done+' מתוך '+hb.total+(hb.done===hb.total?' · יום מלא':''), done:hb.done===hb.total});
   var wv=waterNow(); it.push({k:'wa', t:'מים', s:litres(wv.ml)+' מתוך '+litres(wv.goal)+' ליטר', done:wv.ml>=wv.goal});
-  var sg=+(d.stepsGoal)||0, tw=wk.filter(function(x){ return x.d===TODAY; })[0], sn=tw&&tw.steps||0; if(sg||sn) it.push({k:'st', t:'צעדים', s:(sn?Number(sn).toLocaleString('he-IL'):'0')+(sg?' מתוך '+sg.toLocaleString('he-IL'):'')+(sg&&sn>=sg?' · סגרת':''), done:!!(sg&&sn>=sg)}); /* 29.10.26: צעדים כמו מים */
+  var sg=+(d.stepsGoal)||8000, tw=wk.filter(function(x){ return x.d===TODAY; })[0], sn=tw&&tw.steps||0; if(sg||sn) it.push({k:'st', t:'צעדים', s:(sn?Number(sn).toLocaleString('he-IL'):'0')+(sg?' מתוך '+sg.toLocaleString('he-IL'):'')+(sg&&sn>=sg?' · סגרת':''), done:!!(sg&&sn>=sg)}); /* 29.10.26: צעדים כמו מים */
   return it;
 }
 /* הרגלים יומיים (נשמרים בטלפון וגם בקובץ המעקב) + רצף ימים */
@@ -2636,7 +2636,7 @@ var _renderMS=render; render=function(){ _renderMS.apply(this,arguments); try{ v
 (function(){ var st=document.createElement('style'); st.textContent='.civ{width:100%;margin:8px 0 10px;font-size:14px}.mpl{display:flex;flex-direction:column;gap:10px;margin:8px 0;text-align:right}.mpi{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--panel)}.mpt{color:var(--gold);font-weight:700;font-size:14px;margin:4px 0}.mpr{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}.mpr .ghost{width:auto}'; document.head.appendChild(st); })();
 
 /* יעד הצעדים בולט (29.10.26, אביאל: "הם רק מזינים, לא רואים את היעד"): בתוך השדה ובשורה מעליו */
-var _homeStepsG=homeSteps; homeSteps=function(){ _homeStepsG.apply(this,arguments); try{ var g=+(D&&D.stepsGoal)||0, i=document.getElementById('sIn'); if(!i) return; var t=(D.week||[]).filter(function(x){ return x.d===TODAY; })[0], n=t&&t.steps||0;
+var _homeStepsG=homeSteps; homeSteps=function(){ _homeStepsG.apply(this,arguments); try{ var g=+(D&&D.stepsGoal)||8000, i=document.getElementById('sIn'); /* 29.10.26: בלי יעד מאביאל — 8,000, כדי שתמיד יהיה סרגל */ if(!i) return; var t=(D.week||[]).filter(function(x){ return x.d===TODAY; })[0], n=t&&t.steps||0;
   i.placeholder=g?'צעדים היום · היעד שלך '+g.toLocaleString('he-IL'):'צעדים היום';
   var b=document.getElementById('sGoalBig'); if(!g){ if(b) b.remove(); return; } if(!b){ b=document.createElement('div'); b.id='sGoalBig'; b.className='sgb'; var f=document.getElementById('sForm'); f.parentNode.insertBefore(b,f); }
   var pc=Math.min(100,Math.round(n/g*100)); b.innerHTML='<div class="sgn"><b class="num">'+n.toLocaleString('he-IL')+'</b><span>צעדים היום</span></div><div class="sgbar"><i style="width:'+pc+'%"></i></div><div class="sgs">'+(n>=g?'סגרת את היעד ('+g.toLocaleString('he-IL')+')':'היעד '+g.toLocaleString('he-IL')+' · עוד '+(g-n).toLocaleString('he-IL'))+'</div>'; }catch(e){} };
