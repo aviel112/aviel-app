@@ -624,40 +624,45 @@ input,select,textarea{font-size:16px}
 @media (prefers-contrast:more){:root{--mute:var(--text)}.card,.news{border-width:2px}}
 
 </style><script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script><script>(function(){var t=null;try{t=localStorage.getItem('aviel_theme');}catch(e){}if(t!=='light'&&t!=='dark')t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#f7f3ec':'#0d0d0f';})();</script><style id="restyle">
-/* Hallmark · redesign: restyle · theme: brand, black and champagne · faces: Frank Ruhl Libre (display, numbers) + Assistant (body) · 30.10.26 */
-/* critique: one card recipe everywhere, gold frames and outlines on every box, one font weight, pills that all look alike. Now: hairline surfaces, gold only where it means something, serif for the moments that matter */
-:root{--ink:#0b0a08;--panel:#141210;--panel2:#1b1814;--line:#28231c;--line2:#3a3228;--text:#efe8da;--mute:#a69c8b;--gold:#cfae6b;--gold-d:#8a7043;--cta:#cfae6b;--cta-t:#15110a;--soft:rgba(207,174,107,.10);--sh:none;--good:#5cc489;--warn:#e3a24d;--bad:#e36b5f;--f-display:'Frank Ruhl Libre','Assistant',Georgia,serif;--f-body:'Assistant',Arial,sans-serif;--r-card:18px;--r-ctl:14px;--nav-bg:#0b0a08}
-:root[data-theme="light"]{--ink:#f4efe5;--panel:#fbf8f2;--panel2:#efe8da;--line:#e2d8c6;--line2:#cfc2ab;--text:#1b1712;--mute:#5f564a;--gold:#7a5a20;--gold-d:#b39253;--cta:#1b1712;--cta-t:#f4efe5;--soft:#eee2c8;--sh:none;--good:#23703f;--warn:#9a5d0e;--bad:#b23b31;--nav-bg:#f4efe5}
+/* Hallmark · redesign: restyle v2 · direction: Apple-native (by request: "like Apple") · face: the system font (SF Pro / SF Hebrew on iPhone), Assistant as fallback · 30.10.26 */
+/* critique: v1 still read as generated, the serif and the cards. Now: no borders, grouped surfaces in system greys, one face in heavy weights with tight tracking, gold as the single tint, translucent tab bar */
+:root{--ink:#000;--panel:#1c1c1e;--panel2:#2c2c2e;--line:rgba(84,84,88,.6);--line2:rgba(84,84,88,.9);--text:#fff;--mute:rgba(235,235,245,.62);--gold:#d9b46e;--gold-d:#8a7043;--cta:#d9b46e;--cta-t:#1a1408;--soft:rgba(217,180,110,.14);--sh:none;--good:#30d158;--warn:#ffb340;--bad:#ff6961;--f-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Hebrew','Assistant',system-ui,sans-serif;--f-body:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Hebrew','Assistant',system-ui,sans-serif;--r-card:22px;--r-ctl:14px;--nav-bg:rgba(10,10,12,.72)}
+:root[data-theme="light"]{--ink:#f2f2f7;--panel:#fff;--panel2:#f2f2f7;--line:rgba(60,60,67,.18);--line2:rgba(60,60,67,.3);--text:#000;--mute:rgba(60,60,67,.66);--gold:#8a6420;--gold-d:#b39253;--cta:#000;--cta-t:#fff;--soft:rgba(138,100,32,.10);--good:#248a3d;--warn:#b25000;--bad:#d70015;--nav-bg:rgba(249,249,251,.78)}
 html,body{overflow-x:clip}
-body{font-family:var(--f-body);background:var(--ink);color:var(--text);-webkit-font-smoothing:antialiased}
-h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:-.01em;text-wrap:balance;overflow-wrap:break-word;min-width:0}
-h1{font-size:34px;line-height:1.08;margin:12px 0 6px}
-.card,.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:none}
-.card h2,.card>.row>b:first-child{font-family:var(--f-display);font-weight:700}
-.today{outline:0;border-color:var(--line2)}
-.news{border-width:1px;border-color:var(--line);background:var(--panel2)}
+body{font-family:var(--f-body);background:var(--ink);color:var(--text);-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+h1,h2,h3{font-family:var(--f-display);font-weight:800;letter-spacing:-.025em;text-wrap:balance;overflow-wrap:break-word;min-width:0}
+h1{font-size:36px;line-height:1.06;margin:14px 0 6px}
+#hello{font-size:38px}
+h2{font-size:22px}
+.today h2{font-size:28px}
+.card,.kpi{background:var(--panel);border:0;border-radius:var(--r-card);box-shadow:none}
+#pushCard{border:0!important;background:var(--panel)}
+.today{outline:0;border:0}
+.news{border:0;background:var(--panel)}
+.today .inbox{background:var(--panel2);border:0;border-radius:16px;padding:14px 16px;margin:6px 0 12px}
+.today .inbox b{font-family:var(--f-display);font-weight:700;font-size:16px}
+.card h2,.card>.row>b:first-child{font-family:var(--f-display);font-weight:800;letter-spacing:-.02em}
 .label{font-size:13px;letter-spacing:0;color:var(--mute);font-weight:600;text-transform:none}
-.sub{color:var(--mute)}
-.brand{font-family:var(--f-body);font-weight:800;font-size:13px;letter-spacing:.06em;color:var(--text)}
-.kpi b,.fbig,.sgn,.vtime{font-family:var(--f-display);font-weight:700}
-button.installbtn,label.installbtn{background:var(--cta);color:var(--cta-t);border:0;border-radius:var(--r-ctl);min-height:52px;font-weight:700;font-size:16px;box-shadow:none}
-a.installbtn{color:var(--gold);font-weight:600;font-size:14px}
-.ghost,button.installbtn.ghost{background:transparent;color:var(--text);border:1px solid var(--line2);border-radius:var(--r-ctl)}
-.ghost.sm{border-radius:12px}
-.linkbtn{color:var(--gold);text-underline-offset:3px}
-.chip{border-color:var(--line2)}
-.chip[aria-pressed="true"]{background:var(--gold);color:var(--cta-t);border-color:var(--gold)}
-:root[data-theme="light"] .chip[aria-pressed="true"]{background:var(--text);color:var(--ink);border-color:var(--text)}
-.thbtn{background:transparent;border:1px solid var(--line);color:var(--text)}
-nav.tabs{background:var(--nav-bg);border-top:1px solid var(--line)}
+.sub,.exnote{color:var(--mute)}
+.brand{font-family:var(--f-body);font-weight:700;font-size:15px;letter-spacing:-.01em;color:var(--text)}
+.kpi b,.fbig,.sgn,.vtime,.big{font-family:var(--f-display);font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+button.installbtn,label.installbtn{background:var(--cta);color:var(--cta-t);border:0;border-radius:999px;min-height:50px;font-weight:600;font-size:17px;letter-spacing:-.01em;box-shadow:none}
+a.installbtn{color:var(--gold);font-weight:600;font-size:15px}
+.ghost,button.installbtn.ghost{background:var(--panel2);color:var(--text);border:0;border-radius:999px}
+.ghost.sm{border-radius:999px}
+.linkbtn{color:var(--gold);text-decoration:none;font-weight:600}
+.chip{background:var(--panel2);border:0;color:var(--text);border-radius:999px}
+.chip[aria-pressed="true"]{background:var(--text);color:var(--ink)}
+.thbtn{background:var(--panel);border:0;color:var(--text)}
+nav.tabs{background:var(--nav-bg);border-top:.5px solid var(--line);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
+nav.tabs button{color:var(--mute);font-weight:500}
 nav.tabs button[aria-selected="true"]{color:var(--gold)}
-input,select,textarea{border-radius:12px}
-/* בלי מסגרות זהב: כרטיס התראות והודעת המאמן בתוך "היום שלך" (כרטיס בתוך כרטיס) — עכשיו טקסט עם קו שיער בלבד */
-#pushCard{border-color:var(--line)!important;background:var(--panel2)}
-.today .inbox{background:transparent;border:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0;padding:14px 0;margin:6px 0 10px}
-.today .inbox b{font-family:var(--f-display);font-size:17px}
-.today h2{font-size:26px}
-#hello{font-size:36px}
+input,select,textarea{border-radius:12px;border-color:var(--line)!important;background:var(--panel2)}
+.setrow input,.setrow select{background:var(--panel2)}
+.spec span{background:var(--panel2);border:0}
+.ghost,.swarr,.thbtn,.fsearch button,.fcopy,.ghost.sm{border:0!important}
+.swarr,.fsearch button,.fcopy{background:var(--panel2)}
+.swarr[disabled]{opacity:.35}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style></head>
