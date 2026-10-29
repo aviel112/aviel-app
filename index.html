@@ -973,6 +973,7 @@ function drawMeasures(m){
 
 /* actions */
 $('#wForm').addEventListener('submit',function(e){ e.preventDefault(); var v=parseFloat(String($('#wIn').value).replace(',','.')); if(!(v>30&&v<250)){ toast('מקלידים משקל בק״ג, למשל 68.4',1); return; }
+  var refK=(function(){ var w=(D.week||[]).filter(function(x){ return x.kg&&x.d!==TODAY; }); return w.length?w[w.length-1].kg:(D.lastKg||null); })(); if(refK&&Math.abs(v-refK)>=4&&this.dataset.chk!==String(v)){ this.dataset.chk=String(v); toast(v+' רחוק מהשקילה הקודמת ('+refK+'). אם זו לא טעות הקלדה, לוחצים שמירה שוב',1); return; } this.dataset.chk=''; /* 29.10.26: טעות הקלדה לא נכנסת לגרף */
   /* שמירה מיידית: השקילה מופיעה מיד על המסך, והשרת מאשר ברקע. אם נכשל, חוזרים למצב הקודם */
   var pK=null, pL=D.lastKg, pG=D.gap; try{ (D.week||[]).forEach(function(x){ if(x.d===TODAY){ pK=x.kg; x.kg=v; } }); D.lastKg=v; D.gap=0; }catch(e){}
   $('#wBtn').disabled=true; $('#wIn').value=''; render(); toast('נשמר · '+v+' ק״ג');
