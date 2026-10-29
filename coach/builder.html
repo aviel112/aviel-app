@@ -294,7 +294,7 @@ function render(){
   var cl=S.clients.filter(function(c){ return c.status!=='הסתיים'; });
   var h='<header><span class="brand">AVIEL · בונה</span><select id="cSel" aria-label="מתאמן"><option value="">בחירת מתאמן…</option>'+cl.map(function(c){ return '<option'+(c.name===S.client?' selected':'')+'>'+esc(c.name)+'</option>'; }).join('')+'</select>'+
     '<div class="tabs" role="tablist"><button class="'+(S.tab==='menu'?'on':'')+'" data-tab="menu">תפריט</button><button class="'+(S.tab==='prog'?'on':'')+'" data-tab="prog">תוכנית אימון</button></div><span class="sp"></span>'+
-    '<a href="https://script.google.com/macros/s/AKfycbxUQUfU14Yhmx8RbzJo5hdy9gwASM2F3YfzTXnXRl4/dev?page=m">דשבורד נייד</a><a href="https://script.google.com/macros/s/AKfycbxUQUfU14Yhmx8RbzJo5hdy9gwASM2F3YfzTXnXRl4/dev?page=dashboard">דשבורד מלא</a></header>';
+    '<a href="./">לדשבורד</a></header>';
   if(!S.client){ app.innerHTML=h+'<main><div class="card empty" style="grid-column:1/-1;font-size:17px"><b style="display:block;font-size:20px;color:var(--ink);margin-bottom:6px">שלב ראשון: בוחרים מתאמן</b>בתיבה למעלה, ליד AVIEL, בוחרים את השם. אחר כך הדף יגיד בדיוק מה לעשות.</div></main>'; wireTop(); return; }
   h+=clientStrip()+'<main>'+(S.tab==='menu'?menuMain():progMain())+'</main>';
   app.innerHTML=h; wireTop(); if(S.tab==='menu') wireMenu(); else wireProg(); }
