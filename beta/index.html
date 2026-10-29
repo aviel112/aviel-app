@@ -2722,6 +2722,28 @@ function woResume(){ try{ if(woGet()){ var sec=document.querySelector('section[d
 document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') woResume(); });
 setInterval(function(){ try{ var w=woGet(), t=document.getElementById('woT'); if(w&&t) t.textContent=woMin(w)+' דק׳ · מסיימים עם "סיימתי" למטה'; if(!w&&document.querySelector('.wobar')) renderTrain(); woPill(); }catch(e){} },30000);
 setTimeout(woResume,1200);
+
+/* ===== כרטיס תרגיל צפוף (29.10.26, אביאל: "יותר צמוד, סתם תופס מקום") ===== */
+(function(){ var st=document.createElement('style'); st.textContent=
+ '#progBox .card.ex{padding:12px 14px;gap:5px;margin-bottom:8px}'+
+ '#progBox .card.ex .nmrow{flex-wrap:nowrap;align-items:center;gap:8px}'+
+ '#progBox .card.ex .nmrow .nm{flex:1 1 auto;min-width:0;font-size:17px;line-height:1.25}'+
+ '#progBox .card.ex .nmrow .exbtns{flex:none;margin:0;gap:6px}'+
+ '#progBox .card.ex .swapbtn{width:34px;height:34px;padding:0;justify-content:center;border-radius:50%}'+
+ '#progBox .card.ex .swapbtn span{display:none}'+
+ '#progBox .card.ex .exthumb{width:46px;height:46px;margin-inline-end:2px;border-radius:10px}'+
+ '#progBox .card.ex .spec span{padding:3px 8px;font-size:12.5px}'+
+ '#progBox .card.ex .exnote{font-size:12.5px;line-height:1.4}'+
+ '#progBox .card.ex .vid{margin:0!important;font-size:12.5px}'+
+ '#progBox .card.ex .sets{gap:4px;margin-top:2px}'+
+ '#progBox .card.ex .sets .sh{font-size:10.5px}'+
+ '#progBox .card.ex .setrow input{padding:5px}'+
+ '#progBox .card.ex .setrow select{padding-block:5px}'+
+ '#progBox .card.ex .setrow button{min-height:34px;padding:4px 0}';
+ document.head.appendChild(st); })();
+/* הסבר שחוזר בכל תרגיל ("פעם ראשונה בתרגיל…", "כמה קשה…") — רק בתרגיל הראשון */
+function exDedupe(){ var seen={}; document.querySelectorAll('#progBox .card.ex .exnote').forEach(function(n){ var t=n.textContent.trim(), k=/^פעם ראשונה בתרגיל/.test(t)?'first':/^"?כמה קשה"?/.test(t)?'rir':''; if(!k) return; if(seen[k]) n.remove(); else seen[k]=1; }); }
+var _renderTrainDd=renderTrain; renderTrain=function(){ var r=_renderTrainDd.apply(this,arguments); try{ exDedupe(); }catch(e){} return r; };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
