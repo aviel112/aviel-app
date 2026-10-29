@@ -2684,6 +2684,21 @@ function fdSave(){ try{ if(!FDAY||!FDAY.d||FDAY._cached) return; lsSet(fdKey(FDA
 var _renderFoodC=renderFood; renderFood=function(){ fdSave(); _renderFoodC.apply(this,arguments); try{ var t=document.getElementById('fTot'); if(t&&FDAY&&FDAY._cached&&!t.querySelector('.fdsync')){ var s=document.createElement('div'); s.className='sub fdsync'; s.style.cssText='text-align:center;margin-top:6px'; s.textContent='מתעדכן…'; t.appendChild(s); } }catch(e){} };
 var _renderTodayC=renderTodayCard; renderTodayCard=function(){ fdSave(); return _renderTodayC.apply(this,arguments); };
 (function(){ try{ if(FDAY&&!FDAY.d&&!(FDAY.items||[]).length){ var c=ls(fdKey(TODAY),null); if(c&&c.items&&c.items.length){ FDAY={d:c.d,items:c.items,_cached:true}; try{ renderFood(); }catch(e){} try{ renderTodayCard(); }catch(e){} } } }catch(e){} })();
+
+/* ===== הערה לתרגיל (29.10.26, אביאל: "ממש קטן, רק למי שרוצה, ויופיע באימון הבא"): קישור קטן מתחת לתרגיל, נשמר בשרת לפי שם התרגיל ===== */
+var EXN=ls('aviel_exn',{})||{};
+(function(){ var st=document.createElement('style'); st.textContent='.exn{margin-top:8px}.exn button.exn-a{background:none;border:0;padding:2px 0;font:inherit;font-size:12.5px;color:var(--mute);cursor:pointer;text-align:right;width:auto;min-height:0}.exn button.exn-a b{color:var(--text);font-weight:600}.exn textarea{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);resize:vertical}.exn .exn-r{display:flex;gap:14px;margin-top:4px}.exn .exn-r button{background:none;border:0;padding:4px 0;font:inherit;font-size:13px;color:var(--gold);cursor:pointer;width:auto;min-height:0}.exn .exn-r button+button{color:var(--mute)}'; document.head.appendChild(st); })();
+function exnDecor(){ document.querySelectorAll('#progBox .card.ex').forEach(function(card){ if(card.querySelector('.exn')) return; var nm=card.querySelector('.nm'); if(!nm) return; var k=exKey(nm.textContent), n=EXN[k];
+  var d=document.createElement('div'); d.className='exn'; d.dataset.k=k;
+  d.innerHTML=n&&n.t?'<button type="button" class="exn-a"><b>הערה:</b> '+esc(n.t)+'</button>':'<button type="button" class="exn-a">+ הערה</button>'; card.appendChild(d); }); }
+var _renderTrainExn=renderTrain; renderTrain=function(){ var r=_renderTrainExn.apply(this,arguments); try{ exnDecor(); }catch(e){} return r; };
+document.addEventListener('click',function(e){ var a=e.target.closest&&e.target.closest('.exn button.exn-a'); if(a){ var w=a.parentNode, k=w.dataset.k, n=EXN[k];
+    w.innerHTML='<textarea rows="2" maxlength="200" placeholder="למשל: סט 3 להוריד ל-20 ק״ג · מושב בגובה 4">'+esc(n&&n.t||'')+'</textarea><div class="exn-r"><button type="button" data-exs="1">שמירה</button><button type="button" data-exc="1">'+(n&&n.t?'מחיקה':'ביטול')+'</button></div>'; w.querySelector('textarea').focus(); return; }
+  var b=e.target.closest&&e.target.closest('.exn [data-exs],.exn [data-exc]'); if(!b) return; var w2=b.closest('.exn'), k2=w2.dataset.k, t=b.hasAttribute('data-exs')?w2.querySelector('textarea').value.trim():'';
+  if(b.hasAttribute('data-exc')&&!(EXN[k2]&&EXN[k2].t)){ w2.remove(); exnDecor(); return; }
+  var prev=EXN[k2]; if(t) EXN[k2]={t:t,d:TODAY}; else delete EXN[k2]; lsSet('aviel_exn',EXN); w2.remove(); exnDecor();
+  api('exnote',{ex:k2,t:t}).then(function(){ toast(t?'ההערה נשמרה. תופיע גם באימון הבא':'ההערה נמחקה'); }).catch(function(er){ if(prev) EXN[k2]=prev; else delete EXN[k2]; lsSet('aviel_exn',EXN); document.querySelectorAll('.exn').forEach(function(x){ x.remove(); }); exnDecor(); toast((er&&er.message)||'לא נשמר, נסו שוב',1); }); });
+if(typeof T!=='undefined'&&T) setTimeout(function(){ api('exnotes',{}).then(function(r){ if(r&&typeof r==='object'){ EXN=r; lsSet('aviel_exn',EXN); document.querySelectorAll('.exn').forEach(function(x){ x.remove(); }); exnDecor(); } }).catch(function(){}); },1500);
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
