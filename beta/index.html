@@ -720,7 +720,7 @@ input,select,textarea{font-size:16px}
     <div class="stack">
       <div class="card"><div class="label">ממוצע שבועי (ק״ג)</div><div id="chart"></div></div><div class="card"><div class="row"><span class="label">תמונות התקדמות · פעם בחודש</span><label class="ghost sm" for="phIn" style="border:1px solid var(--line);border-radius:12px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer">+ תמונה</label></div>
         <input type="file" id="phIn" accept="image/*" hidden>
-        <div class="sub" style="margin-top:6px">מצלמים באותו מקום ובאותה תאורה, בבוקר. רק לך ולאביאל יש גישה. מצלמים 4: חזית, גב, צד ופוזת רחב-גבי — אביאל מנתח מהן (בעזרת בינה מלאכותית) אילו שרירים לחזק, ומדייק את התוכנית.</div>
+        <div class="sub" style="margin-top:6px">מצלמים באותו מקום ובאותה תאורה, בבוקר. רק לך ולאביאל יש גישה. מצלמים 4: חזית, שני הצדדים וגב — אביאל מנתח מהן (בעזרת בינה מלאכותית) אילו שרירים לחזק, ומדייק את התוכנית.</div>
         <div id="phBox"></div></div>
       <div class="card"><div class="label">כוח · מאיפה התחלת ולאן הגעת</div><div id="strength"></div></div>
       <div class="card">
@@ -2750,6 +2750,29 @@ var _renderTrainDd=renderTrain; renderTrain=function(){ var r=_renderTrainDd.app
   document.addEventListener('focusin',function(e){ var el=e.target; if(!el||!el.matches||!el.matches('.setrow input')) return; armed=el; sel(el); setTimeout(function(){ sel(el); },0); setTimeout(function(){ if(document.activeElement===el) sel(el); },60); });
   document.addEventListener('mouseup',function(e){ if(armed&&e.target===armed){ e.preventDefault(); sel(armed); armed=null; } },true);
   document.addEventListener('touchend',function(e){ var el=e.target; if(armed&&el===armed){ setTimeout(function(){ sel(el); },0); armed=null; } },true); })();
+
+/* ===== 4 תמונות קבועות (29.10.26, אביאל: "קדימה, צד, צד ואחורה — כל אחד ממלא אותן, לא מעלים סתם תמונות"):
+   4 משבצות, כל אחת מצלמת/מעלה את הזווית שלה. השער נפתח רק כשכל ה-4 מולאו. גם "+ תמונה" בהתקדמות פותח את אותן משבצות ===== */
+var PH_POSES=['חזית','צד ימין','צד שמאל','גב'];
+function phDone(){ var a=ls('aviel_ph_poses_'+TODAY,[]); return Array.isArray(a)?a:[]; }
+function phSlotsHtml(){ var dn=phDone(); return '<div class="phs4">'+PH_POSES.map(function(p){ var on=dn.indexOf(p)>=0; return '<label class="phs'+(on?' on':'')+'"><input type="file" accept="image/*" hidden data-pose="'+p+'"'+(on?' disabled':'')+'><b>'+p+'</b><small>'+(on?'✓ נשמרה':'לצילום')+'</small></label>'; }).join('')+'</div>'; }
+function phUpload(file,pose,lab){ if(lab){ lab.classList.add('busy'); lab.querySelector('small').textContent='מעלה…'; }
+  return Promise.all([shrink(file,1280,.82),shrink(file,320,.7)]).then(function(x){ return fetch(API,{method:'POST',body:JSON.stringify({api:'photo',t:T,p:{full:x[0],thumb:x[1],pose:pose}})}).then(function(r){ return r.json(); }); })
+    .then(function(j){ if(!j.ok) throw new Error(j.error); var dn=phDone(); if(dn.indexOf(pose)<0) dn.push(pose); lsSet('aviel_ph_poses_'+TODAY,dn); try{ PHOTOS_L=j.r; }catch(e){} try{ renderPhotos(j.r); }catch(e){} toast(dn.length>=4?'כל 4 התמונות נשמרו. תודה':'נשמרה: '+pose+' · עוד '+(4-dn.length)); phGate(); phSheetRefresh(); })
+    .catch(function(e){ if(lab){ lab.classList.remove('busy'); lab.querySelector('small').textContent='לצילום'; } toast((e&&e.message)||'התמונה לא נשמרה, נסו שוב',1); }); }
+document.addEventListener('change',function(e){ var i=e.target; if(!i||!i.matches||!i.matches('.phs input[data-pose]')) return; var f=i.files&&i.files[0]; i.value=''; if(f) phUpload(f,i.dataset.pose,i.closest('.phs')); });
+function phSheet(){ vSheet('<h2>תמונות התקדמות</h2><div class="sub">4 זוויות, באותו מקום ובאותה תאורה. לוחצים על כל משבצת ומצלמים. רק אביאל רואה אותן.</div><div id="phSheetBox">'+phSlotsHtml()+'</div><button type="button" class="linkbtn" id="phSheetX">סגירה</button>'); document.getElementById('phSheetX').onclick=vClose; }
+function phSheetRefresh(){ var b=document.getElementById('phSheetBox'); if(b) b.innerHTML=phSlotsHtml(); }
+/* "+ תמונה" בהתקדמות ותזכורות שפותחות את בחירת הקובץ — פותחים את 4 המשבצות במקום */
+document.addEventListener('click',function(e){ var t=e.target.closest&&e.target.closest('label[for="phIn"],#phIn'); if(!t) return; e.preventDefault(); e.stopPropagation(); phSheet(); },true);
+phGate=function(){ var g=document.getElementById('phGate'), dn=phDone(), sn=+ls('aviel_ph_gate','0')||0;
+  var need=D&&D.photoDue&&FEAT('photos')&&dn.length<4&&Date.now()>sn&&curTab()==='home';
+  if(!need){ if(g) g.remove(); return; }
+  var first0=!(PHOTOS_L&&PHOTOS_L.length), must=!!(D&&D.photoMust);
+  var h='<div class="phg"><b>'+(first0?'תמונות התחלה':'תמונות החודש')+'</b><p>'+(first0?'':'עבר חודש. ')+'4 תמונות: חזית, שני הצדדים וגב. באותו מקום ובאותה תאורה, ככה רואים את השינוי האמיתי. לוחצים על כל משבצת ומצלמים. רק אביאל רואה אותן.</p>'+phSlotsHtml()+'<button type="button" class="linkbtn" id="phLater">אני באמצע אימון · עוד שעתיים</button>'+(must?'':'<button type="button" class="linkbtn" id="phSkip">לא עכשיו</button>')+'</div>';
+  if(!g){ g=document.createElement('div'); g.id='phGate'; g.className='phgate'; document.body.appendChild(g); } g.innerHTML=h;
+  g.querySelector('#phLater').onclick=function(){ lsSet('aviel_ph_gate',String(Date.now()+2*36e5)); phGate(); }; var sk=g.querySelector('#phSkip'); if(sk) sk.onclick=function(){ lsSet('aviel_ph_gate',String(Date.now()+12*36e5)); phGate(); }; };
+(function(){ var st=document.createElement('style'); st.textContent='.phs4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0}.phs{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:74px;border:1.5px dashed var(--gold-d);border-radius:14px;cursor:pointer;color:var(--text);text-align:center;padding:8px}.phs b{font-size:15px}.phs small{font-size:12px;color:var(--gold);font-weight:700}.phs.on{border:1.5px solid var(--good);cursor:default}.phs.on small{color:var(--good)}.phs.busy{opacity:.6;pointer-events:none}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
