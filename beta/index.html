@@ -820,9 +820,9 @@ var LASTIN={}, RT=null;
 function normLifts(o){ o=o||{}; Object.keys(o).forEach(function(k){ var x=o[k]; if(x&&!x.hist){ var e={d:'',kg:Number(x.kg)||0,reps:Number(x.reps)||0}; o[k]={first:e,best:e.kg,hist:[e]}; } }); return o; }
 /* צפצופים בסוף המנוחה (28.10.26, אביאל): טון בכל אחת מ-3 השניות האחרונות וטון ארוך בסוף, כל עוד האפליקציה פתוחה */
 var ACX=null; /* צליל פעמון רך (29.10.26, אביאל: "משהו יותר טוב" מהצפצוף): צליל יסוד + עליונים שדועכים, כמו פעמון/מרימבה */
-function bell(f,at,dur,vol){ try{ if(!ACX) return; var t=ACX.currentTime+(at||0), out=ACX.createGain(); out.gain.value=vol||0.3; out.connect(ACX.destination);
+function bell(f,at,dur,vol){ try{ if(!ACX) return; var t=ACX.currentTime+(at||0), out=ACX.createGain(); out.gain.value=vol||0.3; if(!ACX._lim){ ACX._lim=ACX.createDynamicsCompressor(); ACX._lim.threshold.value=-6; ACX._lim.ratio.value=12; ACX._lim.connect(ACX.destination); } out.connect(ACX._lim);
   [[1,1],[2.01,0.35],[3.98,0.12]].forEach(function(h){ var o=ACX.createOscillator(), g=ACX.createGain(), d=dur/(h[0]>1?h[0]*0.8:1); o.type='sine'; o.frequency.value=f*h[0]; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(h[1],t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+d); o.connect(g); g.connect(out); o.start(t); o.stop(t+d+0.05); }); }catch(e){} }
-function beep(f,ms){ if(f<1000) bell(1047,0,0.35,0.18); /* ספירה: טיק עדין */ else { bell(784,0,1.1,0.26); bell(988,0.13,1.1,0.26); bell(1319,0.26,1.6,0.3); } /* סוף: שלושה תווים עולים */ }
+function beep(f,ms){ if(f<1000) bell(1047,0,0.35,0.5); /* ספירה: טיק — 29.10.26 חזק יותר, שיישמע מעל מוזיקה */ else { [0,0.9].forEach(function(o){ bell(784,o,0.9,0.55); bell(988,o+0.13,0.9,0.55); bell(1319,o+0.26,1.3,0.6); }); } /* סוף: שלושה תווים עולים, פעמיים */ }
 function restStart(min){
   var sec=Math.round(min*60); if(!(sec>0)) return; clearInterval(RT); var end=Date.now()+sec*1000, lastB=-1; $('#rest').hidden=false;
   try{ if(navigator.audioSession) navigator.audioSession.type='transient'; }catch(e){} /* 29.10.26: transient — הצפצוף מנמיך את המוזיקה לרגע ולא עוצר אותה (playback עצר את המוזיקה) */
@@ -830,7 +830,7 @@ function restStart(min){
   wakeOn(); REST_END=end; /* המסך לא נכבה במנוחה; ואם יצאו מהאפליקציה — בחזרה רואים/שומעים שהמנוחה נגמרה */
   var tick=function(){ var l=Math.max(0,Math.round((end-Date.now())/1000)); $('#restT').textContent='מנוחה '+Math.floor(l/60)+':'+('0'+l%60).slice(-2);
     if(l>0&&l<=3&&lastB!==l){ lastB=l; beep(880,140); }
-    if(!l){ clearInterval(RT); REST_END=0; $('#rest').hidden=true; wakeOff(); beep(1320,450); setTimeout(audioIdle,2500); try{ if(navigator.vibrate) navigator.vibrate([250,120,250]); }catch(e){} toast('יאללה, לסט הבא'); } };
+    if(!l){ clearInterval(RT); REST_END=0; $('#rest').hidden=true; wakeOff(); beep(1320,450); setTimeout(audioIdle,3500); try{ if(navigator.vibrate) navigator.vibrate([250,120,250]); }catch(e){} toast('יאללה, לסט הבא'); } };
   tick(); RT=setInterval(tick,500);
 }
 $('#restX').addEventListener('click',function(){ clearInterval(RT); REST_END=0; $('#rest').hidden=true; wakeOff(); audioIdle(); });
