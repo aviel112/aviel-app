@@ -626,8 +626,8 @@ input,select,textarea{font-size:16px}
 </style><script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script><script>(function(){var t=null;try{t=localStorage.getItem('aviel_theme');}catch(e){}if(t!=='light'&&t!=='dark')t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#f7f3ec':'#0d0d0f';})();</script><style id="restyle">
 /* Hallmark · redesign: restyle v2 · direction: Apple-native (by request: "like Apple") · face: the system font (SF Pro / SF Hebrew on iPhone), Assistant as fallback · 30.10.26 */
 /* critique: v1 still read as generated, the serif and the cards. Now: no borders, grouped surfaces in system greys, one face in heavy weights with tight tracking, gold as the single tint, translucent tab bar */
-:root{--ink:#000;--panel:#1c1c1e;--panel2:#2c2c2e;--line:rgba(84,84,88,.6);--line2:rgba(84,84,88,.9);--text:#fff;--mute:rgba(235,235,245,.62);--gold:#d9b46e;--gold-d:#8a7043;--cta:#d9b46e;--cta-t:#1a1408;--soft:rgba(217,180,110,.14);--sh:none;--good:#30d158;--warn:#ffb340;--bad:#ff6961;--f-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Hebrew','Assistant',system-ui,sans-serif;--f-body:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Hebrew','Assistant',system-ui,sans-serif;--r-card:22px;--r-ctl:14px;--nav-bg:rgba(10,10,12,.72);--gold-hi:#e8cc8f;--gold-lo:#c39d55;--gold-edge:rgba(255,240,205,.45);--edge:rgba(255,255,255,.06)}
-:root[data-theme="light"]{--ink:#f2f2f7;--panel:#fff;--panel2:#f2f2f7;--line:rgba(60,60,67,.18);--line2:rgba(60,60,67,.3);--text:#000;--mute:rgba(60,60,67,.66);--gold:#8a6420;--gold-d:#b39253;--cta:#000;--cta-t:#fff;--soft:rgba(138,100,32,.10);--good:#248a3d;--warn:#b25000;--bad:#d70015;--nav-bg:rgba(249,249,251,.78)}
+:root{--ink:#000;--panel:#1c1c1e;--panel2:#2c2c2e;--line:rgba(84,84,88,.6);--line2:rgba(84,84,88,.9);--text:#fff;--mute:rgba(235,235,245,.62);--gold:#d9b46e;--gold-d:#8a7043;--cta:#d9b46e;--cta-t:#1a1408;--soft:rgba(217,180,110,.14);--sh:none;--good:#30d158;--warn:#ffb340;--bad:#ff6961;--f-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Hebrew','Assistant',system-ui,sans-serif;--f-body:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Hebrew','Assistant',system-ui,sans-serif;--r-card:22px;--r-ctl:14px;--nav-bg:rgba(10,10,12,.72);--gold-hi:#e8cc8f;--gold-lo:#c39d55;--gold-edge:rgba(255,240,205,.45);--edge:rgba(255,255,255,.06);--seg-on:#48484a;--seg-sh:none}
+:root[data-theme="light"]{--ink:#f2f2f7;--panel:#fff;--panel2:#f2f2f7;--line:rgba(60,60,67,.18);--line2:rgba(60,60,67,.3);--text:#000;--mute:rgba(60,60,67,.66);--gold:#8a6420;--gold-d:#b39253;--cta:#000;--cta-t:#fff;--soft:rgba(138,100,32,.10);--good:#248a3d;--warn:#b25000;--bad:#d70015;--nav-bg:rgba(249,249,251,.78);--seg-on:#fff;--seg-sh:0 1px 3px rgba(0,0,0,.12)}
 html,body{overflow-x:clip}
 body{font-family:var(--f-body);background:var(--ink);color:var(--text);-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
 h1,h2,h3{font-family:var(--f-display);font-weight:800;letter-spacing:-.025em;text-wrap:balance;overflow-wrap:break-word;min-width:0}
@@ -684,6 +684,35 @@ input,select,textarea{border-radius:12px;border-color:var(--line)!important;back
 .tdi .tdg{color:var(--mute)}
 #pushCard{padding:16px 18px}
 #pushCard .label{color:var(--text);font-weight:700;font-size:15px}
+/* אימון: שקט ומלא, בלי קווי מתאר */
+#progBox>.sub:not(.wk1){font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.01em;margin:6px 0 10px}
+#progName{font-size:13px;color:var(--mute)}
+.wk1 button{background:var(--panel2);border:0;color:var(--gold);padding:7px 14px;font-size:13px}
+#progBox .card.ex .nm{font-weight:700;letter-spacing:-.015em}
+#progBox .card.ex .swapbtn{background:var(--panel2);border:0;color:var(--gold)}
+#progBox .card.ex .swapbtn.tech{color:var(--text)}
+.setrow input{border:0!important;background:var(--panel2);font-weight:700}
+.setrow select{border:0!important;background:var(--panel2)}
+.setrow button{background:var(--panel2);border:0;color:var(--gold);border-radius:12px}
+.setrow.ok input,.setrow.ok select{background:rgba(48,209,88,.12);color:var(--good)}
+.setrow.ok button{background:var(--good);color:var(--cta-t)}
+/* התקדמות: המספרים בלי מסגרת, בשורה אחת; מקטעים בסגנון אפל */
+.phero .phg{background:transparent;border:0;border-radius:0;padding:4px 0 0;max-width:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;text-align:center}
+.phero .phg b{font-size:28px;font-weight:800;letter-spacing:-.03em}
+.phv{background:var(--panel2)}
+.pseg,.tseg{background:var(--panel2);border:0;border-radius:12px;padding:3px;gap:2px}
+.pseg button,.tseg button{color:var(--text);font-weight:600;border-radius:9px;min-height:34px;padding:7px 4px}
+.pseg button[aria-selected="true"],.tseg button.on{background:var(--seg-on);color:var(--text);box-shadow:var(--seg-sh)}
+#progSeg.pseg{border:0!important;background:var(--panel2)!important}
+#progSeg.pseg button[aria-selected="true"]{background:var(--seg-on)!important;color:var(--text)!important;box-shadow:var(--seg-sh)}
+.tmets{background:var(--panel2);border-radius:12px;padding:3px;gap:2px}
+.tmets .tmet{border:0!important;background:transparent;color:var(--text);border-radius:9px;font-weight:600}
+.tmets .tmet.on,.tmets .tmet[aria-pressed="true"]{background:var(--seg-on)!important;color:var(--text)!important;box-shadow:var(--seg-sh)}
+.tstats>div{background:var(--panel2);border-radius:16px}
+.tstats b{font-size:24px;letter-spacing:-.03em}
+.tstats b.cur{color:var(--text)}
+/* יומן: שדה חיפוש בסגנון אפל */
+.fsearch input,#fQ{border:0!important;background:var(--panel2);border-radius:12px}
 /* יוקרה: זהב מתכתי עדין על הכפתור הראשי (רק במצב כהה), קו אור דק בראש הכרטיסים */
 :root:not([data-theme="light"]) button.installbtn,:root:not([data-theme="light"]) label.installbtn{background:linear-gradient(180deg,var(--gold-hi),var(--gold) 55%,var(--gold-lo));box-shadow:inset 0 1px 0 var(--gold-edge)}
 :root:not([data-theme="light"]) .card,:root:not([data-theme="light"]) .kpi{box-shadow:inset 0 1px 0 var(--edge)}
