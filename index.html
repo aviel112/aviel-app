@@ -2790,11 +2790,25 @@ function wkKey(){ return trkYmd(weekStart()); }
 var _doneMapU=doneMap; doneMap=function(){ var out=_doneMapU(), u=ls('aviel_undone',{})||{}, wk=wkKey(); Object.keys(u).forEach(function(k){ if(u[k]===wk) delete out[k]; }); return out; };
 var _renderTrainU=renderTrain; renderTrain=function(){ var r=_renderTrainU.apply(this,arguments);
   try{ var b=document.getElementById('finish'); if(b&&doneMap()[DAY]){ var day=DAY; b.classList.add('ghost'); b.textContent='✓ אימון '+(day+1)+' סומן השבוע · לביטול הסימון'; b.onclick=function(){ if(b.dataset.arm!=='1'){ b.dataset.arm='1'; b.textContent='לבטל את הסימון של אימון '+(day+1)+'? לחיצה נוספת'; return; }
-      var m=ls('aviel_done',{}); delete m[day]; lsSet('aviel_done',m); var u=ls('aviel_undone',{})||{}; u[day]=wkKey(); lsSet('aviel_undone',u); SHOWALL=true; renderTrain(); toast('הסימון בוטל. אימון '+(day+1)+' פתוח שוב'); }; } }catch(e){}
+      var m=ls('aviel_done',{}); delete m[day]; lsSet('aviel_done',m); var u=ls('aviel_undone',{})||{}; u[day]=wkKey(); lsSet('aviel_undone',u); SHOWALL=false; DAY=day; ONEDAY=day; renderTrain(); toast('הסימון בוטל. אימון '+(day+1)+' פתוח שוב'); }; } }catch(e){}
   try{ document.querySelectorAll('#progBox .exthumb img').forEach(function(im){ if(im.dataset.oe) return; im.dataset.oe=1; var kill=function(){ var t=im.closest('.exthumb'); if(t) t.remove(); }; if(im.complete&&!im.naturalWidth) kill(); else im.addEventListener('error',kill); }); }catch(e){}
   return r; };
 /* סיום אימון שבוטל קודם — הסימון חוזר כרגיל */
 document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('#finish')&&!doneMap()[DAY]){ var u=ls('aviel_undone',{})||{}; if(u[DAY]){ delete u[DAY]; lsSet('aviel_undone',u); } } },true);
+
+/* ===== רק האימון הבא (29.10.26, אביאל: "שרק אחד יופיע, מה שכבר עשיתי ייעלם; ובצד כפתור לצפייה בכל האימונים") ===== */
+var ONEDAY=null;
+(function(){ var st=document.createElement('style'); st.textContent='.wk1{display:flex;justify-content:space-between;align-items:center;gap:10px}.wk1 button{background:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;font-weight:700;color:var(--gold);cursor:pointer;width:auto;min-height:0;flex:none}'; document.head.appendChild(st); })();
+var _renderTrain1=renderTrain; renderTrain=function(){
+  if(!SHOWALL&&!woGet()){ var p=P&&P.program, days=p?(p.blocks||[]).filter(function(b){ return b.ex&&b.ex.length; }):[], dm=doneMap(), left=[]; for(var i=0;i<days.length;i++) if(!dm[i]) left.push(i);
+    if(left.length){ DAY=ONEDAY!=null&&left.indexOf(ONEDAY)>=0?ONEDAY:left[0]; } }
+  var r=_renderTrain1.apply(this,arguments);
+  try{ var box=document.getElementById('progBox'); if(!box||woGet()||box.querySelector('.wkdone')) return r;
+    var chips=box.querySelector('[aria-label="בחירת אימון"]'), sub=[].slice.call(box.children).filter(function(x){ return x.classList.contains('sub')&&/השבוע:/.test(x.textContent); })[0];
+    if(!SHOWALL&&chips) chips.remove();
+    if(sub&&!sub.querySelector('button')){ var t=sub.textContent; sub.classList.add('wk1'); sub.innerHTML='<span>'+(SHOWALL?esc(t):'אימון '+(DAY+1)+' · '+esc(t.replace(/^השבוע:\s*/,'השבוע ')))+'</span><button type="button" id="wkAll">'+(SHOWALL?'רק האימון הבא':'כל האימונים')+'</button>';
+      document.getElementById('wkAll').onclick=function(){ SHOWALL=!SHOWALL; ONEDAY=null; if(SHOWALL){} renderTrain(); window.scrollTo(0,0); }; } }catch(e){}
+  return r; };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
