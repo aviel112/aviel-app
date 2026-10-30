@@ -2067,7 +2067,7 @@ function homeGoal(){ var k=document.querySelector('section[data-view="home"] .kp
   if(!el){ el=document.createElement('button'); el.type='button'; el.id='hgoal'; el.className='hgoal'; k.parentNode.insertBefore(el,k.nextSibling); el.onclick=function(){ show('prog'); setTimeout(function(){ var t=document.getElementById('trk'); if(t) t.scrollIntoView({block:'start'}); },60); }; }
   var g=goalStat();
   el.innerHTML=g?'<div class="row"><span class="label">הדרך ליעד: '+g.goal+' ק״ג</span><b class="num">'+g.pc+'%</b></div><div class="tbar"><i style="width:'+g.pc+'%"></i></div><div class="tnote">'+(g.pc>=100?'הגעת ליעד.':'נשארו '+g.left+' ק״ג')+'</div>'
-    :'<div class="row"><span class="label">היעד שלך</span><span class="linkbtn">הגדרה</span></div><div class="tnote">מגדירים יעד משקל, ורואים כאן כמה מהדרך כבר עשית.</div>'; }
+    :'<div class="row"><span class="label">היעד שלך</span></div><div class="tnote">את יעד המשקל קובעים יחד בפגישה הראשונה, ואז רואים כאן כמה מהדרך כבר עשית.</div>'; el.classList.toggle('hgnone',!g); } /* 30.10.26 אביאל: המתאמן לא קובע יעד לבד — אביאל קובע בפגישה הראשונה (בכרטיס המתאמן בלוח) */
 var MS=[[25,'רבע מהדרך מאחוריך','ההתחלה היא החלק הכי קשה, ואותו כבר עשית.'],[50,'חצי מהדרך','מכאן זה כבר לא ניסיון. זה הרגל.'],[75,'שלושה רבעים','הקו הסופי כבר נראה באופק.'],[100,'הגעת ליעד','עכשיו לומדים לשמור, וזה החלק שמשנה הכל.']];
 function checkMilestone(){ var g=goalStat(); if(!g) return; var key='aviel_ms_'+g.goal, seen=+ls(key,-1);
   if(seen<0){ lsSet(key,Math.floor(g.pc/25)*25); return; } // יעד חדש: לא חוגגים אחורה
@@ -3150,6 +3150,8 @@ document.addEventListener('submit',function(ev){ var f=ev.target; if(f&&f.classL
    מציגים את הכמות של עכשיו, ואם כבר שתו חצי מהיעד — ההודעה יורדת ===== */
 var _inboxHtmlW=inboxHtml; inboxHtml=function(){ try{ if(INBOX&&/^מים\s*·/.test(INBOX.title||'')&&INBOX.at){ var w=waterNow(), dd=new Date(Date.parse(INBOX.at)), dk=dd.getFullYear()+'-'+('0'+(dd.getMonth()+1)).slice(-2)+'-'+('0'+dd.getDate()).slice(-2);
     if(dk!==TODAY||w.ml>=w.goal/2) return ''; var keep=INBOX.title; INBOX.title='מים · '+(Math.round(w.ml/100)/10)+' מתוך '+(w.goal/1000)+' ליטר'; var h=_inboxHtmlW.apply(this,arguments); INBOX.title=keep; return h; } }catch(e){} return _inboxHtmlW.apply(this,arguments); };
+
+(function(){ var st=document.createElement('style'); st.textContent='#hgoal.hgnone{pointer-events:none}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
