@@ -1297,16 +1297,22 @@ function mohLocal(q){ if(!MOHL) return null; var ws=q.split(/\s+/).filter(Boolea
 var EXTRA=[]; function loadExtra(){ loadMoh(); api('foods',{}).then(function(r){ EXTRA=r||[]; }).catch(function(){}); }
 function ematch(q){ q=String(q||'').trim(); if(q.length<2) return []; return EXTRA.filter(function(f){ return f.name.indexOf(q)>=0||(f.brand&&f.brand.indexOf(q)>=0); }).slice(0,6); }
 function pickExtra(f){ var g=+f.g||100, un=g!==100?(function(n){ return /פיתה/.test(n)?'פיתה':/טורטיה|לאפה/.test(n)?'טורטיה':/חטיף/.test(n)?'חטיף':/משקה|בקבוק/.test(n)?'בקבוק':/יוגורט|מעדן|דנונה|יופלה|מולר|גביע|קוטג/.test(n)?'גביע':/במבה|ביסלי|שקית/.test(n)?'שקית':/נודלס|חבילה/.test(n)?'חבילה':/דגני|קראנץ|פצפוצ/.test(n)?'מנה':/פרוסה|לחם/.test(n)?'פרוסה':/קופסה|טונה/.test(n)?'קופסה':'יחידה'; })(String(f.name)):'מנה'; pick({name:f.name+(f.brand?' '+f.brand:''), p:f.p, c:f.c, fat:f.fat, k100:f.k100, units:[[un,g]], g:g, own:g!==100}); } /* מוצר מהמאגר של אביאל עם משקל יחידה: היחידה שלו קודמת (פיתה 55 ג׳, לא 90) */
-var SCAN={reader:null,stream:null};
-function scanStop(){ try{ if(SCAN.reader) SCAN.reader.reset(); }catch(e){} try{ (SCAN.stream&&SCAN.stream.getTracks()||[]).forEach(function(t){ t.stop(); }); }catch(e){} SCAN.stream=null; $('#scan').hidden=true; }
-function camFail(){ scanStop(); toast('אין גישה למצלמה. מאשרים מצלמה בהגדרות הטלפון ומנסים שוב.',1); }
+var SCAN={reader:null,stream:null,off:null};
+/* מצלמה פעם אחת לכל פתיחה של האפליקציה (30.10.26): אייפון שואל שוב על כל getUserMedia אחרי שהמצלמה נעצרה — אז הזרם נשמר מושהה 3 דק׳ אחרי סגירה וחוזר בלי שאלה */
+function camKill(){ SCAN.reader=null; /* בלי reset — הוא היה עוצר את הזרם המשותף; הזרם נעצר כאן */ try{ (SCAN.stream&&SCAN.stream.getTracks()||[]).forEach(function(t){ t.stop(); }); }catch(e){} SCAN.stream=null; }
+function camGet(){ clearTimeout(SCAN.off); var st=SCAN.stream; if(st&&st.getTracks().some(function(t){ return t.readyState==='live'; })){ st.getTracks().forEach(function(t){ t.enabled=true; }); return Promise.resolve(st); }
+  return navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(function(s2){ SCAN.stream=s2; return s2; }); }
+function scanStop(){ try{ if(SCAN.reader&&SCAN.reader.stopContinuousDecode) SCAN.reader.stopContinuousDecode(); }catch(e){} try{ $('#scanV').pause(); }catch(e){}
+  try{ (SCAN.stream&&SCAN.stream.getTracks()||[]).forEach(function(t){ t.enabled=false; }); }catch(e){} clearTimeout(SCAN.off); SCAN.off=setTimeout(camKill,180000); $('#scan').hidden=true; }
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden'&&$('#scan').hidden) camKill(); });
+function camFail(){ scanStop(); camKill(); toast('אין גישה למצלמה. מאשרים מצלמה בהגדרות הטלפון ומנסים שוב.',1); }
 function scanStart(){ $('#scan').hidden=false; var v=$('#scanV');
-  if(window.BarcodeDetector){ navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(function(st){ if($('#scan').hidden){ st.getTracks().forEach(function(x){ x.stop(); }); throw 'closed'; } SCAN.stream=st; v.srcObject=st; return v.play(); }).then(function(){ var det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});
-      (function loop(){ if($('#scan').hidden) return; det.detect(v).then(function(r){ if(r&&r.length&&String(r[0].rawValue||'').replace(/\D/g,'')) onCode(r[0].rawValue); else setTimeout(loop,250); }).catch(function(){ setTimeout(loop,400); }); })(); }).catch(function(e){ if(e!=='closed') camFail(); }); return; }
-  if(!window.ZXing){ scanStop(); toast('הסורק עוד נטען, מנסים שוב בעוד רגע',1); return; }
-  var hints=new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.UPC_E,ZXing.BarcodeFormat.CODE_128]);
-  SCAN.reader=new ZXing.BrowserMultiFormatReader(hints);
-  SCAN.reader.decodeFromConstraints({video:{facingMode:'environment'}},v,function(res){ if(res) onCode(res.getText()); }).catch(camFail);
+  if(!window.BarcodeDetector&&!window.ZXing){ scanStop(); toast('הסורק עוד נטען, מנסים שוב בעוד רגע',1); return; }
+  camGet().then(function(st){ if($('#scan').hidden) throw 'closed'; v.srcObject=st; v.setAttribute('playsinline',''); return v.play().then(function(){ return st; }); }).then(function(st){
+    if(window.BarcodeDetector){ var det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});
+      (function loop(){ if($('#scan').hidden) return; det.detect(v).then(function(r){ if(r&&r.length&&String(r[0].rawValue||'').replace(/\D/g,'')) onCode(r[0].rawValue); else setTimeout(loop,250); }).catch(function(){ setTimeout(loop,400); }); })(); return; }
+    try{ if(SCAN.reader&&SCAN.reader.stopContinuousDecode) SCAN.reader.stopContinuousDecode(); }catch(e){} { var hints=new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.UPC_E,ZXing.BarcodeFormat.CODE_128]); SCAN.reader=new ZXing.BrowserMultiFormatReader(hints); }
+    SCAN.reader.decodeFromStream(st,v,function(res){ if(res&&!$('#scan').hidden) onCode(res.getText()); }).catch(function(){}); }).catch(function(e){ if(e!=='closed') camFail(); });
 }
 function onCode(code){ code=String(code||'').replace(/\D/g,''); if(!code) return; scanStop(); try{ if(navigator.vibrate) navigator.vibrate(60); }catch(e){}
   var nz=function(c){ return String(c||'').replace(/^0+/,''); }, ex=EXTRA.filter(function(f){ return f.code&&nz(f.code)===nz(code); })[0]; /* ברקוד שמתחיל ב-0 נשמר בגיליון בלי האפס */ if(ex){ pickExtra(ex); toast('נמצא במאגר של אביאל'); return; }
