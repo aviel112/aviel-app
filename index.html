@@ -2669,9 +2669,11 @@ function favSave(ml,xs,b){ var box=document.createElement('div'); box.className=
   box.innerHTML='<input type="text" maxlength="30" value="'+esc(def)+'" aria-label="שם לארוחה"><button type="button">שמירה</button>'; b.replaceWith(box); var inp=box.querySelector('input'); inp.focus(); inp.select();
   box.querySelector('button').onclick=function(){ var n=String(inp.value||'').trim().slice(0,30)||def, a=favMeals().filter(function(f){ return f.n!==n; });
     var items=xs.map(function(x){ return {f:x.f,g:+x.g||0,k:+x.k||0,p:+x.p||0,c:+x.c||0,fat:+x.fat||0}; }); a.unshift({n:n,m:ml,k:Math.round(items.reduce(function(s,x){ return s+x.k; },0)),items:items}); lsSet('aviel_fav_meals',a.slice(0,8)); toast('נשמר: '+n); favDraw(); }; }
-function favAdd(f,b){ if(!f||!f.items||!f.items.length) return; b.disabled=true; var ml=f.m||fMeal();
-  f.items.reduce(function(pr,x){ return pr.then(function(){ return api('food',{f:x.f,g:x.g,k:x.k,p:x.p,c:x.c,fat:x.fat,m:ml}).then(function(r){ FDAY=r; }); }); },Promise.resolve())
-   .then(function(){ renderFood(); toast('נוסף ליומן: '+f.n); }).catch(function(e){ b.disabled=false; try{ renderFood(); }catch(er){} toast(e.message||'לא נוסף',1); }); }
+function favAdd(f,b){ if(!f||!f.items||!f.items.length) return; b.disabled=true; var ml=f.m||fMeal(), now=new Date(), tt=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
+  /* 30.10.26: מיידי — כל הפריטים עולים למסך מיד ("נשמר…"), והשרת מקבל אותם ברקע לפי הסדר */
+  FDAY.items=(FDAY.items||[]).concat(f.items.map(function(x){ return {f:String(x.f).slice(0,80),g:x.g,k:x.k,p:x.p,c:x.c,fat:x.fat,m:ml,t:tt,d:FDAY.d,_p:1}; })); renderFood(); toast('נוסף ליומן: '+f.n);
+  f.items.reduce(function(pr,x){ return pr.then(function(){ return api('food',{f:x.f,g:x.g,k:x.k,p:x.p,c:x.c,fat:x.fat,m:ml,fav:1}).then(function(r){ FDAY=r; renderFood(); }); }); },Promise.resolve())
+   .catch(function(e){ toast(e.message||'לא נוסף הכל, מרעננים',1); api('foodday',{d:FDAY.d}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){}); }); }
 (function(){ var st=document.createElement('style'); st.textContent='.favbox{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}.favrow{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}.favc{flex:none;display:inline-flex;align-items:center;border:1px solid var(--gold-d,var(--line));border-radius:999px;background:var(--panel)}.favc button{min-height:0;border:0;background:none;color:var(--text);font:inherit;font-weight:700;font-size:14px;padding:8px 6px 8px 12px;width:auto}.favc small{color:var(--gold);margin-inline-start:4px}.favc .favx{color:var(--mute);padding:8px 10px 8px 4px;font-size:16px}.favsave{min-height:0;width:auto;background:none;border:0;color:var(--gold);font:inherit;font-size:13px;font-weight:700;padding:6px 0;text-decoration:underline;text-underline-offset:3px}.favnm{display:flex;gap:6px;margin-top:6px}.favnm input{flex:1;min-width:0;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:16px}.favnm button{width:auto;min-height:0;padding:9px 14px}'; document.head.appendChild(st); })();
 
 /* ===== מדריך שאביאל שלח לכולם (29.10.26): כרטיס במסך הבית עד שפותחים ===== */
@@ -2981,7 +2983,7 @@ function praiseFor(p){ var k=+p.k||0, pr=+p.p||0, first=(D&&D.first)||'', fem=!!
   var L=fem?['ארוחה קלילה ומדויקת, את מעולה']:['ארוחה קלילה ומדויקת, יופי'];
   var t=prot?praisePick(P1)+(fem?(Math.random()<.5?', את מדהימה':''):''):light?praisePick(L.concat(G)):praisePick(G);
   if(!prot&&!heavy&&Math.random()>.4) return ''; return (first&&Math.random()<.35?first+', ':'')+t; }
-var _apiPraise=api; api=function(a,p){ var r=_apiPraise.apply(this,arguments); if(a==='food'&&p&&r&&r.then){ var msg=''; try{ msg=praiseFor(p); }catch(e){}
+var _apiPraise=api; api=function(a,p){ var r=_apiPraise.apply(this,arguments); if(a==='food'&&p&&!p.fav&&r&&r.then){ var msg=''; try{ msg=praiseFor(p); }catch(e){}
   if(msg) r.then(function(){ setTimeout(function(){ try{ toast(msg); }catch(e){} },1400); }).catch(function(){}); } return r; };
 
 /* ===== מיקרופון פעם אחת לכל פתיחה (30.10.26): אייפון שואל שוב אחרי שהמיקרופון נעצר — הזרם נשמר מושהה 3 דק׳ וחוזר בלי שאלה ===== */
