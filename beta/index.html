@@ -2962,7 +2962,7 @@ function homeRing(){ var tc=document.getElementById('todayCard'); if(!tc) return
   var m=String(n.textContent).match(/(\d+)\s*\/\s*(\d+)/); if(!m) return; var a=+m[1], b=+m[2]||1, f=Math.min(1,a/b), r=40, C=2*Math.PI*r;
   var el=document.getElementById('tRing'); if(!el){ el=document.createElement('div'); el.id='tRing'; tc.insertBefore(el,row); }
   el.innerHTML='<svg viewBox="0 0 100 100" width="96" height="96" aria-hidden="true"><circle cx="50" cy="50" r="'+r+'" fill="none" stroke="var(--panel2)" stroke-width="8"/><circle cx="50" cy="50" r="'+r+'" fill="none" stroke="var(--gold)" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+(C*f).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 50 50)"/></svg>'+
-    '<div class="trt"><b>היום שלך</b><span><em>'+a+'</em> מתוך '+b+(a>=b?', יום מלא':'')+'</span></div>';
+    '<div class="trin"><b class="num">'+a+'</b><small>מתוך '+b+'</small></div><div class="trt"><b>היום שלך</b>'+(function(){ var nx=null; try{ nx=todayItems().filter(function(x){ return !x.done; })[0]; }catch(e){} return a>=b?'<span class="trdone">יום מלא, כל הכבוד</span>':(nx?'<span>הבא: <em>'+esc(nx.t==='אימון בתהליך'?'לסיים את האימון':nx.t)+'</em></span>':''); })()+'</div>'; /* 30.10.26 אביאל: המספר בתוך העיגול, ולצידו מה הבא */
   el.setAttribute('role','img'); el.setAttribute('aria-label','היום שלך: '+a+' מתוך '+b); }
 var _renderTodayRing=renderTodayCard; renderTodayCard=function(){ var r=_renderTodayRing.apply(this,arguments); try{ homeRing(); }catch(e){} return r; };
 
@@ -3120,6 +3120,8 @@ function eatHelpDraw(){ var tot=document.getElementById('fTot'); if(!tot||FVIEW)
     w.querySelectorAll('[data-eh]').forEach(function(b){ b.onclick=function(){ var x=top[+b.dataset.eh]; if(x.ex) pickExtra(x.ex); else pick({name:x.name,p:x.p,c:x.c,fat:x.fat,units:[['יחידה / מנה',x.g]],g:x.g}); var a=document.getElementById('fAdd'); if(a) a.scrollIntoView({block:'center',behavior:'smooth'}); }; }); }; }
 var _rfEat=renderFood; renderFood=function(){ _rfEat.apply(this,arguments); try{ eatHelpDraw(); }catch(e){} };
 (function(){ var st=document.createElement('style'); st.textContent='.eathelp{display:flex;flex-direction:column;gap:6px;margin-top:10px}.eathelp>.linkbtn{align-self:center}.ehrow{display:flex;align-items:center;gap:10px;width:100%;text-align:start;font:inherit;color:inherit;background:var(--panel2,#2c2c2e);border:0;border-radius:14px;padding:10px 14px}.ehrow>span{flex:1;min-width:0;display:flex;flex-direction:column}.ehrow small{color:var(--mute,#aaa);font-size:12.5px}.ehrow em{font-style:normal;font-weight:700;color:var(--gold,#d9b46e);font-size:14px}.ehrow:focus-visible{outline:2px solid var(--gold,#d9b46e);outline-offset:2px}'; document.head.appendChild(st); })();
+
+(function(){ var st=document.createElement('style'); st.textContent='#tRing{position:relative}#tRing .trin{position:absolute;inset-inline-start:0;top:50%;width:96px;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;line-height:1}#tRing .trin b{font-size:30px;font-weight:800;letter-spacing:-.03em}#tRing .trin small{font-size:12px;color:var(--mute);margin-top:2px}#tRing .trt span{font-size:15px}#tRing .trt .trdone{color:var(--gold)}body:has(#rest:not([hidden])) #woPill{bottom:calc(150px + env(safe-area-inset-bottom,0px))!important}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
