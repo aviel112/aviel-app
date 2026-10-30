@@ -3143,6 +3143,11 @@ function autoReg(f){ try{ if(!f||!f.classList.contains('ok')) return; var days=f
   var rn=document.getElementById('restN'); if(rn&&/עוד סט/.test(rn.textContent)) rn.textContent='הבא: עוד סט, '+nk+' ק״ג'; }catch(er){} }
 document.addEventListener('submit',function(ev){ var f=ev.target; if(f&&f.classList&&f.classList.contains('setrow')) setTimeout(function(){ autoReg(f); },60); },true);
 (function(){ var st=document.createElement('style'); st.textContent='.autoreg{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--soft,rgba(217,180,110,.12));color:var(--text,#fff);font-size:13.5px;line-height:1.45}.autoreg b{color:var(--gold,#d9b46e)}#progBox .setrow input.arg{color:var(--gold,#d9b46e)}'; document.head.appendChild(st); })();
+
+/* ===== הודעת מים מסונכרנת (30.10.26 אביאל: "זה לא מסונכרן"): הכותרת "מים · 0.5 מתוך 3.5" נכתבה בשעת השליחה.
+   מציגים את הכמות של עכשיו, ואם כבר שתו חצי מהיעד — ההודעה יורדת ===== */
+var _inboxHtmlW=inboxHtml; inboxHtml=function(){ try{ if(INBOX&&/^מים\s*·/.test(INBOX.title||'')&&INBOX.at){ var w=waterNow(), dd=new Date(Date.parse(INBOX.at)), dk=dd.getFullYear()+'-'+('0'+(dd.getMonth()+1)).slice(-2)+'-'+('0'+dd.getDate()).slice(-2);
+    if(dk!==TODAY||w.ml>=w.goal/2) return ''; var keep=INBOX.title; INBOX.title='מים · '+(Math.round(w.ml/100)/10)+' מתוך '+(w.goal/1000)+' ליטר'; var h=_inboxHtmlW.apply(this,arguments); INBOX.title=keep; return h; } }catch(e){} return _inboxHtmlW.apply(this,arguments); };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
