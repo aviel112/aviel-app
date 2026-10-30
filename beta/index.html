@@ -2898,8 +2898,11 @@ phGate=function(){ var g=document.getElementById('phGate'), dn=phDone(), sn=+ls(
 var SLEEP_OPT=[['פחות מ-5',4.5],['5–6',5.5],['6–7',6.5],['7–8',7.5],['8+',8.5]]; /* 30.10.26: פחות מ-5 = השקילה של הבוקר לא נכנסת לממוצע */
 function sleepRow(){ var f=document.getElementById('wForm'); if(!f) return; var old=document.getElementById('slRow'), done=ls('aviel_sleep_'+TODAY,null);
   if(!done&&new Date().getHours()>=16){ if(old) old.remove(); return; }
+  /* 30.10.26 אביאל: שואלים רק כשהמשקל קפץ — 0.5 ק״ג ומעלה מעל השקילה הקודמת. אחרת השאלה לא משנה כלום */
+  if(!done){ var wk=(D&&D.week)||[], td=wk.filter(function(x){ return x.d===TODAY&&+x.kg>0; })[0], prev=wk.filter(function(x){ return x.d<TODAY&&+x.kg>0; }).sort(function(a,b){ return a.d<b.d?-1:1; }).pop();
+    if(!td||!prev||(+td.kg)-(+prev.kg)<0.5){ if(old) old.remove(); return; } }
   var short=done==='פחות מ-5'||((D&&D.shortSleep)||[]).indexOf(TODAY)>=0;
-  var h=done?'<span class="sub">שינה הלילה: <b>'+esc(done)+'</b> שעות'+(short?'. אחרי לילה קצר הגוף אוגר נוזלים, אז השקילה של היום לא נספרת בממוצע':'')+'</span>':'<span class="sub">איך ישנת הלילה?</span><div class="slc">'+SLEEP_OPT.map(function(o,i){ return '<button type="button" class="chip" data-sl="'+i+'">'+o[0]+'</button>'; }).join('')+'</div>';
+  var h=done?'<span class="sub">שינה הלילה: <b>'+esc(done)+'</b> שעות'+(short?'. אחרי לילה קצר הגוף אוגר נוזלים, אז השקילה של היום לא נספרת בממוצע':'')+'</span>':'<span class="sub">המשקל קפץ מאתמול. איך ישנת הלילה?</span><div class="slc">'+SLEEP_OPT.map(function(o,i){ return '<button type="button" class="chip" data-sl="'+i+'">'+o[0]+'</button>'; }).join('')+'</div>';
   if(!old){ old=document.createElement('div'); old.id='slRow'; f.parentNode.insertBefore(old,f.nextSibling); } old.innerHTML=h;
   old.querySelectorAll('[data-sl]').forEach(function(b){ b.onclick=function(){ var o=SLEEP_OPT[+b.dataset.sl]; lsSet('aviel_sleep_'+TODAY,o[0]); sleepRow(); api('sleep',{h:o[1]}).catch(function(){ try{ localStorage.removeItem('aviel_sleep_'+TODAY); }catch(e){} sleepRow(); toast('לא נשמר, נסו שוב',1); }); }; }); }
 (function(){ var st=document.createElement('style'); st.textContent='#slRow{display:flex;flex-direction:column;gap:6px;margin-top:10px}#slRow .slc{display:flex;gap:6px}#slRow .slc .chip{flex:1 1 0;width:auto;min-width:0;margin:0;padding:7px 2px;font-size:12.5px}'; document.head.appendChild(st); })();
