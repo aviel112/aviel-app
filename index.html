@@ -1036,14 +1036,14 @@ function render(){
   var wk=d.week||[], tE=wk.filter(function(x){ return x.d===TODAY; })[0], todayKg=tE?tE.kg:null; /* לפי תאריך: מידע שמור מאתמול לא נחשב "היום" */
   $('#week').innerHTML=wk.map(function(x,i){ var dt=pd(x.d); return '<div class="day"><div class="dot num'+(x.kg?' on':'')+(i===wk.length-1?' today':'')+'">'+(x.kg?x.kg.toFixed(1):'')+'</div>'+DAYS[dt.getDay()]+'</div>'; }).join('');
   var n=wk.filter(function(x){return x.kg;}).length;
-  $('#weekNote').innerHTML=n+' שקילות ב-7 הימים האחרונים'+(n>=5?' · <span class="good">מצוין</span>':' · <span class="warn">עוד '+(5-n)+' לממוצע אמין</span>');
+  $('#weekNote').innerHTML=n+' שקילות ב-7 הימים האחרונים'+(n>=5?'. <span class="good">מצוין</span>':'. <span class="warn">עוד '+(5-n)+' לממוצע אמין</span>');
   $('#wIn').placeholder=todayKg?todayKg+' (עודכן היום)':'ק״ג';
   var todaySteps=tE?tE.steps:null; $('#sIn').placeholder=todaySteps?todaySteps.toLocaleString('en')+' צעדים (עודכן)':'צעדים היום';
   var avg=(d.weekly||[]).slice(-1)[0];
   $('#kAvg').textContent = avg!=null ? avg : (d.lastKg!=null?d.lastKg:'—');
   if(d.firstKg!=null&&d.lastKg!=null){ var ch=Math.round((d.lastKg-d.firstKg)*10)/10; var goodDir=d.goal==='עלייה'?ch>0:ch<0; $('#kChg').innerHTML='<span class="'+(ch===0?'':goodDir?'good':'warn')+'">'+(ch>0?'+':ch<0?'−':'')+Math.abs(ch)+'</span>'; }
   if(d.status){ var _si=d.status.icon||'', _sc=/🟢|✅/.test(_si)?'good':/🟡|🟠/.test(_si)?'warn':/🔴/.test(_si)?'bad':''; if(_si){ $('#kStat').innerHTML='<i class="sdot'+(_sc?' s-'+_sc:'')+'"></i>'; } else $('#kStat').textContent='—'; $('#kStatL').textContent=d.status.note||'מול היעד'; } else { $('#kStat').textContent='—'; $('#kStatL').textContent='מול היעד'; }
-  if(d.meeting){ var md=pd(d.meeting.date); $('#calM').textContent=MON[md.getMonth()]; $('#calD').textContent=('0'+md.getDate()).slice(-2); $('#meetTxt').textContent='יום '+DAYS[md.getDay()]+(d.meeting.time?' · '+d.meeting.time:''); $('#meetCard').hidden=false; } else $('#meetCard').hidden=true;
+  if(d.meeting){ var md=pd(d.meeting.date); $('#calM').textContent=MON[md.getMonth()]; $('#calD').textContent=('0'+md.getDate()).slice(-2); $('#meetTxt').textContent='יום '+DAYS[md.getDay()]+(d.meeting.time?', '+d.meeting.time:''); $('#meetCard').hidden=false; } else $('#meetCard').hidden=true;
   if(d.note){ $('#note').textContent=d.note; $('#noteCard').hidden=false; } else $('#noteCard').hidden=true;
   $('#ciForm').hidden=!!d.checkinDone; $('#ciDone').hidden=!d.checkinDone; $('#ciState').textContent=d.checkinDone?'נשלח השבוע':'2 דקות';
   drawChart(d.weekly||[]); drawMeasures(d.measures);
@@ -2284,7 +2284,7 @@ function wireMic(x){ var b=x.querySelector('#askMic'); if(!b) return; micUi(); /
 
 /* ===== פגישת וידאו עם אביאל (למתאמנים אונליין): מופיע ביום הפגישה ויום לפניה ===== */
 function videoMeetHtml(){ if(!INBOX||!INBOX.video||!D||!D.meeting||!D.meeting.date) return ''; var g=Math.round((new Date(D.meeting.date+'T12:00:00')-new Date(TODAY+'T12:00:00'))/864e5); if(g<0||g>1) return '';
-  return '<div class="news vmeet"><div class="row"><b>פגישת וידאו עם אביאל</b><small>'+(g===0?'היום':'מחר')+(D.meeting.time?' · '+esc(D.meeting.time):'')+'</small></div><p>'+(g===0?'נכנסים כמה דקות לפני, עם השקילות והשאלות שלך.':'מחר נפגשים בווידאו. אפשר לשמור את הכפתור הזה, הוא יחכה כאן.')+'</p><a class="vplay" target="_blank" rel="noopener" href="'+esc(INBOX.video)+'">הצטרפות לפגישה</a></div>'; }
+  return '<div class="news vmeet"><div class="row"><b>פגישת וידאו עם אביאל</b><small>'+(g===0?'היום':'מחר')+(D.meeting.time?', '+esc(D.meeting.time):'')+'</small></div><p>'+(g===0?'נכנסים כמה דקות לפני, עם השקילות והשאלות שלך.':'מחר נפגשים בווידאו. אפשר לשמור את הכפתור הזה, הוא יחכה כאן.')+'</p><a class="vplay" target="_blank" rel="noopener" href="'+esc(INBOX.video)+'">הצטרפות לפגישה</a></div>'; }
 
 /* ===== ביטול סט שסומן בטעות: לחיצה על הווי → "ביטול?" (3 שניות) → לחיצה שנייה מוחקת את הרישום ===== */
 function wireUndo(f,e){ var b=f.querySelector('.sundo'); if(!b) return; var armed=0, tmr=null, html=b.innerHTML;
@@ -2745,9 +2745,9 @@ var _renderMS=render; render=function(){ _renderMS.apply(this,arguments); try{ v
 
 /* יעד הצעדים בולט (29.10.26, אביאל: "הם רק מזינים, לא רואים את היעד"): בתוך השדה ובשורה מעליו */
 var _homeStepsG=homeSteps; homeSteps=function(){ _homeStepsG.apply(this,arguments); try{ var g=+(D&&D.stepsGoal)||8000, i=document.getElementById('sIn'); /* 29.10.26: בלי יעד מאביאל — 8,000, כדי שתמיד יהיה סרגל */ if(!i) return; var t=(D.week||[]).filter(function(x){ return x.d===TODAY; })[0], n=t&&t.steps||0;
-  i.placeholder=g?'צעדים היום · היעד שלך '+g.toLocaleString('he-IL'):'צעדים היום';
+  i.placeholder=g?'צעדים היום, היעד שלך '+g.toLocaleString('he-IL'):'צעדים היום';
   var b=document.getElementById('sGoalBig'); if(!g){ if(b) b.remove(); return; } if(!b){ b=document.createElement('div'); b.id='sGoalBig'; b.className='sgb'; var f=document.getElementById('sForm'); f.parentNode.insertBefore(b,f); }
-  var pc=Math.min(100,Math.round(n/g*100)); b.innerHTML='<div class="sgn"><b class="num">'+n.toLocaleString('he-IL')+'</b><span>צעדים היום</span></div><div class="sgbar"><i style="width:'+pc+'%"></i></div><div class="sgs">'+(n>=g?'סגרת את היעד ('+g.toLocaleString('he-IL')+')':'היעד '+g.toLocaleString('he-IL')+' · עוד '+(g-n).toLocaleString('he-IL'))+'</div>'; }catch(e){} };
+  var pc=Math.min(100,Math.round(n/g*100)); b.innerHTML='<div class="sgn"><b class="num">'+n.toLocaleString('he-IL')+'</b><span>צעדים היום</span></div><div class="sgbar"><i style="width:'+pc+'%"></i></div><div class="sgs">'+(n>=g?'סגרת את היעד ('+g.toLocaleString('he-IL')+')':'היעד '+g.toLocaleString('he-IL')+', עוד '+(g-n).toLocaleString('he-IL'))+'</div>'; }catch(e){} };
 (function(){ var st=document.createElement('style'); st.textContent='.sgb{margin:12px 0 8px}.sgn{display:flex;align-items:baseline;gap:8px}.sgn b{font-size:34px;color:var(--gold);line-height:1}.sgn span{color:var(--mute);font-size:14px}.sgbar{height:8px;border-radius:9px;background:var(--panel2,#202026);overflow:hidden;margin:8px 0 4px}.sgbar i{display:block;height:100%;background:var(--gold);border-radius:9px}.sgs{font-size:13px;color:var(--mute)}'; document.head.appendChild(st); })();
 
 /* ===== צעדים אוטומטיים בפתיחה (29.10.26, אביאל: "כמו StepApp"): מי שחיבר את הקיצור — כל פתיחה של האפליקציה, אם עברו 4+ שעות מהעדכון האחרון, הקיצור רץ לבד ===== */
@@ -2950,6 +2950,11 @@ var _renderTodayRing=renderTodayCard; renderTodayCard=function(){ var r=_renderT
 /* ===== באג אייפון (30.10.26, אביאל: "הסרגל של למטה קפץ לאמצע העמוד"): אחרי שהמקלדת נסגרת, אלמנטים קבועים נתקעים עד גלילה. מזיזים פיקסל וחוזרים, והסרגל חוזר למקום ===== */
 document.addEventListener('focusout',function(e){ var t=e.target; if(!t||!t.matches||!t.matches('input,textarea,select')) return; setTimeout(function(){ var y=window.scrollY; window.scrollTo(window.scrollX,y+1); window.scrollTo(window.scrollX,y); var n=document.querySelector('nav.tabs'); if(n){ n.style.transform='translateZ(0)'; requestAnimationFrame(function(){ n.style.transform=''; }); } },60); },true);
 if(window.visualViewport) window.visualViewport.addEventListener('resize',function(){ if(window.visualViewport.height>=window.innerHeight-1){ var n=document.querySelector('nav.tabs'); if(n){ n.style.bottom='1px'; requestAnimationFrame(function(){ n.style.bottom=''; }); } } });
+
+/* ===== כרטיס צעדים בלי כפילות (30.10.26): המספר הגדול והסרגל למעלה נשארים; מהכרטיס הישן נשארת רק שורת 7 הימים ===== */
+(function(){ var st=document.createElement('style'); st.textContent='#sgoal>.row,#sgoal>.tbar{display:none}#sgoal{padding-top:4px}'; document.head.appendChild(st); })();
+function sgDedupe(){ var t=document.querySelector('#sgoal>.tnote'); if(t) t.hidden=/^עוד [\d,]+ צעדים להיום\.?$/.test(t.textContent.trim()); }
+var _renderSg=render; render=function(){ _renderSg.apply(this,arguments); try{ sgDedupe(); }catch(e){} };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
