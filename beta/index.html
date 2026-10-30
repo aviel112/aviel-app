@@ -1176,6 +1176,13 @@ function ring(v,t){ var r=44, C=2*Math.PI*r, pc=t?Math.min(1,v/t):0, over=t&&v>t
 var FVIEW=null; /* תאריך שמוצג ביומן; null = היום */
 function dshift(d,n){ var x=new Date(d+'T12:00:00'); x.setDate(x.getDate()+n); return x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2); }
 function foodNav(n){ var cur=FVIEW||TODAY, d=dshift(cur,n); if(d>TODAY) return; FVIEW=d===TODAY?null:d; api('foodday',{d:d}).then(function(r){ FDAY=r; renderFood(); }).catch(function(e){ toast(e.message,1); }); }
+var DELQ=[], DELBUSY=false;
+function delSync(r){ var used={}; DELQ.forEach(function(j){ var m=(r.items||[]).filter(function(x){ return !used[x.row]&&x.f===j.f&&+x.k===j.k; })[0]; if(m){ used[m.row]=1; j.row=+m.row; } else j.gone=true; });
+  DELQ=DELQ.filter(function(j){ return !j.gone; }); r.items=(r.items||[]).filter(function(x){ return !used[x.row]; }); return r; } /* השורות זזו אחרי כל מחיקה: מעדכנים את מספר השורה של מה שעוד בתור, ולא מחזירים למסך מה שנמחק */
+function delPump(){ if(DELBUSY||!DELQ.length) return; DELBUSY=true; var j=DELQ[0];
+  api('fooddel',{row:j.row,f:j.f,d:j.d,quiet:1}).then(function(r){ if(r&&r.deleted===false&&j.n++<2){ /* נשאר בראש התור, delSync מתקן את השורה */ } else DELQ.shift(); if(r&&r.items&&FDAY&&r.d===FDAY.d){ FDAY=delSync(r); renderFood(); } })
+    .catch(function(e){ DELQ=[]; toast((e&&e.message)||'לא נמחק',1); api('foodday',{d:FDAY.d}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){}); })
+    .then(function(){ DELBUSY=false; delPump(); }); }
 function renderFood(){
   if(FDAY&&FDAY.d) FVIEW=FDAY.d===TODAY?null:FDAY.d; /* התאריך לפי הנתונים שמוצגים */
   var past=!!FVIEW, vd=FVIEW||TODAY, vlab=past?(vd.slice(8,10)+'/'+vd.slice(5,7)+(dshift(TODAY,-1)===vd?' · אתמול':'')):'היום';
@@ -1194,7 +1201,8 @@ function renderFood(){
     return '<div class="fmeal"><div class="fmh"><b>'+ml+'</b><span class="num">'+(xs.length?Math.round(k)+' קק״ל':'')+'</span></div>'+
       xs.map(function(x){ return '<div class="fitem"><span><b>'+esc(x.f)+'</b>'+(+x.g>0?' <small>'+esc(x.g)+' ג׳</small>':'')+'</span><span><span class="num">'+esc(x.k)+'</span> <small>קק״ל</small> '+(x._p?'<small class="fpend">נשמר…</small>':'<button class="ghost sm" data-del="'+x.row+'" data-f="'+esc(x.f)+'" aria-label="מחיקה">'+del+'</button>')+'</span></div>'; }).join('')+
       (past?'':'<button type="button" class="fmadd" data-meal="'+ml+'">+ הוספה ל'+ml+'</button>')+'</div>'; }).join('');
-  document.querySelectorAll('#fItems [data-del]').forEach(function(b){ b.onclick=function(){ var all=document.querySelectorAll('#fItems [data-del]'); all.forEach(function(x){ x.disabled=true; }); api('fooddel',{row:+b.dataset.del,f:b.dataset.f,d:FDAY.d}).then(function(r){ FDAY=r; renderFood(); }).catch(function(e){ toast(e.message,1); all.forEach(function(x){ x.disabled=false; }); }); }; }); /* מחיקה אחת בכל פעם: השורות זזות אחרי כל מחיקה */
+  document.querySelectorAll('#fItems [data-del]').forEach(function(b){ b.onclick=function(){ var row=+b.dataset.del, it=(FDAY.items||[]).filter(function(x){ return +x.row===row&&x.f===b.dataset.f; })[0]; if(!it) return;
+    FDAY.items=FDAY.items.filter(function(x){ return x!==it; }); DELQ.push({row:row,f:it.f,k:+it.k,d:FDAY.d,n:0}); renderFood(); delPump(); }; }); /* 30.10.26: מחיקה מיידית — השורה יורדת מהמסך מיד, והשרת מוחק ברקע לפי התור (delPump) */
   document.querySelectorAll('#fItems .fmadd').forEach(function(b){ b.onclick=function(){ FMEAL=b.dataset.meal; drawMealChips(); $('#fQ').scrollIntoView({block:'center',behavior:'smooth'}); $('#fQ').focus(); }; });
   var cp=$('#fCopy'); if(cp) cp.onclick=copyYesterday;
   drawMealChips(); drawRecent();
@@ -2187,7 +2195,7 @@ api=function(a,p){ var call;
     if(a==='foodday'){ var seq=FMUT; return _apiO(a,p).then(function(r){ if(seq!==FMUT&&typeof FDAY!=='undefined'&&FDAY&&r&&FDAY.d===r.d) return FDAY; return r; }); } /* תשובה שיצאה לפני רישום חדש לא מוחקת אותו */
     var mine=a==='food'?p:null, fc=FQ.then(function(){ return Promise.race([_apiO(a,p), new Promise(function(_,rj){ setTimeout(function(){ rj(new Error('אין חיבור כרגע. נסו שוב בעוד רגע')); },20000); })]); }); FQ=fc.then(function(){},function(){});
     return fc.then(function(r){ FMUT++; try{ var pend=(typeof FDAY!=='undefined'&&FDAY&&FDAY.items||[]).filter(function(x){ return x._p; }), used=false; if(r&&r.items&&pend.length){ pend.forEach(function(x){ if(!used&&mine&&x.f===String(mine.f).slice(0,80)&&+x.k===+mine.k){ used=true; return; } r.items.push(x); }); } }catch(e){}
-      if(a==='fooddel'&&r&&r.deleted===false) setTimeout(function(){ toast('לא נמחק: היומן השתנה בינתיים. רעננו ונסו שוב',1); },60); return r; }); }
+      if(a==='fooddel'&&r&&r.deleted===false&&!p.quiet) setTimeout(function(){ toast('לא נמחק: היומן השתנה בינתיים. רעננו ונסו שוב',1); },60); return r; }); }
   if(a==='plan'){ p=p||{}; var qids=ls(OQ_KEY,[]).filter(function(x){ return x.a==='lift'&&x.p.id&&x.s; }).map(function(x){ return x.p.id; }); if(qids.length) p.qids=qids; return _apiO(a,p).then(function(r){ if(r&&r.lifts) r.lifts=oqOver(r.lifts,r.have); return r; }); }
   if(a==='lift'||a==='liftdel'){ call=LQ.then(function(){ return _apiO(a,p); }); LQ=call.then(function(){},function(){}); } else if(a==='food'||a==='fooddel'){ call=FQ.then(function(){ return _apiO(a,p); }); FQ=call.then(function(){},function(){}); } else call=_apiO(a,p);
   return call.catch(function(e){ var off=/אין חיבור/.test(e&&e.message||'');
@@ -2975,6 +2983,26 @@ function praiseFor(p){ var k=+p.k||0, pr=+p.p||0, first=(D&&D.first)||'', fem=!!
   if(!prot&&!heavy&&Math.random()>.4) return ''; return (first&&Math.random()<.35?first+', ':'')+t; }
 var _apiPraise=api; api=function(a,p){ var r=_apiPraise.apply(this,arguments); if(a==='food'&&p&&r&&r.then){ var msg=''; try{ msg=praiseFor(p); }catch(e){}
   if(msg) r.then(function(){ setTimeout(function(){ try{ toast(msg); }catch(e){} },1400); }).catch(function(){}); } return r; };
+
+/* ===== מיקרופון פעם אחת לכל פתיחה (30.10.26): אייפון שואל שוב אחרי שהמיקרופון נעצר — הזרם נשמר מושהה 3 דק׳ וחוזר בלי שאלה ===== */
+(function(){ var md=navigator.mediaDevices; if(!md||!md.getUserMedia||!window.MediaStreamTrack) return;
+  var MIC={st:null,off:null}, realStop=MediaStreamTrack.prototype.stop, gum=md.getUserMedia.bind(md);
+  function kill(){ clearTimeout(MIC.off); var s=MIC.st; MIC.st=null; if(s) s.getTracks().forEach(function(t){ realStop.call(t); }); }
+  MediaStreamTrack.prototype.stop=function(){ if(MIC.st&&MIC.st.getTracks().indexOf(this)>=0){ this.enabled=false; clearTimeout(MIC.off); MIC.off=setTimeout(kill,180000); return; } return realStop.call(this); };
+  md.getUserMedia=function(c){ var audioOnly=c&&c.audio&&!c.video; if(!audioOnly) return gum(c);
+    clearTimeout(MIC.off); var s=MIC.st; if(s&&s.getTracks().some(function(t){ return t.readyState==='live'; })){ s.getTracks().forEach(function(t){ t.enabled=true; }); return Promise.resolve(s); }
+    return gum(c).then(function(s2){ MIC.st=s2; return s2; }); };
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') kill(); });
+})();
+
+/* ===== סרוק עוד (30.10.26): אחרי שמוצר מסריקה נרשם ביומן — כפתור לסריקה הבאה, ארוחה שלמה ברצף ===== */
+var SCANCHAIN=0;
+if(typeof onCode==='function'){ var _onCodeChain=onCode; onCode=function(){ SCANCHAIN=Date.now(); return _onCodeChain.apply(this,arguments); }; }
+(function(){ var st=document.createElement('style'); st.textContent='#scanMore{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;gap:8px;align-items:center;background:var(--panel2,#2c2c2e);border-radius:999px;padding:6px 6px 6px 14px;box-shadow:0 8px 24px rgba(0,0,0,.4)}#scanMore button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:10px 18px;background:var(--gold,#d9b46e);color:var(--cta-t,#1a1408)}#scanMore .x{background:transparent;color:var(--mute,#aaa);padding:10px}#scanMore button:focus-visible{outline:2px solid var(--text,#fff);outline-offset:2px}'; document.head.appendChild(st); })();
+function scanMoreShow(){ var el=document.getElementById('scanMore'); if(el) el.remove(); el=document.createElement('div'); el.id='scanMore';
+  el.innerHTML='<button type="button" class="go">סרוק עוד מוצר</button><button type="button" class="x" aria-label="סגירה">סיימתי</button>'; document.body.appendChild(el);
+  var t=setTimeout(function(){ el.remove(); },12000); el.querySelector('.go').onclick=function(){ clearTimeout(t); el.remove(); try{ scanStart(); }catch(e){} }; el.querySelector('.x').onclick=function(){ clearTimeout(t); el.remove(); SCANCHAIN=0; }; }
+var _apiChain=api; api=function(a,p){ var r=_apiChain.apply(this,arguments); if(a==='food'&&SCANCHAIN&&Date.now()-SCANCHAIN<10*60*1000&&r&&r.then){ SCANCHAIN=0; r.then(function(){ scanMoreShow(); }).catch(function(){}); } return r; };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
