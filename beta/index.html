@@ -31,7 +31,7 @@ h1{font-family:var(--f-display);font-weight:400;font-size:27px;margin:4px 0 2px}
 button{font-family:inherit;cursor:pointer;border:none;border-radius:12px;font-weight:700;font-size:15px;padding:12px 16px;background:var(--gold);color:var(--ink)}
 button:disabled{opacity:.5;cursor:not-allowed}
 :where(button:disabled){background-color:var(--panel2);color:var(--mute)} /* :where = משקל 0: כפתור עם עיצוב משלו (סט שבוצע, ספינר שמירה) שומר על הצבעים שלו */
-html,body{overflow-x:clip}
+body{overflow-x:clip}
 h1,h2,h3{text-wrap:balance}
 button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
 button.sm{padding:6px 10px;font-size:13px}
@@ -626,9 +626,9 @@ input,select,textarea{font-size:16px}
 </style><script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script><script>(function(){var t=null;try{t=localStorage.getItem('aviel_theme');}catch(e){}if(t!=='light'&&t!=='dark')t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#f7f3ec':'#0d0d0f';})();</script><style id="restyle">
 /* Hallmark · redesign: restyle v2 · direction: Apple-native (by request: "like Apple") · face: the system font (SF Pro / SF Hebrew on iPhone), Assistant as fallback · 30.10.26 */
 /* critique: v1 still read as generated, the serif and the cards. Now: no borders, grouped surfaces in system greys, one face in heavy weights with tight tracking, gold as the single tint, translucent tab bar */
-:root{--ink:#000;--panel:#1c1c1e;--panel2:#2c2c2e;--line:rgba(84,84,88,.6);--line2:rgba(84,84,88,.9);--text:#fff;--mute:rgba(235,235,245,.62);--gold:#d9b46e;--gold-d:#8a7043;--cta:#d9b46e;--cta-t:#1a1408;--soft:rgba(217,180,110,.14);--sh:none;--good:#30d158;--warn:#ffb340;--bad:#ff6961;--f-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Hebrew','Assistant',system-ui,sans-serif;--f-body:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Hebrew','Assistant',system-ui,sans-serif;--r-card:22px;--r-ctl:14px;--nav-bg:rgba(10,10,12,.72);--gold-hi:#e8cc8f;--gold-lo:#c39d55;--gold-edge:rgba(255,240,205,.45);--edge:rgba(255,255,255,.06);--seg-on:#48484a;--seg-sh:none}
-:root[data-theme="light"]{--ink:#f2f2f7;--panel:#fff;--panel2:#f2f2f7;--line:rgba(60,60,67,.18);--line2:rgba(60,60,67,.3);--text:#000;--mute:rgba(60,60,67,.66);--gold:#8a6420;--gold-d:#b39253;--cta:#000;--cta-t:#fff;--soft:rgba(138,100,32,.10);--good:#248a3d;--warn:#b25000;--bad:#d70015;--nav-bg:rgba(249,249,251,.78);--seg-on:#fff;--seg-sh:0 1px 3px rgba(0,0,0,.12)}
-html,body{overflow-x:clip}
+:root{--ink:#000;--panel:#1c1c1e;--panel2:#2c2c2e;--line:rgba(84,84,88,.6);--line2:rgba(84,84,88,.9);--text:#fff;--mute:rgba(235,235,245,.62);--gold:#d9b46e;--gold-d:#8a7043;--cta:#d9b46e;--cta-t:#1a1408;--soft:rgba(217,180,110,.14);--sh:none;--good:#30d158;--warn:#ffb340;--bad:#ff6961;--f-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Hebrew','Assistant',system-ui,sans-serif;--f-body:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Hebrew','Assistant',system-ui,sans-serif;--r-card:22px;--r-ctl:14px;--nav-bg:rgba(10,10,12,.72);--nav-solid:#0a0a0c;--gold-hi:#e8cc8f;--gold-lo:#c39d55;--gold-edge:rgba(255,240,205,.45);--edge:rgba(255,255,255,.06);--seg-on:#48484a;--seg-sh:none}
+:root[data-theme="light"]{--ink:#f2f2f7;--panel:#fff;--panel2:#f2f2f7;--line:rgba(60,60,67,.18);--line2:rgba(60,60,67,.3);--text:#000;--mute:rgba(60,60,67,.66);--gold:#8a6420;--gold-d:#b39253;--cta:#000;--cta-t:#fff;--soft:rgba(138,100,32,.10);--good:#248a3d;--warn:#b25000;--bad:#d70015;--nav-bg:rgba(249,249,251,.78);--nav-solid:#f9f9fb;--seg-on:#fff;--seg-sh:0 1px 3px rgba(0,0,0,.12)}
+body{overflow-x:clip}
 body{font-family:var(--f-body);background:var(--ink);color:var(--text);-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
 h1,h2,h3{font-family:var(--f-display);font-weight:800;letter-spacing:-.025em;text-wrap:balance;overflow-wrap:break-word;min-width:0}
 h1{font-size:36px;line-height:1.06;margin:14px 0 6px}
@@ -654,7 +654,7 @@ a.installbtn{color:var(--gold);font-weight:600;font-size:15px}
 .chip{background:var(--panel2);border:0;color:var(--text);border-radius:999px}
 .chip[aria-pressed="true"]{background:var(--text);color:var(--ink)}
 .thbtn{background:var(--panel);border:0;color:var(--text)}
-nav.tabs{background:var(--nav-bg);border-top:.5px solid var(--line);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
+nav.tabs{background:var(--nav-solid);border-top:.5px solid var(--line)} /* בלי backdrop-filter: באייפון הוא גרם לסרגל להיתקע באמצע הדף אחרי מקלדת */
 nav.tabs button{color:var(--mute);font-weight:500}
 nav.tabs button[aria-selected="true"]{color:var(--gold)}
 input,select,textarea{border-radius:12px;border-color:var(--line)!important;background:var(--panel2)}
@@ -2946,6 +2946,10 @@ function homeRing(){ var tc=document.getElementById('todayCard'); if(!tc) return
     '<div class="trt"><b>היום שלך</b><span><em>'+a+'</em> מתוך '+b+(a>=b?', יום מלא':'')+'</span></div>';
   el.setAttribute('role','img'); el.setAttribute('aria-label','היום שלך: '+a+' מתוך '+b); }
 var _renderTodayRing=renderTodayCard; renderTodayCard=function(){ var r=_renderTodayRing.apply(this,arguments); try{ homeRing(); }catch(e){} return r; };
+
+/* ===== באג אייפון (30.10.26, אביאל: "הסרגל של למטה קפץ לאמצע העמוד"): אחרי שהמקלדת נסגרת, אלמנטים קבועים נתקעים עד גלילה. מזיזים פיקסל וחוזרים, והסרגל חוזר למקום ===== */
+document.addEventListener('focusout',function(e){ var t=e.target; if(!t||!t.matches||!t.matches('input,textarea,select')) return; setTimeout(function(){ var y=window.scrollY; window.scrollTo(window.scrollX,y+1); window.scrollTo(window.scrollX,y); var n=document.querySelector('nav.tabs'); if(n){ n.style.transform='translateZ(0)'; requestAnimationFrame(function(){ n.style.transform=''; }); } },60); },true);
+if(window.visualViewport) window.visualViewport.addEventListener('resize',function(){ if(window.visualViewport.height>=window.innerHeight-1){ var n=document.querySelector('nav.tabs'); if(n){ n.style.bottom='1px'; requestAnimationFrame(function(){ n.style.bottom=''; }); } } });
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
