@@ -3091,6 +3091,20 @@ var _homeWoStrip=homeWorkout; homeWorkout=function(){ var r=_homeWoStrip.apply(t
  '.wkstrip .row{display:flex;justify-content:space-between;align-items:baseline}.wks{display:flex;gap:8px;margin-top:10px}.wkb{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 2px;border-radius:16px;border:1.5px solid var(--panel2,#2c2c2e);background:transparent;color:var(--text,#fff);font:inherit}.wkb small{font-size:11px;color:var(--mute,#aaa)}.wkb b{font-size:20px;line-height:1}.wki{height:18px;display:flex;align-items:center}.wki svg{width:16px;height:16px;color:var(--gold,#d9b46e)}.wkb.ok{border-color:var(--gold-d,#8a7043)}.wkb.go{border-color:var(--gold,#d9b46e)}.wkb.go .wki::before{content:"";width:12px;height:12px;border-radius:50%;border:2px solid var(--gold,#d9b46e)}'+
  '.fxarr:focus-visible,.fxnext:focus-visible,.wkb:focus-visible,.chip.wkc:focus-visible{outline:2px solid var(--gold,#d9b46e);outline-offset:2px}';
  document.head.appendChild(st); })();
+
+/* ===== סיכום אימון מול הפעם הקודמת (30.10.26): כמה יותר הרמת באותם תרגילים, ואילו שיאים נשברו ===== */
+function finCompare(){ var days=fxDays(), d=days[DAY]?applySwaps(days[DAY]):null; if(!d) return null; var now=0, before=0, prs=[];
+  d.ex.forEach(function(e){ var L=P.lifts&&P.lifts[e.ex], h=L&&L.hist||[], td=h.filter(function(x){ return x.d===TODAY; }); if(!td.length) return;
+    var prev=h.filter(function(x){ return x.d&&x.d<TODAY; }), lastD=prev.length?prev[prev.length-1].d:'', ps=prev.filter(function(x){ return x.d===lastD; });
+    var pb=prev.reduce(function(a,x){ return Math.max(a,+x.kg||0); },0), tt=Math.max.apply(null,td.map(function(x){ return +x.kg||0; })); if(pb&&tt>pb) prs.push(e.ex+' '+tt+' ק״ג');
+    if(ps.length){ td.forEach(function(x){ now+=x.kg*x.reps; }); ps.forEach(function(x){ before+=x.kg*x.reps; }); } });
+  return { pct: before>0?Math.round((now-before)/before*100):null, prs: prs }; }
+var _showFinishCmp=showFinish; showFinish=function(){ var c=null; try{ c=finCompare(); }catch(e){} var r=_showFinishCmp.apply(this,arguments);
+  try{ var fin=document.querySelector('.sheet .fin'); if(c&&fin){ var el=document.createElement('div'); el.className='fcmp'; var h='';
+      if(c.pct!=null) h+='<b class="'+(c.pct>=0?'up':'dn')+'">'+(c.pct>0?'הרמת <span class="num">'+c.pct+'%</span> יותר מהפעם הקודמת':c.pct===0?'אותו נפח כמו בפעם הקודמת':'<span class="num">'+Math.abs(c.pct)+'%</span> פחות מהפעם הקודמת, קורה. בפעם הבאה משלימים')+'</b>';
+      if(c.prs.length) h+='<span>שיאים: '+c.prs.slice(0,3).map(esc).join(', ')+'</span>';
+      if(h){ el.innerHTML=h; var st=fin.querySelector('.fstats'); fin.insertBefore(el,st||null); } } }catch(e){} return r; };
+(function(){ var st=document.createElement('style'); st.textContent='.fcmp{display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;margin:6px 0 10px}.fcmp b{font-size:16px}.fcmp b.up{color:var(--gold,#d9b46e)}.fcmp b.dn{color:var(--mute,#aaa)}.fcmp span{font-size:13.5px;color:var(--mute,#aaa)}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
