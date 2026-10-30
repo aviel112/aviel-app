@@ -3105,6 +3105,21 @@ var _showFinishCmp=showFinish; showFinish=function(){ var c=null; try{ c=finComp
       if(c.prs.length) h+='<span>שיאים: '+c.prs.slice(0,3).map(esc).join(', ')+'</span>';
       if(h){ el.innerHTML=h; var st=fin.querySelector('.fstats'); fin.insertBefore(el,st||null); } } }catch(e){} return r; };
 (function(){ var st=document.createElement('style'); st.textContent='.fcmp{display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;margin:6px 0 10px}.fcmp b{font-size:16px}.fcmp b.up{color:var(--gold,#d9b46e)}.fcmp b.dn{color:var(--mute,#aaa)}.fcmp span{font-size:13.5px;color:var(--mute,#aaa)}'; document.head.appendChild(st); })();
+
+/* ===== מה לאכול עם מה שנשאר (30.10.26 אביאל: "רק אם ביקש הצעה"): כפתור קטן ביומן, ההצעות מופיעות רק בלחיצה ===== */
+function eatHelpDraw(){ var tot=document.getElementById('fTot'); if(!tot||FVIEW) return; var old=document.getElementById('eatHelp'); if(old) old.remove();
+  var T=targets(), tk=+T['קלוריות']||0, tp=+T['חלבון']||0; if(!tk) return; var it=(FDAY&&FDAY.items||[]), k=it.reduce(function(a,x){ return a+(+x.k||0); },0), p=it.reduce(function(a,x){ return a+(+x.p||0); },0), lk=Math.round(tk-k), lp=Math.round(tp-p); if(lk<80) return;
+  var w=document.createElement('div'); w.id='eatHelp'; w.className='eathelp'; w.innerHTML='<button type="button" class="linkbtn">מה לאכול עם מה שנשאר?</button>'; tot.appendChild(w);
+  w.querySelector('button').onclick=function(){ var pool=FOODS.map(function(f){ var g=+f[5]||100; return {name:f[0],p:f[2],c:f[3],fat:f[4],g:g,k:(4*f[2]+4*f[3]+9*f[4])*g/100,pp:f[2]*g/100}; })
+      .concat((typeof EXTRA!=='undefined'?EXTRA:[]).filter(function(f){ return +f.k100>0; }).map(function(f){ var g=+f.g||100; return {name:f.name+(f.brand?' '+f.brand:''),p:+f.p||0,c:+f.c||0,fat:+f.fat||0,g:g,k:f.k100*g/100,pp:(+f.p||0)*g/100,ex:f}; }))
+      .filter(function(x){ return x.k>=60&&x.k<=lk+30; }), needP=tp&&lp>=15;
+    pool.sort(needP?function(a,b){ return (b.pp/b.k)-(a.pp/a.k); }:function(a,b){ var t=Math.min(lk,350); return Math.abs(a.k-t)-Math.abs(b.k-t); });
+    var seen={}, top=pool.filter(function(x){ var key=x.name.split(' ')[0]; if(seen[key]) return false; seen[key]=1; return true; }).slice(0,3);
+    if(!top.length){ w.innerHTML='<div class="sub">לא מצאתי משהו שמתאים בדיוק. מחפשים למעלה לפי שם.</div>'; return; }
+    w.innerHTML='<div class="sub">נשארו <span class="num">'+lk+'</span> קק״ל'+(tp?' ו-<span class="num">'+Math.max(0,lp)+'</span> גרם חלבון':'')+'. מה שסוגר את זה:</div>'+top.map(function(x,i){ return '<button type="button" class="ehrow" data-eh="'+i+'"><span><b>'+esc(x.name)+'</b><small><span class="num">'+x.g+'</span> ג׳, <span class="num">'+Math.round(x.k)+'</span> קק״ל, <span class="num">'+Math.round(x.pp)+'</span> ג׳ חלבון</small></span><em>הוספה</em></button>'; }).join('');
+    w.querySelectorAll('[data-eh]').forEach(function(b){ b.onclick=function(){ var x=top[+b.dataset.eh]; if(x.ex) pickExtra(x.ex); else pick({name:x.name,p:x.p,c:x.c,fat:x.fat,units:[['יחידה / מנה',x.g]],g:x.g}); var a=document.getElementById('fAdd'); if(a) a.scrollIntoView({block:'center',behavior:'smooth'}); }; }); }; }
+var _rfEat=renderFood; renderFood=function(){ _rfEat.apply(this,arguments); try{ eatHelpDraw(); }catch(e){} };
+(function(){ var st=document.createElement('style'); st.textContent='.eathelp{display:flex;flex-direction:column;gap:6px;margin-top:10px}.eathelp>.linkbtn{align-self:center}.ehrow{display:flex;align-items:center;gap:10px;width:100%;text-align:start;font:inherit;color:inherit;background:var(--panel2,#2c2c2e);border:0;border-radius:14px;padding:10px 14px}.ehrow>span{flex:1;min-width:0;display:flex;flex-direction:column}.ehrow small{color:var(--mute,#aaa);font-size:12.5px}.ehrow em{font-style:normal;font-weight:700;color:var(--gold,#d9b46e);font-size:14px}.ehrow:focus-visible{outline:2px solid var(--gold,#d9b46e);outline-offset:2px}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
