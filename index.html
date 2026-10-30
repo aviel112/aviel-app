@@ -2982,7 +2982,9 @@ function praiseFor(p){ var k=+p.k||0, pr=+p.p||0, first=(D&&D.first)||'', fem=!!
            :['כל הכבוד, ככה מגיעים לתוצאה','רישום מדויק, מעולה','עוד ארוחה ביומן, ככה ממשיכים','יופי, רואים שאתם על זה'];
   var L=fem?['ארוחה קלילה ומדויקת, את מעולה']:['ארוחה קלילה ומדויקת, יופי'];
   var t=prot?praisePick(P1)+(fem?(Math.random()<.5?', את מדהימה':''):''):light?praisePick(L.concat(G)):praisePick(G);
-  if(!prot&&!heavy&&Math.random()>.4) return ''; return (first&&Math.random()<.35?first+', ':'')+t; }
+  /* 30.10.26 אביאל: לא כל הזמן — מדי פעם, לרז יותר. ולא יותר מהודעה אחת ב-45 דק׳ */
+  var last=+ls('aviel_praise_t',0)||0; if(Date.now()-last<45*60*1000) return '';
+  var chance=fem?(prot?.6:.35):(prot?.3:.12); if(Math.random()>chance) return ''; lsSet('aviel_praise_t',Date.now()); return (first&&Math.random()<.35?first+', ':'')+t; }
 var _apiPraise=api; api=function(a,p){ var r=_apiPraise.apply(this,arguments); if(a==='food'&&p&&!p.fav&&r&&r.then){ var msg=''; try{ msg=praiseFor(p); }catch(e){}
   if(msg) r.then(function(){ setTimeout(function(){ try{ toast(msg); }catch(e){} },1400); }).catch(function(){}); } return r; };
 
