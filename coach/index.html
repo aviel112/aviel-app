@@ -1339,4 +1339,32 @@ google.script.run.withSuccessHandler(function(d){ swrSave('leads',d||[]); LEADS=
 })();
 </script>
 
+<style>
+#winsCard{margin-bottom:10px}
+#winsCard .wl{display:flex;flex-direction:column}
+#winsCard .wr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+#winsCard .wr:first-child{border-top:0}
+#winsCard .wr b{font-size:14.5px}
+#winsCard .wr small{display:block;color:var(--mute);font-size:12.5px;margin-top:1px}
+#winsCard .wr button{border:0;border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;font-weight:700;background:var(--blue);color:#16130c;cursor:pointer}
+#winsCard .wr button.done{background:var(--chip);color:var(--chip-t);cursor:default}
+</style>
+<script>
+/* ===== ניצחונות השבוע (30.10.26, השראה מ-NutriCal 2.0): שיאים, 10,000 צעדים, רצף שקילות — לחיצה אחת שולחת למתאמן "כל הכבוד" לאפליקציה ===== */
+(function(){
+  var WINS=null, KIND={pr:'שיא',steps:'צעדים',streak:'רצף'};
+  function dd(d){ return d.slice(8,10)+'/'+d.slice(5,7); }
+  function draw(){ var sec=document.querySelector('section[data-v="today"]'); if(!sec) return; var el=document.getElementById('winsCard');
+    if(!WINS||!WINS.length){ if(el) el.remove(); return; }
+    if(!el){ el=document.createElement('div'); el.id='winsCard'; el.className='card'; sec.insertBefore(el,sec.firstChild); }
+    var open=WINS.filter(function(w){ return !w.sent; }).length;
+    el.innerHTML='<div class="sec" style="margin:0 0 6px"><span>ניצחונות השבוע'+(open?' ('+open+' מחכים ל"כל הכבוד")':'')+'</span></div><div class="wl">'+WINS.slice(0,8).map(function(w,i){ return '<div class="wr"><div><b>'+esc(w.name.split(' ')[0])+': '+esc(w.t)+'</b><small>'+KIND[w.kind]+', '+dd(w.d)+'</small></div><button type="button" data-win="'+i+'" class="'+(w.sent?'done':'')+'"'+(w.sent?' disabled':'')+'>'+(w.sent?'נשלח':'כל הכבוד')+'</button></div>'; }).join('')+'</div>';
+    el.querySelectorAll('[data-win]').forEach(function(b){ b.onclick=function(){ var w=WINS[+b.dataset.win]; if(!w||w.sent) return; b.disabled=true; b.textContent='שולח…';
+      gsr('dashboardApplaud',w.name,w.t,w.msg).then(function(){ w.sent=true; toast('נשלח ל'+w.name.split(' ')[0]+': '+w.msg); draw(); }).catch(function(e){ b.disabled=false; b.textContent='כל הכבוד'; toast(e.message||String(e)); }); }; }); }
+  function load(){ gsr('dashboardWins').then(function(L){ WINS=L||[]; draw(); }).catch(function(){}); }
+  var _rt=renderToday; renderToday=function(){ var r=_rt.apply(this,arguments); try{ draw(); }catch(e){} return r; };
+  setTimeout(load,2500);
+})();
+</script>
+
 </body></html>
