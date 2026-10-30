@@ -3158,6 +3158,25 @@ var _inboxHtmlW=inboxHtml; inboxHtml=function(){ try{ if(INBOX&&/^מים\s*·/.t
 (function(){ var st=document.createElement('style'); st.textContent='#hgoal .tbar{display:flex;direction:rtl}#hgoal .tbar i{display:block}'; document.head.appendChild(st); })();
 
 (function(){ var st=document.createElement('style'); st.textContent='#fBtn{background:#0a84ff!important;color:#fff!important;border-color:#0a84ff!important}#fBtn:disabled{background:#0a84ff!important;opacity:.45}#fBtn:focus-visible{outline:2px solid #fff;outline-offset:2px}'; document.head.appendChild(st); })(); /* 30.10.26 אביאל: כפתור ההוספה ביומן כחול — צבע שרוצים ללחוץ עליו, לא אפור */
+
+/* ===== פעילות נוספת (30.10.26 אביאל: "שיחק פאדל — נשווה לכמות צעדים"): דקות → צעדים, נכנס לצעדים של היום ===== */
+var ACTS=[['פאדל',120],['טניס',130],['כדורגל',140],['כדורסל',140],['ריצה',160],['אופניים',110],['ספינינג',140],['שחייה',130],['פילאטיס',70],['יוגה',50],['אימון פונקציונלי',130],['ריקוד / זומבה',120],['מדרגות',150],['אגרוף',140],['טיול רגלי',110]], ACT_SEL=null, ACT_MIN=60;
+function actDraw(){ var f=document.getElementById('sForm'); if(!f) return; var box=document.getElementById('actBox'); if(!box){ box=document.createElement('div'); box.id='actBox'; box.className='actbox'; f.parentNode.insertBefore(box,f.nextSibling); }
+  var log=(ls('aviel_act',{})||{})[TODAY]||[];
+  var h=(log.length?'<div class="actlog">'+log.map(function(x){ return '<span>'+esc(x.k)+' '+x.min+' דק׳ = <b class="num">'+Number(x.s).toLocaleString('en')+'</b> צעדים</span>'; }).join('')+'</div>':'')+'<button type="button" class="linkbtn" id="actOpen">+ פעילות נוספת (פאדל, ריצה, פילאטיס…)</button><div id="actPick" hidden></div>';
+  box.innerHTML=h; document.getElementById('actOpen').onclick=function(){ var p=document.getElementById('actPick'); p.hidden=!p.hidden; if(!p.hidden) actPick(); }; }
+function actPick(){ var p=document.getElementById('actPick'); if(!p) return; var sel=ACTS.filter(function(a){ return a[0]===ACT_SEL; })[0], est=sel?Math.round(ACT_MIN*sel[1]/100)*100:0;
+  p.innerHTML='<div class="sub">איזו פעילות?</div><div class="actch">'+ACTS.map(function(a){ return '<button type="button" class="chip" data-act="'+esc(a[0])+'" aria-pressed="'+(a[0]===ACT_SEL)+'">'+esc(a[0])+'</button>'; }).join('')+'</div>'+
+    '<div class="sub">כמה זמן?</div><div class="actch">'+[30,45,60,90,120].map(function(m){ return '<button type="button" class="chip" data-min="'+m+'" aria-pressed="'+(m===ACT_MIN)+'">'+m+' דק׳</button>'; }).join('')+'</div>'+
+    '<button type="button" id="actGo"'+(sel?'':' disabled')+'>'+(sel?'הוספה: כ-'+est.toLocaleString('en')+' צעדים':'בוחרים פעילות')+'</button>';
+  p.querySelectorAll('[data-act]').forEach(function(b){ b.onclick=function(){ ACT_SEL=b.dataset.act; actPick(); }; });
+  p.querySelectorAll('[data-min]').forEach(function(b){ b.onclick=function(){ ACT_MIN=+b.dataset.min; actPick(); }; });
+  var go=document.getElementById('actGo'); go.onclick=function(){ if(!sel) return; go.disabled=true; go.textContent='שומר…';
+    api('activity',{k:sel[0],min:ACT_MIN}).then(function(r){ var add=(r&&r.actAdded)||est; var L=ls('aviel_act',{})||{}; Object.keys(L).forEach(function(d){ if(d!==TODAY) delete L[d]; }); (L[TODAY]=L[TODAY]||[]).push({k:sel[0],min:ACT_MIN,s:add}); lsSet('aviel_act',L);
+      if(r&&r.week){ D=r; } toast(sel[0]+' '+ACT_MIN+' דק׳ = '+add.toLocaleString('en')+' צעדים נוספו'); ACT_SEL=null; try{ render(); }catch(e){} actDraw(); })
+    .catch(function(e){ go.disabled=false; go.textContent='הוספה'; toast((e&&e.message)||'לא נשמר',1); }); }; }
+var _renderAct=render; render=function(){ _renderAct.apply(this,arguments); try{ actDraw(); }catch(e){} };
+(function(){ var st=document.createElement('style'); st.textContent='.actbox{display:flex;flex-direction:column;gap:8px;margin-top:10px}.actbox>.linkbtn{align-self:flex-start}.actlog{display:flex;flex-direction:column;gap:4px;font-size:13.5px;color:var(--mute,#aaa)}.actlog b{color:var(--gold,#d9b46e)}#actPick{display:flex;flex-direction:column;gap:8px}#actPick .actch{display:flex;flex-wrap:wrap;gap:6px}#actPick .chip{width:auto;flex:none;margin:0;padding:8px 12px;font-size:13.5px}#actGo{background:#0a84ff;color:#fff;border:0;border-radius:999px;min-height:48px;font:inherit;font-weight:700}#actGo:disabled{opacity:.45}#actGo:focus-visible{outline:2px solid #fff;outline-offset:2px}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
