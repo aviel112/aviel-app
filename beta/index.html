@@ -2955,6 +2955,20 @@ if(window.visualViewport) window.visualViewport.addEventListener('resize',functi
 (function(){ var st=document.createElement('style'); st.textContent='#sgoal>.row,#sgoal>.tbar{display:none}#sgoal{padding-top:4px}'; document.head.appendChild(st); })();
 function sgDedupe(){ var t=document.querySelector('#sgoal>.tnote'); if(t) t.hidden=/^עוד [\d,]+ צעדים להיום\.?$/.test(t.textContent.trim()); }
 var _renderSg=render; render=function(){ _renderSg.apply(this,arguments); try{ sgDedupe(); }catch(e){} };
+
+/* ===== מילה טובה על כל רישום (30.10.26): ארוחה חלבונית מקבלת "יופי של ארוחה חלבונית"; לרז מילה טובה על כל רישום, לשאר מדי פעם ===== */
+var PRAISE_FEM={'רז':1}, _praiseLast='';
+function praisePick(a){ var c=a.filter(function(x){ return x!==_praiseLast; }); _praiseLast=c[Math.floor(Math.random()*c.length)]; return _praiseLast; }
+function praiseFor(p){ var k=+p.k||0, pr=+p.p||0, first=(D&&D.first)||'', fem=!!PRAISE_FEM[first], heavy=fem; if(k<=0) return '';
+  var prot=pr>=20||(k>0&&pr*4/k>=0.3), light=k<=350&&!prot;
+  var P1=['יופי של ארוחה חלבונית','ארוחה חלבונית מעולה, ככה בונים שריר','איזה חלבון, בדיוק מה שהגוף צריך','ארוחה חלבונית, אין עליה'];
+  var G=fem?['את מדהימה, ככה ממשיכים','את מצוינת, רישום מדויק','את מעולה, רואים שאת על זה','כל הכבוד לך, ככה מגיעים לתוצאה','את פשוט אלופה, עוד ארוחה ביומן','גאה בך, ממשיכה ככה']
+           :['כל הכבוד, ככה מגיעים לתוצאה','רישום מדויק, מעולה','עוד ארוחה ביומן, ככה ממשיכים','יופי, רואים שאתם על זה'];
+  var L=fem?['ארוחה קלילה ומדויקת, את מעולה']:['ארוחה קלילה ומדויקת, יופי'];
+  var t=prot?praisePick(P1)+(fem?(Math.random()<.5?', את מדהימה':''):''):light?praisePick(L.concat(G)):praisePick(G);
+  if(!prot&&!heavy&&Math.random()>.4) return ''; return (first&&Math.random()<.35?first+', ':'')+t; }
+var _apiPraise=api; api=function(a,p){ var r=_apiPraise.apply(this,arguments); if(a==='food'&&p&&r&&r.then){ var msg=''; try{ msg=praiseFor(p); }catch(e){}
+  if(msg) r.then(function(){ setTimeout(function(){ try{ toast(msg); }catch(e){} },1400); }).catch(function(){}); } return r; };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
