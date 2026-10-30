@@ -3021,6 +3021,76 @@ function daySumLine(){ try{ var old=document.getElementById('daySum'); if(old) o
 (function(){ var st=document.createElement('style'); st.textContent='.daysum{display:flex;flex-direction:column;gap:2px;padding:12px 16px;margin:0 0 12px;border-radius:16px;background:var(--panel,#1c1c1e);font-size:14px;line-height:1.45}.daysum b{font-size:13px;color:var(--gold,#d9b46e)}.daysum span{color:var(--text,#fff)}'; document.head.appendChild(st); })();
 var _rtcSum=renderTodayCard; renderTodayCard=function(){ _rtcSum.apply(this,arguments); daySumLine(); };
 var _rfSum=renderFood; renderFood=function(){ _rfSum.apply(this,arguments); daySumLine(); };
+
+/* ===== אימון בפוקוס (30.10.26, השראה מאפליקציה שאביאל אהב): תרגיל אחד במסך — "תרגיל 3 מתוך 6", התרגיל הבא בתחתית,
+   כפתור גדול "סיים סט", ומתחת לכל סט מה עשית בפעם הקודמת. "כל התרגילים" מחזיר לרשימה ===== */
+var FX={day:-1,i:-1}, FXOFF=!!ls('aviel_fx_off',0);
+function fxDays(){ var p=P&&P.program; return p?(p.blocks||[]).filter(function(b){ return b.ex&&b.ex.length; }):[]; }
+function fxCards(){ var box=document.getElementById('progBox'); return box?Array.prototype.slice.call(box.querySelectorAll(':scope > .card.ex')):[]; }
+function fxOpen(c){ return !!(c&&c.querySelector('form.setrow:not(.ok)')); }
+function fxPrev(){ try{ var days=fxDays(), d=days[DAY]?applySwaps(days[DAY]):null; if(!d) return; var cards=fxCards();
+  cards.forEach(function(c){ var f0=c.querySelector('form.setrow'); if(!f0) return; var e=d.ex[+f0.dataset.i]; if(!e) return; var L=P.lifts&&P.lifts[e.ex], hist=L&&L.hist||[], prev=hist.filter(function(x){ return x.d&&x.d<TODAY; }); if(!prev.length) return;
+    var lastD=prev[prev.length-1].d, ps=prev.filter(function(x){ return x.d===lastD; });
+    c.querySelectorAll('form.setrow').forEach(function(f,k){ if(f.querySelector('.pvv')) return; var pv=ps[k]; if(!pv) return; var el=document.createElement('div'); el.className='pvv';
+      el.innerHTML='<span></span><span>('+pv.kg+' ק״ג)</span><span>('+pv.reps+' חזרות)</span><span>'+(pv.rir!=null&&pv.rir!==''?'(עוד '+pv.rir+')':'')+'</span><span></span>'; f.appendChild(el); }); }); }catch(e){} }
+function fxApply(){ var box=document.getElementById('progBox'); if(!box) return; ['fxHead','fxNext','fxSet'].forEach(function(id){ var o=document.getElementById(id); if(o) o.remove(); });
+  var cards=fxCards(); box.classList.remove('fx-on'); cards.forEach(function(c){ c.classList.remove('fxhide'); });
+  var fin=document.getElementById('finish');
+  if(cards.length<2){ return; }
+  if(FXOFF){ var lk=document.createElement('button'); lk.type='button'; lk.id='fxHead'; lk.className='linkbtn fxmode'; lk.textContent='תרגיל אחד בכל מסך'; lk.onclick=function(){ FXOFF=false; lsSet('aviel_fx_off',0); fxApply(); window.scrollTo(0,0); }; cards[0].parentNode.insertBefore(lk,cards[0]); return; }
+  if(FX.day!==DAY||FX.i<0||FX.i>=cards.length){ FX.day=DAY; FX.i=0; for(var q=0;q<cards.length;q++){ if(fxOpen(cards[q])){ FX.i=q; break; } if(q===cards.length-1) FX.i=q; } }
+  var i=FX.i, cur=cards[i], nx=cards[i+1]; box.classList.add('fx-on'); cards.forEach(function(c,j){ if(j!==i) c.classList.add('fxhide'); });
+  var hd=document.createElement('div'); hd.id='fxHead'; hd.className='fxhead';
+  hd.innerHTML='<button type="button" class="fxarr" data-fx="-1" aria-label="לתרגיל הקודם"'+(i?'':' disabled')+'>'+IC_GO+'</button><b>תרגיל <span class="num">'+(i+1)+'</span> מתוך <span class="num">'+cards.length+'</span></b><button type="button" class="fxarr prev" data-fx="1" aria-label="לתרגיל הבא"'+(nx?'':' disabled')+'>'+IC_GO+'</button>'+
+    '<div class="fxdots">'+cards.map(function(c,j){ return '<i class="'+(j===i?'on':(fxOpen(c)||!c.querySelector('form.setrow')?'':'ok'))+'"></i>'; }).join('')+'</div><button type="button" class="linkbtn fxall">כל התרגילים</button>';
+  cur.parentNode.insertBefore(hd,cur);
+  hd.querySelectorAll('[data-fx]').forEach(function(b){ b.onclick=function(){ fxGo(FX.i+(+b.dataset.fx)); }; });
+  hd.querySelector('.fxall').onclick=function(){ FXOFF=true; lsSet('aviel_fx_off',1); fxApply(); };
+  if(nx){ var nm=(nx.querySelector('.nm')||{}).textContent||'', mu=(nx.querySelector('.mu')||{}).textContent||'', sp=nx.querySelector('.spec span'), sets=sp?sp.textContent.replace(/^סטים/,'').trim():'', im=nx.querySelector('.exthumb img');
+    var nb=document.createElement('button'); nb.type='button'; nb.id='fxNext'; nb.className='card fxnext';
+    nb.innerHTML=(im?'<img alt="" src="'+im.getAttribute('src')+'">':'')+'<span><small>התרגיל הבא</small><b>'+esc(nm)+'</b><small>'+(sets?esc(sets)+' סטים':'')+(mu?(sets?', ':'')+esc(mu):'')+'</small></span>'+IC_GO;
+    nb.onclick=function(){ fxGo(FX.i+1); }; cur.parentNode.insertBefore(nb,cur.nextSibling); }
+  if(fin) fin.classList.toggle('fxhide',!!nx);
+  var open=cur.querySelector('form.setrow:not(.ok)'), sb=document.createElement('button'); sb.type='button'; sb.id='fxSet'; sb.className='installbtn fxset';
+  sb.textContent=open?'סיים סט':(nx?'לתרגיל הבא':'סיום האימון'); if(!open&&!nx&&!fin) sb.hidden=true;
+  sb.onclick=function(){ var f=cur.querySelector('form.setrow:not(.ok)'); if(f){ if(f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true})); return; } if(nx) fxGo(FX.i+1); else if(fin) fin.click(); };
+  box.appendChild(sb); }
+function fxGo(j){ var cards=fxCards(); if(j<0||j>=cards.length) return; FX.day=DAY; FX.i=j; fxApply(); var h=document.getElementById('fxHead'); if(h) h.scrollIntoView({block:'start',behavior:'smooth'}); }
+function fxAfterSet(){ var cards=fxCards(), cur=cards[FX.i]; if(!cur) return; if(fxOpen(cur)){ fxApply(); return; } fxApply(); /* התרגיל נגמר: עוברים לבא אחרי רגע (גם אם המסך התרענן בינתיים) */
+  if(cards[FX.i+1]&&!FX.adv){ var at=FX.i, dy=DAY; FX.adv=1; setTimeout(function(){ FX.adv=0; if(FX.i===at&&DAY===dy&&!FXOFF&&!fxOpen(fxCards()[at])) fxGo(at+1); },1600); } }
+document.addEventListener('submit',function(ev){ var f=ev.target; if(f&&f.classList&&f.classList.contains('setrow')&&document.getElementById('fxSet')) setTimeout(fxAfterSet,350); },true);
+
+/* ===== כרטיסי אימון (30.10.26): במקום "אימון 1" — כמה תרגילים, סטים ודקות, ו"הושלם" / "בתהליך" ===== */
+function wkCards(){ var days=fxDays(); if(!days.length) return; var dm=doneMap(), w=woGet();
+  document.querySelectorAll('#progBox .chips[role="group"] .chip[data-day]').forEach(function(c){ var i=+c.dataset.day, d=days[i]?applySwaps(days[i]):null; if(!d) return;
+    var exs=d.ex.filter(function(e){ return !/חימום/.test(e.mu||''); }), sets=exs.reduce(function(a,e){ return a+(parseInt(e.s,10)||0); },0), st=dm[i]?'הושלם':(w&&w.day===i?'בתהליך':'');
+    c.classList.add('wkc'); c.innerHTML='<span class="wkt"><b>אימון '+(i+1)+'</b>'+(st?'<em class="'+(dm[i]?'ok':'go')+'">'+st+'</em>':'')+'</span><small>'+exs.length+' תרגילים, '+sets+' סטים</small><small>כ-'+woMinutes(d)+' דק׳</small>'; });
+  var g=document.querySelector('#progBox .chips[role="group"]'); if(g) g.classList.add('wkcs'); }
+
+var _renderTrainFx=renderTrain; renderTrain=function(){ var r=_renderTrainFx.apply(this,arguments); try{ fxPrev(); }catch(e){} try{ wkCards(); }catch(e){} try{ fxApply(); }catch(e){} return r; };
+
+/* ===== פס השבוע בבית (30.10.26): עיגול לכל אימון — וי על מה שהושלם, טבעת על הבא או מה שבתהליך. לחיצה פותחת ===== */
+function wkStrip(){ var old=document.getElementById('wkStrip'), anchor=document.getElementById('hWo')||document.getElementById('todayCard'); try{
+  var days=fxDays(); if(!anchor||!days.length||(P.program&&P.program.file)){ if(old) old.remove(); return; }
+  var dm=doneMap(), w=woGet(), nxt=w?w.day:-1; if(nxt<0) for(var q=0;q<days.length;q++){ if(!dm[q]){ nxt=q; break; } }
+  var h='<div class="row"><b>האימונים של השבוע</b><span class="sub"><span class="num">'+Object.keys(dm).length+'</span> מתוך <span class="num">'+days.length+'</span></span></div><div class="wks">'+days.map(function(d,i){ var cls=dm[i]?'ok':(i===nxt?'go':'');
+    return '<button type="button" class="wkb '+cls+'" data-wk="'+i+'" aria-label="אימון '+(i+1)+(dm[i]?', הושלם':(i===nxt?(w?', בתהליך':', הבא'):''))+'"><span class="wki">'+(dm[i]?'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':'')+'</span><small>אימון</small><b class="num">'+(i+1)+'</b></button>'; }).join('')+'</div>';
+  if(!old){ old=document.createElement('div'); old.id='wkStrip'; old.className='card wkstrip'; } if(old.previousElementSibling!==anchor) anchor.parentNode.insertBefore(old,anchor.nextSibling); old.innerHTML=h;
+  old.querySelectorAll('[data-wk]').forEach(function(b){ b.onclick=function(){ var i=+b.dataset.wk; DAY=i; ONEDAY=i; SHOWALL=!!dm[i]; FX.day=-1; show('train'); renderTrain(); window.scrollTo(0,0); }; }); }catch(e){} }
+var _homeWoStrip=homeWorkout; homeWorkout=function(){ var r=_homeWoStrip.apply(this,arguments); wkStrip(); return r; };
+
+(function(){ var st=document.createElement('style'); st.textContent=
+ '#progBox .fxhide{display:none!important}'+
+ '.fxhead{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:6px;margin:10px 0 8px;text-align:center}.fxhead>b{font-size:17px}.fxarr{width:44px;height:44px;border-radius:50%;border:0;background:var(--panel,#1c1c1e);color:var(--text,#fff);display:flex;align-items:center;justify-content:center}.fxarr svg{width:20px;height:20px}.fxarr.prev svg{transform:scaleX(-1)}.fxarr:disabled{opacity:.3}'+
+ '.fxdots{grid-column:1/-1;display:flex;gap:5px;justify-content:center;margin-top:2px}.fxdots i{width:7px;height:7px;border-radius:50%;background:var(--panel2,#2c2c2e)}.fxdots i.ok{background:var(--gold-d,#8a7043)}.fxdots i.on{background:var(--gold,#d9b46e);width:20px;border-radius:4px}'+
+ '.fxall{grid-column:1/-1;justify-self:center;font-size:13px}.fxmode{display:block;margin:8px auto}'+
+ '.fxnext{display:flex;align-items:center;gap:12px;width:100%;text-align:start;font:inherit;color:inherit;border:0;margin-top:10px;padding:10px 14px}.fxnext img{width:64px;height:64px;object-fit:cover;border-radius:12px;background:#fff;flex:none}.fxnext>span{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.fxnext small{color:var(--mute,#aaa);font-size:12.5px}.fxnext b{font-size:16px}.fxnext>svg{width:18px;height:18px;flex:none;transform:scaleX(-1);opacity:.6}'+
+ '.fxset{position:sticky;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:7;margin-top:14px;min-height:54px;font-size:17px}body:has(#rest:not([hidden])) .fxset{bottom:calc(150px + env(safe-area-inset-bottom,0px))}'+
+ '.pvv{grid-column:1/-1;display:grid;grid-template-columns:24px 1fr 1fr 86px 44px;gap:6px;margin-top:-2px;font-size:11.5px;color:var(--mute,#9d9aa6);text-align:center}'+
+ '.chips.wkcs{gap:8px;padding-bottom:6px}.chip.wkc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:132px;padding:10px 12px;border-radius:16px;text-align:start;white-space:nowrap}.chip.wkc .wkt{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%}.chip.wkc b{font-size:15px;color:var(--text,#fff)}.chip.wkc small{font-size:12px;color:var(--mute,#aaa)}.chip.wkc em{font-style:normal;font-size:11.5px;font-weight:700}.chip.wkc em.ok{color:var(--good,#30d158)}.chip.wkc em.go{color:var(--gold,#d9b46e)}.chip.wkc[aria-pressed="true"] b,.chip.wkc[aria-pressed="true"] em{color:inherit}.chip.wkc[aria-pressed="true"] small{color:inherit;opacity:.68}'+
+ '.wkstrip .row{display:flex;justify-content:space-between;align-items:baseline}.wks{display:flex;gap:8px;margin-top:10px}.wkb{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 2px;border-radius:16px;border:1.5px solid var(--panel2,#2c2c2e);background:transparent;color:var(--text,#fff);font:inherit}.wkb small{font-size:11px;color:var(--mute,#aaa)}.wkb b{font-size:20px;line-height:1}.wki{height:18px;display:flex;align-items:center}.wki svg{width:16px;height:16px;color:var(--gold,#d9b46e)}.wkb.ok{border-color:var(--gold-d,#8a7043)}.wkb.go{border-color:var(--gold,#d9b46e)}.wkb.go .wki::before{content:"";width:12px;height:12px;border-radius:50%;border:2px solid var(--gold,#d9b46e)}'+
+ '.fxarr:focus-visible,.fxnext:focus-visible,.wkb:focus-visible,.chip.wkc:focus-visible{outline:2px solid var(--gold,#d9b46e);outline-offset:2px}';
+ document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
