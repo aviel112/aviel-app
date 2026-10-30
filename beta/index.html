@@ -1418,7 +1418,7 @@ sugg=function(e,L){
   var rr=atTop.map(function(x){ return x.rir; }).filter(function(x){ return x!=null&&x!==''; }).map(Number), rirAll=rr.length&&rr.length===atTop.length, rirMin=rirAll?Math.min.apply(null,rr):null;
   if(R&&minR>=R[1]&&(!ns||atTop.length>=ns)){ var big=rirMin!=null&&rirMin>=3, up=big?inc*2:inc; return {up:true,from:top,kg:Math.round((top+up)*100)/100,reps:R[0],why:big?'הגעת ל-'+R[1]+' חזרות והיה לך כוח לעוד 3 חזרות לפחות, אז קפיצה כפולה: +'+up+' ק״ג':'בפעם הקודמת הגעת ל-'+R[1]+' חזרות בכל הסטים, אז עולים '+inc+' ק״ג וחוזרים ל-'+R[0]}; }
   // RIR 0 בכל הסטים ועדיין מתחת לטווח — המשקל כבד מדי
-  if(R&&rirMin===0&&minR<R[0]&&top>inc){ var dn2=Math.round((top-inc)*100)/100; return {kg:dn2,reps:R[0],why:'בפעם הקודמת הגעת לכשל לפני '+R[0]+' חזרות. יורדים ל-'+dn2+' ק״ג ונכנסים לטווח',stall:true}; }
+  if(R&&rirMin===0&&minR<R[0]&&top>inc){ var st2=Math.max(inc,top>10?2.5:inc), dn2=Math.floor(top*(1+minR/30)/(1+R[0]/30)/st2)*st2; if(!(dn2<top)) dn2=top-st2; dn2=Math.round(dn2*100)/100; /* 30.10.26: לפי הערכת 1RM ובקפיצות של 2.5 לפחות (לא 29 במכונה) */ return {kg:dn2,reps:R[0],why:'בפעם הקודמת הגעת לכשל לפני '+R[0]+' חזרות. יורדים ל-'+dn2+' ק״ג ונכנסים לטווח',stall:true}; }
   // תקיעות: 3 אימונים אחרונים באותו משקל עליון בלי שיפור בחזרות — יורדים 10% ובונים מחדש
   var ds=[]; prev.forEach(function(x){ if(ds.indexOf(x.d)<0) ds.push(x.d); }); ds=ds.slice(-3);
   if(ds.length===3&&top>0){ var st=ds.map(function(d){ var ss=prev.filter(function(x){ return x.d===d; }), t=Math.max.apply(null,ss.map(function(x){ return x.kg; })); return {t:t, r:Math.max.apply(null,ss.filter(function(x){ return x.kg===t; }).map(function(x){ return x.reps; }))}; });
@@ -3050,7 +3050,7 @@ function fxApply(){ var box=document.getElementById('progBox'); if(!box) return;
     var nb=document.createElement('button'); nb.type='button'; nb.id='fxNext'; nb.className='card fxnext';
     nb.innerHTML=(im?'<img alt="" src="'+im.getAttribute('src')+'">':'')+'<span><small>התרגיל הבא</small><b>'+esc(nm)+'</b><small>'+(sets?esc(sets)+' סטים':'')+(mu?(sets?', ':'')+esc(mu):'')+'</small></span>'+IC_GO;
     nb.onclick=function(){ fxGo(FX.i+1); }; cur.parentNode.insertBefore(nb,cur.nextSibling); }
-  if(fin) fin.classList.toggle('fxhide',!!nx);
+  if(fin) fin.classList.add('fxhide'); /* בפוקוס יש כפתור אחד בלבד: "סיים סט", ובסוף "סיום האימון" (לוחץ על הכפתור המקורי) */
   var open=cur.querySelector('form.setrow:not(.ok)'), sb=document.createElement('button'); sb.type='button'; sb.id='fxSet'; sb.className='installbtn fxset';
   sb.textContent=open?'סיים סט':(nx?'לתרגיל הבא':'סיום האימון'); if(!open&&!nx&&!fin) sb.hidden=true;
   sb.onclick=function(){ var f=cur.querySelector('form.setrow:not(.ok)'); if(f){ if(f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true})); return; } if(nx) fxGo(FX.i+1); else if(fin) fin.click(); };
