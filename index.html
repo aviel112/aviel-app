@@ -2065,9 +2065,9 @@ function goalStat(){ var d=D||{}, goal=+ls('aviel_goal_kg',0)||0; if(!goal) retu
   return {goal:goal,start:start,cur:cur,pc:Math.max(0,Math.min(100,Math.round((start-cur)/(start-goal)*100))),done:Math.abs(Math.round((start-cur)*10)/10),left:Math.abs(Math.round((cur-goal)*10)/10),up:goal>start}; }
 function homeGoal(){ var k=document.querySelector('section[data-view="home"] .kpis'); if(!k) return; var el=document.getElementById('hgoal');
   if(!el){ el=document.createElement('button'); el.type='button'; el.id='hgoal'; el.className='hgoal'; k.parentNode.insertBefore(el,k.nextSibling); el.onclick=function(){ show('prog'); setTimeout(function(){ var t=document.getElementById('trk'); if(t) t.scrollIntoView({block:'start'}); },60); }; }
-  var g=goalStat();
-  el.innerHTML=g?'<div class="row"><span class="label">הדרך ליעד: '+g.goal+' ק״ג</span><b class="num">'+g.pc+'%</b></div><div class="tbar"><i style="width:'+g.pc+'%"></i></div><div class="tnote">'+(g.pc>=100?'הגעת ליעד.':'נשארו '+g.left+' ק״ג')+'</div>'
-    :'<div class="row"><span class="label">היעד שלך</span></div><div class="tnote">את יעד המשקל קובעים יחד בפגישה הראשונה, ואז רואים כאן כמה מהדרך כבר עשית.</div>'; el.classList.toggle('hgnone',!g); } /* 30.10.26 אביאל: המתאמן לא קובע יעד לבד — אביאל קובע בפגישה הראשונה (בכרטיס המתאמן בלוח) */
+  var g=goalStat(); /* 30.10.26 אביאל: בלי כרטיס ריק — מופיע רק כשיש יעד, ומראה כמה אחוז מהתהליך: ירד 10 מתוך 30 = 33% */
+  if(!g){ el.hidden=true; return; } el.hidden=false; var tot=Math.abs(Math.round((g.start-g.goal)*10)/10);
+  el.innerHTML='<div class="row"><span class="label">התהליך שלך</span><b class="num">'+g.pc+'%</b></div><div class="tbar"><i style="width:'+g.pc+'%"></i></div><div class="tnote">'+(g.pc>=100?'הגעת ליעד, '+g.goal+' ק״ג.':(g.up?'עלית ':'ירדת ')+'<span class="num">'+g.done+'</span> מתוך <span class="num">'+tot+'</span> ק״ג, נשארו <span class="num">'+g.left+'</span>')+'</div>'; } /* 30.10.26 אביאל: המתאמן לא קובע יעד לבד — אביאל קובע בפגישה הראשונה (בכרטיס המתאמן בלוח) */
 var MS=[[25,'רבע מהדרך מאחוריך','ההתחלה היא החלק הכי קשה, ואותו כבר עשית.'],[50,'חצי מהדרך','מכאן זה כבר לא ניסיון. זה הרגל.'],[75,'שלושה רבעים','הקו הסופי כבר נראה באופק.'],[100,'הגעת ליעד','עכשיו לומדים לשמור, וזה החלק שמשנה הכל.']];
 function checkMilestone(){ var g=goalStat(); if(!g) return; var key='aviel_ms_'+g.goal, seen=+ls(key,-1);
   if(seen<0){ lsSet(key,Math.floor(g.pc/25)*25); return; } // יעד חדש: לא חוגגים אחורה
@@ -3152,6 +3152,7 @@ var _inboxHtmlW=inboxHtml; inboxHtml=function(){ try{ if(INBOX&&/^מים\s*·/.t
     if(dk!==TODAY||w.ml>=w.goal/2) return ''; var keep=INBOX.title; INBOX.title='מים · '+(Math.round(w.ml/100)/10)+' מתוך '+(w.goal/1000)+' ליטר'; var h=_inboxHtmlW.apply(this,arguments); INBOX.title=keep; return h; } }catch(e){} return _inboxHtmlW.apply(this,arguments); };
 
 (function(){ var st=document.createElement('style'); st.textContent='#hgoal.hgnone{pointer-events:none}'; document.head.appendChild(st); })();
+(function(){ var st=document.createElement('style'); st.textContent='#hgoal .tbar{display:flex;direction:rtl}#hgoal .tbar i{display:block}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
