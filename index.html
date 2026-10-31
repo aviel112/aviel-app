@@ -3277,6 +3277,10 @@ var _rfFdc=renderFood; renderFood=function(){ try{ if(FDAY&&!FDAY._cached) fdcPu
   try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(function(){}); }catch(e){}
   var ov=document.createElement('div'); ov.id='rotOv'; ov.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18.5h2"/></svg><b>מחזיקים את הטלפון לגובה</b><span>האפליקציה עובדת במצב עומד</span>'; document.body.appendChild(ov);
   var st=document.createElement('style'); st.textContent='html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}input,textarea,select{font-size:16px!important}#rotOv{display:none}@media (orientation:landscape) and (max-height:520px){#rotOv{display:flex;position:fixed;inset:0;z-index:2147483647;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--ink,#000);color:var(--text,#fff);text-align:center;padding:24px}#rotOv svg{width:56px;height:56px;color:var(--gold,#d9b46e)}#rotOv b{font-size:20px}#rotOv span{color:var(--mute,#aaa);font-size:14px}}'; document.head.appendChild(st); })();
+
+/* ===== 31.10.26 אביאל: "כשסיימתי את האימונים של השבוע — שלא יופיעו לי במשימות" ===== */
+var _todayItemsWk=todayItems; todayItems=function(){ var it=_todayItemsWk.apply(this,arguments); try{ var p=P&&P.program, days=p&&p.blocks?p.blocks.filter(function(b){ return b.ex&&b.ex.length; }):[], dm=doneMap(), finToday=Object.keys(dm).some(function(x){ return dm[x]===TODAY; });
+  if(days.length&&Object.keys(dm).length>=days.length&&!finToday) it=it.filter(function(x){ return x.k!=='t'; }); }catch(e){} return it; };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
