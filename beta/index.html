@@ -3023,8 +3023,8 @@ var _apiPraise=api; api=function(a,p){ var r=_apiPraise.apply(this,arguments); i
 (function(){ var md=navigator.mediaDevices; if(!md||!md.getUserMedia||!window.MediaStreamTrack) return;
   var MIC={st:null,off:null}, realStop=MediaStreamTrack.prototype.stop, gum=md.getUserMedia.bind(md);
   function kill(){ clearTimeout(MIC.off); var s=MIC.st; MIC.st=null; if(s) s.getTracks().forEach(function(t){ realStop.call(t); }); }
-  MediaStreamTrack.prototype.stop=function(){ if(MIC.st&&MIC.st.getTracks().indexOf(this)>=0){ this.enabled=false; clearTimeout(MIC.off); MIC.off=setTimeout(kill,180000); return; } return realStop.call(this); };
-  md.getUserMedia=function(c){ var audioOnly=c&&c.audio&&!c.video; if(!audioOnly) return gum(c);
+  MediaStreamTrack.prototype.stop=function(){ if(MIC.st&&MIC.st.getTracks().indexOf(this)>=0){ setTimeout(function(){ try{ if(navigator.audioSession&&!(VREC&&VREC.rec&&VREC.rec.state==='recording')) navigator.audioSession.type='ambient'; }catch(e){} },400); this.enabled=false; clearTimeout(MIC.off); MIC.off=setTimeout(kill,180000); return; } return realStop.call(this); };
+  md.getUserMedia=function(c){ var audioOnly=c&&c.audio&&!c.video; if(!audioOnly) return gum(c); try{ if(navigator.audioSession) navigator.audioSession.type='play-and-record'; }catch(e){} /* 31.10.26: במצב ambient (בשביל הטיימר) האייפון חוסם את המיקרופון — לפני הקלטה עוברים למצב הקלטה */
     clearTimeout(MIC.off); var s=MIC.st; if(s&&s.getTracks().some(function(t){ return t.readyState==='live'; })){ s.getTracks().forEach(function(t){ t.enabled=true; }); return Promise.resolve(s); }
     return gum(c).then(function(s2){ MIC.st=s2; return s2; }); };
   document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') kill(); });
@@ -3233,6 +3233,13 @@ document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&
 (function(){ var st=document.createElement('style'); st.textContent='.mealshot{flex-direction:column;align-items:stretch!important;gap:6px!important}.mealshot>label,.mealshot>button{align-self:flex-start;font:inherit;font-size:14px!important;font-weight:700;padding:9px 16px!important;border:1px solid var(--gold-d,#8a7043)!important;color:var(--gold,#d9b46e)!important;background:transparent;border-radius:999px;cursor:pointer}.mealshot .sub{font-size:13px!important;line-height:1.45}'+
  '#ceQ{width:100%;margin:6px 0}#ceCam{align-self:flex-start}.cesw{display:flex;flex-direction:column;gap:6px;margin-top:10px;text-align:start}.ceo{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;background:var(--panel2,#2c2c2e)}.ceo small{color:var(--mute,#aaa);flex:none}.cent{margin:10px 0 0;font-size:14px;color:var(--text,#fff);text-align:start}'+
  '.fmh.fmtap{cursor:pointer}.fmh.fmtap>span::after{content:" ⌄";color:var(--mute,#aaa)}.fmh.fmtap[aria-expanded="true"]>span::after{content:" ⌃"}.fmmac{display:flex;gap:14px;font-size:13px;color:var(--mute,#aaa);padding:2px 0 8px}.fmmac b{color:var(--text,#fff)}.fmh.fmtap:focus-visible{outline:2px solid var(--gold,#d9b46e);outline-offset:2px}'; document.head.appendChild(st); })();
+
+/* ===== רשימת מאכלים בכתב (31.10.26 אביאל): "2 ביצים, פרוסת לחם, כף טחינה" → אותו אישור כמו בהקלטה ===== */
+function listOpen(){ vSheet('<h2>רשימת מאכלים</h2><div class="sub">כותבים כמה דברים ביחד, עם כמויות. למשל: 2 ביצים, פרוסת לחם מלא, כף טחינה, מלפפון</div><textarea id="flT" rows="4" maxlength="600" aria-label="רשימת מאכלים" style="width:100%;margin:8px 0"></textarea><button type="button" class="installbtn" id="flGo">המשך</button><button type="button" class="ghost" id="flX">ביטול</button>');
+  document.getElementById('flX').onclick=vClose; var ta=document.getElementById('flT'); setTimeout(function(){ ta.focus(); },50);
+  document.getElementById('flGo').onclick=function(){ var v=ta.value.trim(); if(v.length<2){ toast('כותבים מה אכלתם',1); return; } vSheet('<h2>מפרק לפריטים…</h2><div class="sub">2-4 שניות</div>');
+    api('foodvoice',{text:v}).then(vReview).catch(function(er){ vClose(); toast((er&&er.message)||'לא הצלחנו',1); }); }; }
+(function(){ var fs=document.querySelector('.fsearch'); if(!fs||document.getElementById('flOpen')) return; var b=document.createElement('button'); b.type='button'; b.id='flOpen'; b.className='linkbtn'; b.textContent='+ כמה מאכלים ביחד (רשימה)'; b.style.cssText='align-self:flex-start;margin-top:6px'; fs.parentNode.insertBefore(b,fs.nextSibling); b.onclick=listOpen; })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
