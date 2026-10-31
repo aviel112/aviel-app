@@ -3240,6 +3240,12 @@ function listOpen(){ vSheet('<h2>רשימת מאכלים</h2><div class="sub">כ
   document.getElementById('flGo').onclick=function(){ var v=ta.value.trim(); if(v.length<2){ toast('כותבים מה אכלתם',1); return; } vSheet('<h2>מפרק לפריטים…</h2><div class="sub">2-4 שניות</div>');
     api('foodvoice',{text:v}).then(vReview).catch(function(er){ vClose(); toast((er&&er.message)||'לא הצלחנו',1); }); }; }
 (function(){ var fs=document.querySelector('.fsearch'); if(!fs||document.getElementById('flOpen')) return; var b=document.createElement('button'); b.type='button'; b.id='flOpen'; b.className='linkbtn'; b.textContent='+ כמה מאכלים ביחד (רשימה)'; b.style.cssText='align-self:flex-start;margin-top:6px'; fs.parentNode.insertBefore(b,fs.nextSibling); b.onclick=listOpen; })();
+
+/* ===== תמונה בהודעה מאביאל (31.10.26: השוואת לפני/אחרי שאביאל בחר לשלוח). נטענת דרך הקישור האישי בלבד ===== */
+var INB_IMG={};
+var _inboxHtmlImg=inboxHtml; inboxHtml=function(){ var h=_inboxHtmlImg.apply(this,arguments); try{ if(h&&INBOX&&INBOX.img){ var src=INB_IMG[INBOX.img]; h=h.replace('</p>','</p><div class="inbimg">'+(src?'<img alt="ההשוואה שלך" src="'+src+'">':'<div class="skel" style="height:220px"></div>')+'</div>');
+    if(!src&&!INB_IMG['_'+INBOX.img]){ INB_IMG['_'+INBOX.img]=1; var id=INBOX.img; api('inboximg',{}).then(function(r){ if(r&&r.img){ INB_IMG[id]=r.img; try{ render(); }catch(e){} } }).catch(function(){}); } } }catch(e){} return h; };
+(function(){ var st=document.createElement('style'); st.textContent='.inbimg{margin:8px 0}.inbimg img{width:100%;border-radius:14px;display:block}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
