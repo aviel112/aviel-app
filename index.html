@@ -3259,6 +3259,17 @@ var _inboxHtmlImg=inboxHtml; inboxHtml=function(){ var h=_inboxHtmlImg.apply(thi
  '.ceex{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.ceex .chip{width:auto;flex:none;margin:0;padding:7px 12px;font-size:13.5px}'; document.head.appendChild(st); })();
 (function(){ var st=document.createElement('style'); st.textContent='#ftiles button.ftile,#ftiles label.ftile{border:1px solid var(--gold-d,#8a7043)!important;background:var(--panel2,#2c2c2e)!important}#fItems .fitem{gap:10px}#fItems .fitem>span:first-child{flex:1;min-width:0}#fItems .fitem>span:last-child{flex:none;white-space:nowrap;display:flex;align-items:center;gap:6px}'; document.head.appendChild(st); })(); /* 31.10.26: גבול זהה לשני הכפתורים; שורת מאכל עם שם ארוך לא שוברת את הקלוריות והמחיקה */
 (function(){ var st=document.createElement('style'); st.textContent='#fItems .fmeal .fmadd,#fItems .fmeal .favsave{display:inline-flex;margin:8px 0 0}#fItems .fmeal .favsave{margin-inline-start:14px;color:var(--mute,#aaa)!important;font-size:13px}'; document.head.appendChild(st); })();
+
+/* ===== מעבר בין ימים ביומן (31.10.26 אביאל: "החצים הפוכים ויש דילאי"): ימים קודמים נשמרים בזיכרון ונטענים מראש — המעבר מיידי, והנתונים הטריים מתעדכנים ברקע ===== */
+var FDC={};
+function fdcPut(r){ try{ if(r&&r.d) FDC[r.d]={d:r.d,items:(r.items||[]).filter(function(x){ return !x._p; })}; }catch(e){} }
+function fdcPrefetch(){ [1,2,3].forEach(function(k,i){ var d=dshift(TODAY,-k); if(FDC[d]) return; setTimeout(function(){ api('foodday',{d:d}).then(function(r){ if(r&&r.d===d) fdcPut(r); }).catch(function(){}); },1500+i*1200); }); }
+foodNav=function(n){ var cur=FVIEW||TODAY, d=dshift(cur,n); if(d>TODAY) return; FVIEW=d===TODAY?null:d;
+  var c=FDC[d]||(d===TODAY?null:null); if(!c&&d===TODAY&&FDAY&&FDAY.d===TODAY) c=FDAY; if(!c){ try{ var lc=ls(fdKey(d),null); if(lc&&lc.items) c=lc; }catch(e){} }
+  if(c){ FDAY={d:d,items:(c.items||[]).slice(),_cached:true}; renderFood(); } else { FDAY={d:d,items:[],_cached:true}; renderFood(); }
+  api('foodday',{d:d}).then(function(r){ fdcPut(r); if((FVIEW||TODAY)===d){ FDAY=r; renderFood(); } }).catch(function(e){ if((FVIEW||TODAY)===d) toast(e.message,1); }); };
+var _rfFdc=renderFood; renderFood=function(){ try{ if(FDAY&&!FDAY._cached) fdcPut(FDAY); }catch(e){} _rfFdc.apply(this,arguments); try{ if(!fdcPrefetch._on&&FDAY&&FDAY.d){ fdcPrefetch._on=1; fdcPrefetch(); } }catch(e){} };
+(function(){ var st=document.createElement('style'); st.textContent='#fTot .swarr svg{transform:scaleX(-1)}#fTot .swarr.prev svg{transform:none}'; document.head.appendChild(st); })(); /* ימין = יום קודם (חץ ימינה), שמאל = יום הבא */
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
