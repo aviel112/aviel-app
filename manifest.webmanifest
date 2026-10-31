@@ -1,6 +1,6 @@
 {
-  "name": "AVIEL בטא",
-  "short_name": "AVIEL β",
+  "name": "AVIEL · ליווי אישי",
+  "short_name": "AVIEL",
   "description": "האפליקציה האישית של המתאמנים של אביאל עמירה",
   "lang": "he",
   "dir": "rtl",
@@ -26,5 +26,6 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "orientation": "portrait"
 }
