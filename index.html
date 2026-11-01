@@ -2668,9 +2668,12 @@ function vReview(r){ var L=(r&&r.items)||[]; if(!L.length){ vSheet('<h2>לא ז�
     s.querySelectorAll('[data-vf]').forEach(function(b){ b.onclick=function(){ var i=+b.dataset.vf, q=s.querySelector('[data-vq="'+i+'"]'); q.hidden=false; q.focus(); q.select(); q.onchange=function(){ rows[i].q=q.value.trim(); rows[i].f=vFind(rows[i].q); draw(); }; }; });
     document.getElementById('vX').onclick=vClose;
     document.getElementById('vAdd').onclick=function(){ var ok=rows.filter(function(x){ return x.on&&x.f&&x.g>0; }); if(!ok.length){ toast('אין מה להוסיף',1); return; } var ml=fMeal(); FDAY=FDAY||{d:TODAY,items:[]};
-      var chain=Promise.resolve(); ok.forEach(function(x){ var m=mac(x.f,x.g), pend={f:x.f.name.slice(0,80),g:x.g,k:m.k,p:m.p,c:m.c,fat:m.fat,m:ml,_p:1}; FDAY.items=(FDAY.items||[]).concat([pend]); try{ recentAdd(x.f,x.g); }catch(e){}
-        chain=chain.then(function(){ return api('food',{f:pend.f,g:pend.g,k:m.k,p:m.p,c:m.c,fat:m.fat,m:ml}).then(function(rr){ FDAY=rr; }); }); });
-      renderFood(); vClose(); toast('נוספו '+ok.length+' פריטים'); chain.then(function(){ renderFood(); }).catch(function(er){ toast((er&&er.message)||'חלק לא נשמר, נסו שוב',1); api('foodday',{}).then(function(rr){ FDAY=rr; renderFood(); }).catch(function(){}); }); }; };
+      /* 1.11.26 (אביאל: "לא הכניס את כל המוצרים"): הכל בבקשה אחת עם מזהה לכל פריט, ניסיון חוזר, ורק מה שנשמר נכנס ל"אחרונים" */
+      var stamp=Date.now().toString(36), items=ok.map(function(x,i){ var m=mac(x.f,x.g); return {f:x.f.name.slice(0,80),g:x.g,k:m.k,p:m.p,c:m.c,fat:m.fat,m:ml,d:TODAY,id:'v'+stamp+i}; });
+      FDAY.items=(FDAY.items||[]).concat(items.map(function(x){ return Object.assign({_p:1},x); })); renderFood(); vClose(); toast('שומר '+items.length+' פריטים…');
+      var send=function(n){ return api('foodmulti',{items:items}).catch(function(er){ if(n>0) return new Promise(function(ok2){ setTimeout(ok2,2500); }).then(function(){ return send(n-1); }); throw er; }); };
+      send(2).then(function(rr){ FDAY=rr; ok.forEach(function(x){ try{ recentAdd(x.f,x.g); }catch(e){} }); renderFood(); toast('נוספו '+items.length+' פריטים'); })
+        .catch(function(er){ api('foodday',{}).then(function(rr){ FDAY=rr; renderFood(); }).catch(function(){}); toast('לא נשמר, אין חיבור לשרת כרגע. מנסים שוב בעוד רגע',1); }); }; };
   draw(); }
 (function(){ var sc=document.getElementById('fScan'); if(!sc||document.getElementById('fMic')) return; var b=document.createElement('button'); b.type='button'; b.className='ghost'; b.id='fMic'; b.setAttribute('aria-label','הקלטה של מה שאכלתי'); b.title='הקלטה של מה שאכלתי';
   b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'; b.onclick=vStart; sc.parentNode.insertBefore(b,sc);
