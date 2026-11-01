@@ -2865,11 +2865,14 @@ if(typeof T!=='undefined'&&T) setTimeout(function(){ api('exnotes',{}).then(func
 
 /* ===== מצב אימון (29.10.26, אביאל: "ברגע שהתחלתי אימון — שידע שאני באימון ולא יציג לי עוד אימונים"):
    מהסט הראשון ועד "סיימתי": רק האימון הזה, בלי בחירת אימונים אחרים; בכל מסך אחר — כפתור "חזרה לאימון"; פתיחת האפליקציה מחזירה לאימון. 3 שעות בלי סט = נסגר לבד */
-function woGet(){ var w=ls('aviel_wo',null); return w&&w.d===TODAY&&Date.now()-(+w.last||0)<3*36e5?w:null; }
+function woGet(){ var w=ls('aviel_wo',null); if(w&&w.d===TODAY&&Date.now()-(+w.last||0)<90*6e4) return w; if(w){ woAutoClose(w); } return null; }
+/* 1.11.26: אימון שנשאר פתוח (שעה וחצי בלי סט) נסגר לבד ונרשם כבוצע, כדי שהמסך לא יישאר "באמצע אימון" */
+function woAutoClose(w){ try{ localStorage.removeItem('aviel_wo'); }catch(e){} try{ if(w.d!==TODAY) return; var m=ls('aviel_done',{}); if(m[w.day]===TODAY) return; var any=false; ((P&&P.program&&P.program.blocks)||[]).filter(function(b){ return b.ex&&b.ex.length; }).forEach(function(b,i){ if(i!==w.day) return; b.ex.forEach(function(e){ var L=P.lifts&&P.lifts[e.ex]; if(L&&L.hist&&L.hist.some(function(x){ return x.d===TODAY; })) any=true; }); });
+  if(any){ m[w.day]=TODAY; lsSet('aviel_done',m); setTimeout(function(){ toast('האימון של היום נסגר ונרשם כבוצע'); },600); } try{ audioIdle(); wakeOff(); }catch(e){} }catch(e){} }
 function woMin(w){ return Math.max(1,Math.round((Date.now()-(+w.start||+w.last))/6e4)); }
 (function(){ var st=document.createElement('style'); st.textContent='.wobar{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--gold);border-radius:16px;padding:12px 14px;margin-bottom:10px}.wobar b{font-size:15px}.wobar .sub{margin:2px 0 0}.wobar button{background:none;border:0;padding:4px 0;font:inherit;font-size:12.5px;color:var(--mute);text-decoration:underline;cursor:pointer;width:auto;min-height:0;flex:none}#woPill{position:fixed;left:50%;transform:translateX(-50%);z-index:40;background:var(--gold);color:var(--cta-t,#16130c);border:0;border-radius:999px;padding:11px 20px;font:inherit;font-weight:800;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.35);white-space:nowrap;width:auto;min-height:0}'; document.head.appendChild(st); })();
 var _apiWo=api; api=function(a,p){ var r=_apiWo.apply(this,arguments); if(a==='lift'){ try{ var w=woGet(); lsSet('aviel_wo',{day:w?w.day:DAY,d:TODAY,start:w?w.start:Date.now(),last:Date.now()}); woPill(); }catch(e){} } return r; };
-document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('#finish')){ try{ localStorage.removeItem('aviel_wo'); }catch(er){} SHOWALL=false; setTimeout(woPill,0); } },true);
+document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('#finish')){ try{ localStorage.removeItem('aviel_wo'); }catch(er){} try{ audioIdle(); wakeOff(); }catch(er){} SHOWALL=false; setTimeout(woPill,0); } },true); /* סיום: גם הצליל והמסך הדלוק משתחררים */
 var _renderTrainWo=renderTrain; renderTrain=function(){ var w=woGet(); if(w){ DAY=w.day; SHOWALL=true; }
   var r=_renderTrainWo.apply(this,arguments);
   try{ var box=$('#progBox'); if(w&&box&&!box.querySelector('.wobar')){ box.querySelectorAll('[aria-label="בחירת אימון"]').forEach(function(x){ x.remove(); }); var s0=box.firstElementChild; if(s0&&s0.classList.contains('sub')&&/השבוע:/.test(s0.textContent)) s0.remove();
@@ -3085,8 +3088,10 @@ function fxApply(){ var box=document.getElementById('progBox'); if(!box) return;
   var i=FX.i, cur=cards[i], nx=cards[i+1]; box.classList.add('fx-on'); cards.forEach(function(c,j){ if(j!==i) c.classList.add('fxhide'); });
   var hd=document.createElement('div'); hd.id='fxHead'; hd.className='fxhead';
   hd.innerHTML='<button type="button" class="fxarr" data-fx="-1" aria-label="לתרגיל הקודם"'+(i?'':' disabled')+'>'+IC_GO+'</button><b>תרגיל <span class="num">'+(i+1)+'</span> מתוך <span class="num">'+cards.length+'</span></b><button type="button" class="fxarr prev" data-fx="1" aria-label="לתרגיל הבא"'+(nx?'':' disabled')+'>'+IC_GO+'</button>'+
-    '<div class="fxdots">'+cards.map(function(c,j){ return '<i class="'+(j===i?'on':(fxOpen(c)||!c.querySelector('form.setrow')?'':'ok'))+'"></i>'; }).join('')+'</div><button type="button" class="linkbtn fxall">כל התרגילים</button>';
+    '<div class="fxdots">'+cards.map(function(c,j){ return '<i class="'+(j===i?'on':(fxOpen(c)||!c.querySelector('form.setrow')?'':'ok'))+'"></i>'; }).join('')+'</div><div class="fxlinks"><button type="button" class="linkbtn fxall">כל התרגילים</button>'+(fin&&nx&&box.querySelector('form.setrow.ok')?'<button type="button" class="linkbtn fxend">סיום האימון</button>':'')+'</div>';
   cur.parentNode.insertBefore(hd,cur);
+  /* 1.11.26 (אביאל: "סיימתי את האימון וזה עדיין מופיע"): אפשר לסיים מכל תרגיל, לא רק מהאחרון. לחיצה שנייה מאשרת */
+  var fe=hd.querySelector('.fxend'); if(fe) fe.onclick=function(){ fin.click(); }; /* הסטים הפתוחים נשאלים בחלון (openSets) */
   hd.querySelectorAll('[data-fx]').forEach(function(b){ b.onclick=function(){ fxGo(FX.i+(+b.dataset.fx)); }; });
   hd.querySelector('.fxall').onclick=function(){ FXOFF=true; lsSet('aviel_fx_off',1); fxApply(); };
   if(nx){ var nm=(nx.querySelector('.nm')||{}).textContent||'', mu=(nx.querySelector('.mu')||{}).textContent||'', sp=nx.querySelector('.spec span'), sets=sp?sp.textContent.replace(/^סטים/,'').trim():'', im=nx.querySelector('.exthumb img');
@@ -3350,6 +3355,26 @@ var _progLayoutNP=progLayout; progLayout=function(){ var r=_progLayoutNP.apply(t
 
 document.addEventListener('click',function(e){ var b=e.target.closest&&e.target.closest('.wuck'); if(!b) return; var on=b.getAttribute('aria-pressed')!=='true'; b.setAttribute('aria-pressed',on); b.closest('.wurow').classList.toggle('ok',on); });
 (function(){ var st=document.createElement('style'); st.textContent='.wurow{display:grid;grid-template-columns:24px 1fr 1fr 86px 44px;gap:6px;align-items:center;margin:0 0 6px;opacity:.85}.wurow .num{color:var(--mute,#9d9aa6);text-align:center;font-weight:700}.wurow .wv{text-align:center;font-weight:700;padding:10px 0;border-radius:12px;border:1px dashed var(--line,rgba(255,255,255,.14))}.wurow .wl{text-align:center;font-size:12.5px;color:var(--mute,#9d9aa6)}.wuck{height:42px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.14));background:none;color:var(--mute,#9d9aa6);font:inherit;font-weight:800}.wurow.ok .wuck{background:var(--gold,#c9a45c);color:#16130c;border-color:transparent}.wurow.ok{opacity:.55}'; document.head.appendChild(st); })();
+
+(function(){ var st=document.createElement('style'); st.textContent='.fxlinks{display:flex;justify-content:center;gap:18px}.fxend{color:var(--mute,#9d9aa6)!important}'; document.head.appendChild(st); })();
+
+/* ===== סטים פתוחים בסיום (1.11.26, אביאל): "לא הספקתי בטן" ≠ "שכחתי להזין סט". בסיום עם סטים פתוחים — להשלים עכשיו / להזכיר באימון הבא / לסיים בלי ===== */
+var FINOK=false;
+function openSets(){ var out=[]; (typeof fxCards==='function'?fxCards():[]).forEach(function(c,j){ var open=[].filter.call(c.querySelectorAll('form.setrow'),function(f){ return !f.classList.contains('ok'); }).length; if(open) out.push({j:j,ex:((c.querySelector('.nm')||{}).textContent||'').trim(),left:open,part:!!c.querySelector('form.setrow.ok')}); }); return out; }
+window.addEventListener('click',function(e){ var b=e.target.closest&&e.target.closest('#finish'); if(!b||FINOK||doneMap()[DAY]) return; var L=openSets(); if(!L.length||!document.querySelector('#progBox form.setrow.ok')) return;
+  e.preventDefault(); e.stopImmediatePropagation(); var n=L.reduce(function(a,x){ return a+x.left; },0);
+  var s=vSheet('<h2>נשארו '+n+' סטים פתוחים</h2><div class="sub" style="margin-bottom:10px">'+L.map(function(x){ return '<div>'+esc(x.ex)+': '+(x.part?'חסר'+(x.left>1?'ים '+x.left+' סטים':' סט אחד')+' <span style="color:var(--gold)">(אולי שכחת להזין?)</span>':x.left+' סטים')+'</div>'; }).join('')+'</div>'+
+    '<button type="button" class="installbtn" id="osNow">להשלים עכשיו</button><button type="button" class="installbtn ghost" id="osNext" style="margin-top:8px">להזכיר לי באימון הבא</button><button type="button" class="linkbtn" id="osSkip" style="margin-top:6px">לא אספיק, לסיים בלי</button>');
+  var fin=function(){ vClose(); FINOK=true; try{ b.click(); }finally{ FINOK=false; } };
+  document.getElementById('osNow').onclick=function(){ vClose(); if(typeof fxGo==='function'&&!FXOFF) fxGo(L[0].j); else { var c=fxCards()[L[0].j]; if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); } };
+  document.getElementById('osNext').onclick=function(){ lsSet('aviel_carry',{d:TODAY,day:DAY,items:L.filter(function(x){ return !x.part; }).map(function(x){ return {ex:x.ex,left:x.left}; })}); fin(); setTimeout(function(){ toast('אזכיר לך באימון הבא'); },500); };
+  document.getElementById('osSkip').onclick=fin; },true);
+/* באימון הבא: תזכורת למעלה עם מה שנשאר */
+var _renderTrainCarry=renderTrain; renderTrain=function(){ var r=_renderTrainCarry.apply(this,arguments); try{ var cr=ls('aviel_carry',null), box=document.getElementById('progBox'); if(!cr||!cr.items||!cr.items.length||cr.d===TODAY||!box||document.getElementById('carryCard')) return r;
+  var el=document.createElement('div'); el.id='carryCard'; el.className='card'; el.style.borderColor='var(--gold)';
+  el.innerHTML='<b>נשאר מהאימון הקודם</b><div class="exnote" style="margin:4px 0 8px">'+cr.items.map(function(x){ return esc(x.ex)+' · '+x.left+' סטים'; }).join('<br>')+'</div><div style="display:flex;gap:8px"><button type="button" class="installbtn" id="carryOk" style="flex:1">עשיתי</button><button type="button" class="linkbtn" id="carryNo">לא הפעם</button></div>';
+  box.insertBefore(el,box.firstChild); var x=function(){ try{ localStorage.removeItem('aviel_carry'); }catch(e){} el.remove(); };
+  document.getElementById('carryOk').onclick=function(){ x(); toast('מעולה, נסגר'); }; document.getElementById('carryNo').onclick=x; }catch(e){} return r; };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
