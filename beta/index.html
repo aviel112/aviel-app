@@ -3324,6 +3324,16 @@ function trkCmpHtml(){ var M=(D&&D.measures)||{}, R=(M.rows||[]).filter(function
   return '<div class="tcmp"><div class="tcr tch"><span>איבר</span><span class="num">'+esc(a.date)+'</span><span class="num">'+esc(b.date)+'</span><span>שינוי</span></div>'+rows+'</div>'+
     (n?'<div class="tnote" style="margin-top:8px">'+(sum===0?'בלי שינוי בסך הכל מהמדידה הקודמת':'בסך הכל '+(sum<0?'ירדו ':'נוספו ')+Math.abs(sum)+' ס״מ מהמדידה הקודמת')+'</div>':''); }
 (function(){ var st=document.createElement('style'); st.textContent='.tcmp{margin-top:12px;display:grid;gap:2px}.tcr{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr));gap:8px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--line,rgba(127,127,127,.15));font-size:15px}.tcr:last-child{border-bottom:0}.tcr>span:not(:first-child){text-align:center}.tch{font-size:12.5px;color:var(--mute,#888);padding-top:0}.tcr .up{color:var(--good,#2e8b57);font-weight:700}.tcr .dn{color:var(--bad,#c0392b);font-weight:700}'; document.head.appendChild(st); })();
+
+/* ===== רק תפריט (1.11.26, אביאל): מתאמן בלי תוכנית אימון — בלי לשונית אימון, בלי משימת אימון בבית ובלי "אימונים ב-30 יום" ===== */
+function npOn(){ return !!(P&&P.noProg); }
+var _todayItemsNP=todayItems; todayItems=function(){ var it=_todayItemsNP.apply(this,arguments); return npOn()?it.filter(function(x){ return x.k!=='t'&&x.k!=='cd'; }):it; };
+function npApply(){ var on=npOn(), tb=document.querySelector('[data-tab="train"]'); if(tb) tb.hidden=on;
+  if(on){ var cur=document.querySelector('section[data-view="train"]'); if(cur&&!cur.hidden) show('home'); document.querySelectorAll('.cardio').forEach(function(x){ x.remove(); });
+    var hg=document.querySelector('#progHero .phg'); if(hg&&hg.children[2]){ hg.children[2].hidden=true; hg.style.gridTemplateColumns='repeat(2,minmax(0,1fr))'; } } }
+var _renderTrainNP=renderTrain; renderTrain=function(){ var r=_renderTrainNP.apply(this,arguments); try{ npApply(); }catch(e){} return r; };
+var _renderNP=render; render=function(){ var r=_renderNP.apply(this,arguments); try{ npApply(); }catch(e){} return r; };
+var _progLayoutNP=progLayout; progLayout=function(){ var r=_progLayoutNP.apply(this,arguments); try{ npApply(); }catch(e){} return r; };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
