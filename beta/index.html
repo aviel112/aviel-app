@@ -858,10 +858,10 @@ function toast(t,bad){ var el=$('#toast'); el.textContent=t; el.className='toast
 var LOCKED=false;
 function showExpired(x){ if(LOCKED) return; LOCKED=true; x=x||{}; var d=document.createElement('div'); d.id='lockScr'; d.setAttribute('role','dialog'); d.setAttribute('aria-modal','true'); d.setAttribute('aria-labelledby','lockT');
   d.style.cssText='position:fixed;inset:0;z-index:10000;background:var(--ink);display:flex;align-items:center;justify-content:center;padding:24px max(20px,env(safe-area-inset-right,0px)) 24px max(20px,env(safe-area-inset-left,0px));overflow:auto';
-  d.innerHTML='<div class="card" style="max-width:420px;width:100%;text-align:center"><div class="label">AVIEL · ליווי אישי</div><h2 id="lockT" style="margin:10px 0 8px">'+esc(x.first?x.first+', ':'')+'המנוי הסתיים</h2>'+
-    '<div class="sub" style="line-height:1.6">'+(x.end?'הליווי שלך הסתיים ב-'+esc(x.end)+'. ':'')+'כדי להמשיך עם התפריט, התוכנית והליווי האישי, מחדשים את המנוי.</div>'+
+  d.innerHTML='<div class="card" style="max-width:420px;width:100%;text-align:center"><div class="label">AVIEL · ליווי אישי</div><h2 id="lockT" style="margin:10px 0 8px">'+esc(x.first?x.first+', ':'')+(x.monthly?'התשלום החודשי לא התקבל':'המנוי הסתיים')+'</h2>'+
+    '<div class="sub" style="line-height:1.6">'+(x.monthly?(x.end?'התשלום של החודש היה אמור לעבור ב-'+esc(x.end)+'. ':'')+'ברגע שהתשלום עובר, האפליקציה נפתחת שוב.':(x.end?'הליווי שלך הסתיים ב-'+esc(x.end)+'. ':'')+'כדי להמשיך עם התפריט, התוכנית והליווי האישי, מחדשים את המנוי.')+'</div>'+
     '<div class="sub" style="margin-top:8px;line-height:1.6">כל הנתונים שלך שמורים: שקילות, אימונים ויומן. הכל חוזר ברגע שמחדשים.</div>'+
-    '<a class="wa" style="margin-top:16px;background:var(--gold);border-color:var(--gold);color:#120f0a" href="'+esc(x.wa||'https://wa.me/972537718200')+'" target="_blank" rel="noopener">חידוש המנוי בוואטסאפ</a>'+
+    '<a class="wa" style="margin-top:16px;background:var(--gold);border-color:var(--gold);color:#120f0a" href="'+esc(x.wa||'https://wa.me/972537718200')+'" target="_blank" rel="noopener">'+(x.monthly?'לדבר עם אביאל בוואטסאפ':'חידוש המנוי בוואטסאפ')+'</a>'+
     (x.pay?'<a class="wa" style="margin-top:10px" href="'+esc(x.pay)+'" target="_blank" rel="noopener">לתשלום</a>':'')+'</div>';
   document.body.appendChild(d); var tb=document.getElementById('tabs'); if(tb) tb.hidden=true; try{ d.querySelector('a').focus(); }catch(e){} }
 var BOOTRES=null, BOOTWAIT=new Promise(function(r){ window.__bootDone=r; }), BOOTFD=false; /* 28.10.26: עד שבקשת הפתיחה חוזרת, בקשות משניות מחכות (13 במקביל האטו את הכל) */
@@ -3375,6 +3375,49 @@ var _renderTrainCarry=renderTrain; renderTrain=function(){ var r=_renderTrainCar
   el.innerHTML='<b>נשאר מהאימון הקודם</b><div class="exnote" style="margin:4px 0 8px">'+cr.items.map(function(x){ return esc(x.ex)+' · '+x.left+' סטים'; }).join('<br>')+'</div><div style="display:flex;gap:8px"><button type="button" class="installbtn" id="carryOk" style="flex:1">עשיתי</button><button type="button" class="linkbtn" id="carryNo">לא הפעם</button></div>';
   box.insertBefore(el,box.firstChild); var x=function(){ try{ localStorage.removeItem('aviel_carry'); }catch(e){} el.remove(); };
   document.getElementById('carryOk').onclick=function(){ x(); toast('מעולה, נסגר'); }; document.getElementById('carryNo').onclick=x; }catch(e){} return r; };
+
+/* ===== 2.11.26 (אביאל, השראה מנוטריקל): "התאמנת N פעמים ב-7 הימים האחרונים" — מפת שרירים שעבדו השבוע + 7 ימים, כרטיס באימון ותמונה לסטורי ===== */
+function wkTrainData(){ var muOf={}, days={}, mus={}, now=new Date(), keys=[];
+  for(var i=6;i>=0;i--){ var d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i); keys.push(d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)); }
+  try{ ((P&&P.program&&P.program.blocks)||[]).forEach(function(b){ (b.ex||[]).forEach(function(e){ if(e.ex&&e.mu) muOf[e.ex]=e.mu; }); }); }catch(e){}
+  var guess=function(n){ return /לחיצת חזה|פרפר(?! הפוך)|מקבילים|שכיבות סמיכה/.test(n)?'חזה':/מתח|פולי|חתירה|טי-בר|פול-אובר/.test(n)?'גב':/פרפר הפוך|כתף אחורית/.test(n)?'כתף אחורית':/כתפיים|הרחקת/.test(n)?'כתפיים':/פשיטת מרפק|יד אחורית/.test(n)?'יד אחורית':/כפיפת מרפק|פטישים|פריצ/.test(n)?'יד קדמית':/בטן|הרמות רגליים|גלגל/.test(n)?'בטן':/סקוואט|לחיצת רגליים|פשיטת ברך|מכרע/.test(n)?'ארבע ראשי':/כפיפת ברך|RDL|דדליפט/.test(n)?'המסטרינג':/ישבן|מרחיק|גשר|היפ/.test(n)?'ישבן':/תאומים/.test(n)?'תאומים':/מקרבים/.test(n)?'מקרבים':/כיסא רומי|גב תחתון/.test(n)?'גב תחתון':''; };
+  try{ Object.keys((P&&P.lifts)||{}).forEach(function(ex){ ((P.lifts[ex]&&P.lifts[ex].hist)||[]).forEach(function(x){ var d=String(x.d||'').slice(0,10); if(keys.indexOf(d)<0) return; days[d]=1; var m=muOf[ex]||guess(ex); if(m) mus[m]=1; }); }); }catch(e){}
+  return { keys:keys, days:days, n:Object.keys(days).length, mus:mus }; }
+/* גוף מסוגנן: [שריר, צורה, x, y, rx, ry] ביחידות של דמות ברוחב ~200; ציר הסימטריה 0, ±x = זוג */
+var WK_FRONT=[['','c',0,30,26],['','r',-10,54,20,18,4],['כתפיים','e',48,88,20,16],['חזה','e',22,102,24,19],['יד קדמית','e',62,134,11,26],['','e',70,188,9,26],['','c',74,224,8],['','e',30,160,9,30],['בטן','r',-18,122,36,78,10],['','r',-36,198,72,28,12],['ארבע ראשי','e',23,272,17,48],['מקרבים','e',7,254,6,28],['','c',22,328,10],['תאומים','e',22,374,11,36],['','e',24,420,12,7]];
+var WK_BACK=[['','c',0,30,26],['','r',-10,54,20,18,4],['גב','e',0,94,30,18],['כתף אחורית','e',48,88,20,16],['גב','e',26,136,20,34],['יד אחורית','e',62,134,11,26],['','e',70,188,9,26],['','c',74,224,8],['גב תחתון','r',-16,162,32,36,8],['ישבן','e',18,216,20,18],['המסטרינג','e',22,280,16,42],['','c',22,328,10],['תאומים','e',22,370,13,34],['','e',24,420,12,7]];
+function wkBody(x,cx,cy,s,shapes,on,base,hot){ shapes.forEach(function(p){ x.fillStyle=p[0]&&on[p[0]]?hot:base; var t=p[1], sides=(t==='r'||p[2]===0)?[1]:[1,-1];
+  sides.forEach(function(sd){ x.beginPath();
+    if(t==='c') x.arc(cx+p[2]*sd*s,cy+p[3]*s,p[4]*s,0,Math.PI*2);
+    else if(t==='e') x.ellipse(cx+p[2]*sd*s,cy+p[3]*s,p[4]*s,p[5]*s,0,0,Math.PI*2);
+    else { var rx=cx+p[2]*s, ry=cy+p[3]*s, w=p[4]*s, h=p[5]*s, r=p[6]*s; x.moveTo(rx+r,ry); x.arcTo(rx+w,ry,rx+w,ry+h,r); x.arcTo(rx+w,ry+h,rx,ry+h,r); x.arcTo(rx,ry+h,rx,ry,r); x.arcTo(rx,ry,rx+w,ry,r); x.closePath(); }
+    x.fill(); x.strokeStyle='#0e0d0b'; x.lineWidth=2.4*s; x.stroke(); }); }); } /* קו כהה בין שרירים, כמו מפה אנטומית */
+var WK_DOW=['א','ב','ג','ד','ה','ו','ש'];
+function wkCanvas(){ var o=wkTrainData(), c=document.createElement('canvas'); c.width=1080; c.height=1920; var x=c.getContext('2d'), W=1080, G='#d6b066', IV='#f3ede2', MU='#a59c8d';
+  var serif="'Frank Ruhl Libre', Georgia, serif", sans="'Assistant', Arial, sans-serif";
+  x.fillStyle='#0e0d0b'; x.fillRect(0,0,W,1920); x.strokeStyle='rgba(214,176,102,.55)'; x.lineWidth=3; x.strokeRect(54,54,W-108,1920-108);
+  x.direction='rtl'; x.textAlign='center';
+  x.fillStyle=G; x.font='800 46px '+sans; x.save(); x.direction='ltr'; x.fillText('A V I E L   A M I R A',W/2,190); x.restore();
+  x.fillStyle=IV; x.font='700 64px '+serif; x.fillText('השבוע שלי באימונים',W/2,290);
+  wkBody(x,W/2+230,400,2.05,WK_FRONT,o.mus,'#34302a',G); wkBody(x,W/2-230,400,2.05,WK_BACK,o.mus,'#34302a',G);
+  var y=1360, gap=118, x0=W/2+3*gap; x.font='600 38px '+sans;
+  o.keys.forEach(function(k,i){ var cx=x0-i*gap, done=!!o.days[k], d=new Date(k+'T12:00:00');
+    x.fillStyle=MU; x.fillText(WK_DOW[d.getDay()],cx,y-62);
+    x.beginPath(); x.arc(cx,y,40,0,Math.PI*2); x.fillStyle=done?G:'#24211d'; x.fill();
+    if(done){ x.strokeStyle='#120f0a'; x.lineWidth=7; x.lineCap='round'; x.beginPath(); x.moveTo(cx-16,y+1); x.lineTo(cx-4,y+13); x.lineTo(cx+17,y-12); x.stroke(); } });
+  x.fillStyle=IV; x.font='700 84px '+serif; x.fillText('התאמנתי '+o.n+(o.n===1?' פעם':' פעמים'),W/2,1520);
+  x.fillStyle=G; x.font='600 46px '+sans; x.fillText('ב-7 הימים האחרונים',W/2,1590);
+  var ml=Object.keys(o.mus); if(ml.length){ x.fillStyle=MU; x.font='600 36px '+sans; x.fillText(ml.slice(0,7).join(', '),W/2,1650); }
+  x.fillStyle='rgba(214,176,102,.35)'; x.fillRect(180,1700,W-360,2);
+  x.fillStyle=G; x.font='800 48px '+sans; x.save(); x.direction='ltr'; x.fillText('@avielife1',W/2,1785); x.restore();
+  return c; }
+function wkCard(){ var box=document.getElementById('progBox'); if(!box||(typeof npOn==='function'&&npOn())) return; var old=document.getElementById('wkCard'); if(old) old.remove();
+  var o=wkTrainData(), dots=o.keys.map(function(k){ var d=new Date(k+'T12:00:00'); return '<span class="wkd'+(o.days[k]?' on':'')+'"><small>'+WK_DOW[d.getDay()]+'</small><i aria-hidden="true"></i></span>'; }).join('');
+  var el=document.createElement('div'); el.id='wkCard'; el.className='card wkcard';
+  el.innerHTML='<div class="wkrow"><b>'+(o.n?'התאמנת '+o.n+(o.n===1?' פעם':' פעמים')+' ב-7 הימים האחרונים':'עוד לא התאמנת השבוע')+'</b></div><div class="wkdots" role="img" aria-label="'+o.n+' ימי אימון ב-7 הימים האחרונים">'+dots+'</div>'+(o.n?'<button type="button" class="ghost" id="wkShare">שיתוף לסטורי</button>':'');
+  box.parentNode.insertBefore(el,box); var b=el.querySelector('#wkShare'); if(b) b.onclick=function(){ shareStory(b,{canvas:wkCanvas}); }; }
+(function(){ var st=document.createElement('style'); st.textContent='.wkcard{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}.wkdots{display:flex;justify-content:space-between;gap:6px}.wkd{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}.wkd small{color:var(--mute,#a59c8d);font-size:12px}.wkd i{width:28px;height:28px;border-radius:50%;background:var(--panel2,#24211d);display:block}.wkd.on i{background:var(--gold,#d6b066);box-shadow:inset 0 0 0 2px rgba(0,0,0,.15)}.wkcard .ghost{align-self:flex-start}'; document.head.appendChild(st); })();
+var _renderTrainWK=renderTrain; renderTrain=function(){ _renderTrainWK.apply(this,arguments); try{ wkCard(); }catch(e){} };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
