@@ -2053,7 +2053,7 @@ function drawTrk(){ var host=document.getElementById('chart'); if(!host||!D) ret
   var mets=[['kg','משקל'],['st','צעדים']]; if(hasM) mets.push(['ms','היקפים']);
   var W=trkWindow(), all=trkSeries(), pts=all.filter(function(x){ return x.k>=W.s&&x.k<=W.e; }), firstK=all.length?all[0].k:'';
   var canBack=TRK.p!=='a'&&firstK&&firstK<W.s, canFwd=TRK.p!=='a'&&TRK.o>0;
-  var h='<div class="label">מטרות</div>'+trkGoalHtml()+
+  var h=(TRK.m==='kg'?'<div class="label">מטרות</div>'+trkGoalHtml():'')+
     '<div class="tmets" role="tablist">'+mets.map(function(m){ return '<button type="button" role="tab" aria-selected="'+(TRK.m===m[0])+'" class="tmet'+(TRK.m===m[0]?' on':'')+'" data-tm="'+m[0]+'">'+m[1]+'</button>'; }).join('')+'</div>'+
     (TRK.m==='ms'?'<div class="tml">'+MLABELS.map(function(l,i){ return '<button type="button" class="'+(TRK.ml===i?'on':'')+'" data-tml="'+i+'">'+esc(l)+'</button>'; }).join('')+'</div>':'')+
     '<div class="tseg">'+[[TRK.m==='ms'?'c':'w',TRK.m==='ms'?'השוואה':'שבועי'],['m','חודשי'],['a','הכל']].map(function(p){ return '<button type="button" class="'+(TRK.p===p[0]?'on':'')+'" data-tp="'+p[0]+'">'+p[1]+'</button>'; }).join('')+'</div>';
@@ -2358,7 +2358,7 @@ document.addEventListener('visibilitychange',function(){ if(document.visibilityS
 /* ===== אחוז שומן (מהמשקל החכם): כרטיס בלשונית ההתקדמות, אחרי ההיקפים ===== */
 var BF=null, BF_TRIED=false;
 function bfSpark(v){ if(!v||v.length<2) return ''; var W=120,H=34,mn=Math.min.apply(null,v),mx=Math.max.apply(null,v),r=(mx-mn)||1; var pts=v.map(function(x,i){ return (i*(W-4)/(v.length-1)+2).toFixed(1)+','+(H-3-(x-mn)/r*(H-6)).toFixed(1); }).join(' '); return '<svg class="bfsp" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" aria-hidden="true"><polyline points="'+pts+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>'; }
-function bfEnsure(){ var mt=document.getElementById('mTable'), mc=mt&&mt.closest('.card'); if(!mc) return; var c=document.getElementById('bfCard'); if(!c){ c=document.createElement('div'); c.className='card'; c.id='bfCard'; mc.parentNode.insertBefore(c,mc.nextSibling); }
+function bfEnsure(){ /* 1.11.26 (אביאל): כרטיס אחוז השומן הוסר מהאפליקציה */ var oc=document.getElementById('bfCard'); if(oc) oc.remove(); return; var mt=document.getElementById('mTable'), mc=mt&&mt.closest('.card'); if(!mc) return; var c=document.getElementById('bfCard'); if(!c){ c=document.createElement('div'); c.className='card'; c.id='bfCard'; mc.parentNode.insertBefore(c,mc.nextSibling); }
   if(!BF_TRIED&&typeof api==='function'){ BF_TRIED=true; api('bodyfatlist',{}).then(function(r){ BF=r||[]; bfEnsure(); }).catch(function(){}); }
   var L=BF||[], last=L[L.length-1], first=L[0], dd=last&&first&&L.length>1?Math.round((last.v-first.v)*10)/10:null, today=last&&last.d===TODAY;
   c.innerHTML='<div class="row"><span class="label">אחוז שומן מהמשקל החכם</span>'+(last?'<span class="sub">'+(today?'נרשם היום':'אחרון '+last.d.slice(8,10)+'/'+last.d.slice(5,7))+'</span>':'')+'</div>'+
