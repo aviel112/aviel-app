@@ -3081,9 +3081,9 @@ function fxPrev(){ try{ var days=fxDays(), d=days[DAY]?applySwaps(days[DAY]):nul
       el.innerHTML='<span></span><span>('+pv.kg+' ק״ג)</span><span>('+pv.reps+' חזרות)</span><span>'+(pv.rir!=null&&pv.rir!==''?'(עוד '+pv.rir+')':'')+'</span><span></span>'; f.appendChild(el); }); }); }catch(e){} }
 function fxApply(){ var box=document.getElementById('progBox'); if(!box) return; ['fxHead','fxNext','fxSet'].forEach(function(id){ var o=document.getElementById(id); if(o) o.remove(); });
   var cards=fxCards(); box.classList.remove('fx-on'); cards.forEach(function(c){ c.classList.remove('fxhide'); });
-  var fin=document.getElementById('finish');
+  var fin=document.getElementById('finish'); if(fin) fin.classList.remove('fxhide'); /* 1.11.26: בתצוגת כל התרגילים הכפתור נשאר מוסתר אחרי מצב תרגיל-תרגיל */
   if(cards.length<2){ return; }
-  if(FXOFF){ var lk=document.createElement('button'); lk.type='button'; lk.id='fxHead'; lk.className='linkbtn fxmode'; lk.textContent='תרגיל אחד בכל מסך'; lk.onclick=function(){ FXOFF=false; lsSet('aviel_fx_off',0); fxApply(); window.scrollTo(0,0); }; cards[0].parentNode.insertBefore(lk,cards[0]); return; }
+  if(FXOFF){ var lk=document.createElement('button'); lk.type='button'; lk.id='fxHead'; lk.className='linkbtn fxmode'; lk.textContent='תרגיל אחד בכל מסך'; lk.onclick=function(){ FXOFF=false; lsSet('aviel_fx_off',0); fxApply(); window.scrollTo(0,0); }; cards[0].parentNode.insertBefore(lk,cards[0]); if(fin&&box.querySelector('form.setrow.ok')){ var fe2=document.createElement('button'); fe2.type='button'; fe2.id='fxNext'; fe2.className='linkbtn fxend'; fe2.textContent='סיום האימון'; fe2.style.display='block'; fe2.style.margin='0 auto 8px'; fe2.onclick=function(){ fin.click(); }; lk.after(fe2); } return; } /* 1.11.26: סיום האימון גם בראש תצוגת כל התרגילים */
   if(FX.day!==DAY||FX.i<0||FX.i>=cards.length){ FX.day=DAY; FX.i=0; for(var q=0;q<cards.length;q++){ if(fxOpen(cards[q])){ FX.i=q; break; } if(q===cards.length-1) FX.i=q; } }
   var i=FX.i, cur=cards[i], nx=cards[i+1]; box.classList.add('fx-on'); cards.forEach(function(c,j){ if(j!==i) c.classList.add('fxhide'); });
   var hd=document.createElement('div'); hd.id='fxHead'; hd.className='fxhead';
