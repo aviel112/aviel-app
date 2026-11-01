@@ -3287,6 +3287,25 @@ var _todayItemsWk=todayItems; todayItems=function(){ var it=_todayItemsWk.apply(
     var v=(document.querySelector('script[data-v]')||{}).dataset; api0('apperr',{m:m,src:String(src||'').slice(0,80),v:(navigator.userAgent.match(/OS (\d+_\d+)/)||[])[1]||''}); }catch(e){} }
   window.addEventListener('error',function(e){ rep(e.message,(e.filename||'').split('/').pop()+':'+(e.lineno||'')); });
   window.addEventListener('unhandledrejection',function(e){ var r=e.reason; rep(r&&(r.message||r)||'unhandled',''); }); })();
+
+/* ===== מתכונים (1.11.26 אביאל, השראה מנוטריקל): בונים מתכון פעם אחת — שם, מנות ורשימת מרכיבים — והוא נשמר כמאכל אחד בחיפוש ===== */
+function recipesGet(){ return ls('aviel_recipes',[])||[]; }
+function recipeOpen(){ vSheet('<h2>מתכון חדש</h2><div class="sub">כותבים את המרכיבים של כל המתכון, ואני מחשב ערכים למנה. אחר כך הוא מופיע בחיפוש כמו כל מאכל.</div><input type="text" id="rcN" maxlength="40" placeholder="שם, למשל: פנקייק חלבון" aria-label="שם המתכון" style="width:100%;margin:8px 0"><label class="sub" style="display:flex;align-items:center;gap:8px">כמה מנות יוצא?<input id="rcS" inputmode="numeric" value="1" style="width:70px" aria-label="מספר מנות"></label><textarea id="rcT" rows="4" maxlength="600" placeholder="2 ביצים, 40 גרם שיבולת שועל, סקופ אבקת חלבון, 100 גרם בננה" aria-label="מרכיבים" style="width:100%;margin:8px 0"></textarea><button type="button" class="installbtn" id="rcGo">חישוב</button><button type="button" class="ghost" id="rcX">ביטול</button>');
+  document.getElementById('rcX').onclick=vClose;
+  document.getElementById('rcGo').onclick=function(){ var n=document.getElementById('rcN').value.trim(), sv=Math.max(1,Math.min(20,Math.round(+document.getElementById('rcS').value)||1)), tx=document.getElementById('rcT').value.trim(); if(!n){ toast('נותנים שם למתכון',1); return; } if(tx.length<3){ toast('כותבים את המרכיבים',1); return; }
+    vSheet('<h2>מחשב…</h2><div class="sub">2-4 שניות</div>'); api('foodvoice',{text:tx}).then(function(r){ recipeReview(n,sv,r); }).catch(function(er){ vClose(); toast((er&&er.message)||'לא הצלחנו',1); }); }; }
+function recipeReview(name,sv,r){ var rows=((r&&r.items)||[]).map(function(x){ return {q:x.q,n:x.n,unit:x.unit,g:x.grams,f:vFind(x.q)}; }); if(!rows.length){ vClose(); toast('לא זיהיתי מרכיבים',1); return; }
+  var draw=function(){ var T={k:0,p:0,c:0,fat:0,g:0}; rows.forEach(function(x){ if(!x.f) return; var m=mac(x.f,x.g); T.k+=m.k; T.p+=m.p; T.c+=m.c; T.fat+=m.fat; T.g+=x.g; });
+    var h='<h2>'+esc(name)+'</h2><div class="vrows">'+rows.map(function(x,i){ var m=x.f?mac(x.f,x.g):null; return '<div class="vrow"><div class="vtx"><b>'+esc(x.n+' '+(x.unit||'')+' '+x.q)+'</b><small>'+(x.f?esc(x.f.name):'לא נמצא במאגר, לא ייכנס לחישוב')+'</small></div><label class="vg"><input inputmode="numeric" data-rg="'+i+'" value="'+x.g+'" aria-label="גרם">ג׳</label><span class="vk num">'+(m?m.k:'–')+'</span></div>'; }).join('')+'</div>'+
+      '<div class="sub" style="margin:10px 0">כל המתכון: <b class="num">'+Math.round(T.k)+'</b> קק״ל. מנה ('+sv+' מנות): <b class="num">'+Math.round(T.k/sv)+'</b> קק״ל, <b class="num">'+Math.round(T.p/sv)+'</b> ג׳ חלבון</div><button type="button" class="installbtn" id="rcSave">שמירת המתכון</button><button type="button" class="linkbtn" id="rcX2">ביטול</button>';
+    var s=vSheet(h); s.querySelectorAll('[data-rg]').forEach(function(inp){ inp.onchange=function(){ var v=Math.round(+inp.value); if(v>0&&v<3000){ rows[+inp.dataset.rg].g=v; draw(); } }; });
+    document.getElementById('rcX2').onclick=vClose;
+    document.getElementById('rcSave').onclick=function(){ if(!(T.g>0)){ toast('אין מרכיבים מהמאגר',1); return; } var per=function(v){ return Math.round(v/T.g*1000)/10; };
+      var R=recipesGet().filter(function(x){ return x.name!==name; }); R.unshift({name:name,brand:'מתכון שלי',k100:Math.round(T.k/T.g*100),p:per(T.p),c:per(T.c),fat:per(T.fat),g:Math.round(T.g/sv),ok:true,recipe:1}); lsSet('aviel_recipes',R.slice(0,30)); vClose(); toast('המתכון נשמר. מחפשים "'+name+'" ומוסיפים'); }; };
+  draw(); }
+var _ematchRc=ematch; ematch=function(q){ var r=_ematchRc.apply(this,arguments)||[]; try{ var qq=String(q||'').trim(); if(qq.length>=2){ var rc=recipesGet().filter(function(x){ return x.name.indexOf(qq)>=0; }); r=rc.concat(r.filter(function(x){ return !rc.some(function(y){ return y.name===x.name; }); })); } }catch(e){} return r; };
+(function(){ var fl=document.getElementById('flOpen'); if(!fl||document.getElementById('rcOpen')) return; var b=document.createElement('button'); b.type='button'; b.id='rcOpen'; b.className='linkbtn'; b.textContent='+ מתכון חדש'; b.style.cssText='display:block;margin:6px 0 0'; fl.parentNode.insertBefore(b,fl.nextSibling); b.onclick=recipeOpen; })();
+var _pickExtraRc=pickExtra; pickExtra=function(f){ if(f&&f.recipe){ pick({name:f.name, p:f.p, c:f.c, fat:f.fat, k100:f.k100, units:[['מנה',f.g],['חצי מנה',Math.round(f.g/2)]], g:f.g, own:true}); return; } return _pickExtraRc.apply(this,arguments); };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
