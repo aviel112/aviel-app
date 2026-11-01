@@ -1511,7 +1511,7 @@ function renderTrain(){
       h+='<div class="sets"><div class="sh"><span>סט</span><span>ק״ג</span><span>חזרות</span><span>כמה קשה</span><span></span></div>';
       for(var k=0;k<Math.max(n,today.length);k++){
         var dn=today[k], pv=ps[k]||ps[ps.length-1], li=LASTIN[e.ex]||{};
-        var kg=dn?dn.kg:(li.kg!=null?li.kg:(sg?sg.kg:(pv?pv.kg:''))), rp=dn?dn.reps:(li.reps!=null?li.reps:(sg?sg.reps:(R?R[1]:(pv?pv.reps:''))));
+        var kg=dn?dn.kg:(li.kg!=null?li.kg:(sg?sg.kg:(pv?pv.kg:''))), rp=dn?dn.reps:(sg&&sg.reps?sg.reps:(li.reps!=null?li.reps:(R?R[0]:(pv?pv.reps:'')))); /* 1.11.26 (אביאל): החזרות הממולאות = היעד של היום, לא הקצה העליון של הטווח ולא הסט הקודם */
         h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal"'+(sg&&sg.up&&!dn?' class="upk"':'')+' value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select data-rk="'+k+'" aria-label="כמה קשה היה סט '+(k+1)+'">'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):(RIRD[e.ex+'|'+k]!=null?String(RIRD[e.ex+'|'+k]):''); return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+({'':'איך היה?','0':'קשה ממש','1':'קשה','2':'מאתגר','3':'בינוני','4':'קל'})[o]+'</option>'; }).join('')+'</select>'+(dn?'<button type="button" class="sundo" aria-label="ביטול סט '+(k+1)+' שסומן">'+IC_CHECK+'</button>':'<button type="submit" aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button>')+'</form>';
       }
       h+='</div>';
