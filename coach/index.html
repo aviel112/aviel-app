@@ -1070,7 +1070,7 @@ function chatHtml(L,all){ L=L||[]; var who=(CARD_SHOWN&&CARD_SHOWN.name?String(C
 document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('[data-chatall]'); if(!b) return; var n=($('#ov h2')||{}).textContent||'', d=cardOf(n), cb=$('#chatBox'); if(d&&cb) cb.innerHTML=chatHtml(d.chat,true); });
 /* "מה לעשות עכשיו" (1.11.26, אביאל: "שלא אצטרך לחשוב מה לעשות להם"): עד 4 המלצות לפי הנתונים של המתאמן, כל אחת עם הודעה מוכנה לאפליקציה */
 /* הקמה מלאה מהטופס (1.11.26, אביאל): הליד מילא את הטופס לפני הפגישה → לחיצה אחת: הפעלה, תפריט ותוכנית משוערים מהטופס, והודעת פתיחה עם הסרטון */
-function intakeSetupBox(d){ var c=(L||[]).filter(function(x){ return x.name===d.name; })[0]||{}; if(c.status==='פעיל'||c.status==='הסתיים'||d.intakeUrl) return '';
+function intakeSetupBox(d){ var c=((L&&L.clients)||[]).filter(function(x){ return x.name===d.name; })[0]||{}; if(c.status==='פעיל'||c.status==='הסתיים'||d.intakeUrl) return '';
   return '<div class="card isb"><div class="gh">הטופס של '+esc(String(d.name).split(' ')[0])+' התקבל</div><div class="s" style="font-size:13px;color:var(--mute);margin-bottom:8px">בלחיצה אחת: הפעלה, תפריט לפי החישוב וההעדפות שכתב/ה, תוכנית לפי הניסיון, הזמינות והפציעות, ואז הודעת פתיחה עם הסרטון.</div>'+
     '<div class="kv" id="isbM" style="flex-wrap:wrap">'+['1','2','3','6'].map(function(m){ return '<button type="button" class="btn'+(m==='3'?' p':'')+'" data-v="'+m+'">'+m+' חודשים</button>'; }).join('')+'</div>'+
     '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0"><input id="isbP" type="number" inputmode="numeric" placeholder="מחיר לחודש"><input id="isbPd" type="number" inputmode="numeric" placeholder="שולם"></div>'+
