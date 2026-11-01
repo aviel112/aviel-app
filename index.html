@@ -2470,11 +2470,14 @@ function progPaneOf(card){ var t=((card.querySelector('h2,h3,.label,.lbl,.gh,b')
 function progLayout(){ var sec=document.querySelector('section[data-view="prog"]'); if(!sec||!D) return; var stack=sec.querySelector('.stack'); if(!stack) return;
   var sub=sec.querySelector(':scope > .sub'); if(sub) sub.hidden=true;
   var hero=document.getElementById('progHero'); if(!hero){ hero=document.createElement('div'); hero.id='progHero'; hero.className='card phero'; stack.parentNode.insertBefore(hero,stack); }
-  var wk=D.weekly||[], last=wk.length?wk[wk.length-1]:D.lastKg, first=wk.length?wk[0]:D.firstKg, tot=(last!=null&&first!=null)?Math.round((last-first)*10)/10:null, wd=wk.length>1?Math.round((wk[wk.length-1]-wk[wk.length-2])*10)/10:null;
+  var wk=D.weekly||[], last=D.lastKg!=null?+D.lastKg:(wk.length?wk[wk.length-1]:null), first=D.firstKg!=null?+D.firstKg:(wk.length?wk[0]:null), tot=(last!=null&&first!=null)?Math.round((last-first)*10)/10:null, wd=wk.length>1?Math.round((wk[wk.length-1]-wk[wk.length-2])*10)/10:null;
   var since=new Date(); since.setDate(since.getDate()-30); var s30=trkYmd(since), days={}; Object.keys((P&&P.lifts)||{}).forEach(function(k){ (P.lifts[k].hist||[]).forEach(function(h){ if(h.d&&h.d>=s30) days[h.d]=1; }); }); var tr=Object.keys(days).length;
   var down=D.goal==='ירידה', up=D.goal==='עלייה', good=wd==null?null:(down?wd<0:up?wd>0:Math.abs(wd)<=0.3);
   var fmt=function(v){ return v==null?'—':(v>0?'+':'')+v; };
-  var verdict=wd==null?'עוד שבוע של שקילות, ותראו כאן אם אתם בכיוון':good?'השבוע בכיוון הנכון. ממשיכים בדיוק ככה':(down||up)?'השבוע המשקל לא זז לכיוון. אביאל מסתכל ומכוון':'השבוע יציב';
+  /* 1.11.26 (אביאל): בלי "לא זז לכיוון" שמבאס. שבוע הפוך מקבל הסבר רגוע + כמה כבר עשית מההתחלה */
+  var totGood=tot!=null&&(down?tot<0:up?tot>0:false), ab=function(v){ return Math.abs(v); };
+  var verdict=wd==null?'עוד שבוע של שקילות, ותראו כאן אם אתם בכיוון':good?'השבוע בכיוון הנכון. ממשיכים בדיוק ככה':(down||up)?(totGood?'קפיצה קטנה השבוע, זה טבעי. מההתחלה כבר '+(down?'ירדת ':'עלית ')+ab(tot)+' ק״ג':'שבוע של תנודות, זה חלק מהדרך. ממשיכים לפי התוכנית'):'השבוע יציב';
+  if(good===false&&totGood) good=null;
   hero.innerHTML='<div class="phv'+(good===false?' warn':good?' ok':'')+'">'+esc(verdict)+'</div><div class="phg"><div><b class="num" dir="ltr">'+fmt(tot)+'</b><small>ק״ג מההתחלה</small></div><div><b class="num" dir="ltr">'+fmt(wd)+'</b><small>ק״ג השבוע</small></div><div><b class="num">'+tr+'</b><small>אימונים ב-30 יום</small></div></div>';
   var seg=document.getElementById('progSeg'); if(!seg){ seg=document.createElement('div'); seg.id='progSeg'; seg.className='pseg'; seg.setAttribute('role','tablist'); stack.parentNode.insertBefore(seg,stack); }
   var P4=[['w','משקל'],['st','כוח'],['me','היקפים'],['ph','תמונות']];
