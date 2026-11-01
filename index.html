@@ -3281,6 +3281,12 @@ var _rfFdc=renderFood; renderFood=function(){ try{ if(FDAY&&!FDAY._cached) fdcPu
 /* ===== 31.10.26 אביאל: "כשסיימתי את האימונים של השבוע — שלא יופיעו לי במשימות" ===== */
 var _todayItemsWk=todayItems; todayItems=function(){ var it=_todayItemsWk.apply(this,arguments); try{ var p=P&&P.program, days=p&&p.blocks?p.blocks.filter(function(b){ return b.ex&&b.ex.length; }):[], dm=doneMap(), finToday=Object.keys(dm).some(function(x){ return dm[x]===TODAY; });
   if(days.length&&Object.keys(dm).length>=days.length&&!finToday) it=it.filter(function(x){ return x.k!=='t'; }); }catch(e){} return it; };
+
+/* ===== דיווח תקלות (1.11.26 אביאל: "אם יהיו תקלות שיהיה אפשר לשפר"): שגיאה בטלפון של מתאמן נשלחת לשרת, ואביאל מקבל הודעה פעם ביום לכל תקלה ===== */
+(function(){ var sent=0, seen={}; function rep(m,src){ try{ m=String(m||'').slice(0,200); if(!m||sent>=3||seen[m]) return; if(/Script error|Failed to fetch|NetworkError|Load failed|אין חיבור|AbortError|ResizeObserver/i.test(m)) return; seen[m]=1; sent++;
+    var v=(document.querySelector('script[data-v]')||{}).dataset; api0('apperr',{m:m,src:String(src||'').slice(0,80),v:(navigator.userAgent.match(/OS (\d+_\d+)/)||[])[1]||''}); }catch(e){} }
+  window.addEventListener('error',function(e){ rep(e.message,(e.filename||'').split('/').pop()+':'+(e.lineno||'')); });
+  window.addEventListener('unhandledrejection',function(e){ var r=e.reason; rep(r&&(r.message||r)||'unhandled',''); }); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;

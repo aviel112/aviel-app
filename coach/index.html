@@ -1403,4 +1403,9 @@ document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&
       rec.start(1000); MREC={rec:rec}; b.textContent='עצירה וסיכום (0:00)'; toast('מקליט. בסוף לוחצים "עצירה וסיכום"'); }); })
   .catch(function(){ toast('ההקלטה בוטלה'); }); });
 </script>
+<script>
+/* 1.11.26 אביאל: "לוחץ על תזכורת בווטסאפ וזה לא עושה כלום" — חלון חדש נפתח מתחת לחלון הניתוח (z-index 99). כל חלון שנפתח עולה מעל כל מה שכבר פתוח */
+(function(){ var st=document.createElement('style'); st.textContent='.toast{z-index:2147483000!important}'; document.head.appendChild(st); var top=function(){ var z=10; document.querySelectorAll('body > .ov, body > .gsov, body > .msov, body > .sheet').forEach(function(e){ var v=parseInt(getComputedStyle(e).zIndex,10); if(v>z) z=v; }); return z; };
+  new MutationObserver(function(ms){ ms.forEach(function(m){ m.addedNodes.forEach(function(n){ if(n.nodeType!==1||n.parentNode!==document.body) return; if(!/(^|\s)(ov|gsov|msov)(\s|$)/.test(n.className||'')) return; var others=top.call(null); n.style.zIndex=Math.max(others+1, parseInt(n.style.zIndex||0,10)||0); }); }); }).observe(document.body,{childList:true}); })();
+</script>
 </body></html>
