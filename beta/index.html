@@ -2056,7 +2056,9 @@ function drawTrk(){ var host=document.getElementById('chart'); if(!host||!D) ret
   var h='<div class="label">מטרות</div>'+trkGoalHtml()+
     '<div class="tmets" role="tablist">'+mets.map(function(m){ return '<button type="button" role="tab" aria-selected="'+(TRK.m===m[0])+'" class="tmet'+(TRK.m===m[0]?' on':'')+'" data-tm="'+m[0]+'">'+m[1]+'</button>'; }).join('')+'</div>'+
     (TRK.m==='ms'?'<div class="tml">'+MLABELS.map(function(l,i){ return '<button type="button" class="'+(TRK.ml===i?'on':'')+'" data-tml="'+i+'">'+esc(l)+'</button>'; }).join('')+'</div>':'')+
-    '<div class="tseg">'+[['w','שבועי'],['m','חודשי'],['a','הכל']].map(function(p){ return '<button type="button" class="'+(TRK.p===p[0]?'on':'')+'" data-tp="'+p[0]+'">'+p[1]+'</button>'; }).join('')+'</div>';
+    '<div class="tseg">'+[[TRK.m==='ms'?'c':'w',TRK.m==='ms'?'השוואה':'שבועי'],['m','חודשי'],['a','הכל']].map(function(p){ return '<button type="button" class="'+(TRK.p===p[0]?'on':'')+'" data-tp="'+p[0]+'">'+p[1]+'</button>'; }).join('')+'</div>';
+  /* 1.11.26 (אביאל): מודדים היקפים פעם בחודש, אז במקום "שבועי" — המדידה האחרונה מול הקודמת, כל איבר והשינוי */
+  if(TRK.m==='ms'&&TRK.p==='c'){ el.innerHTML=h+trkCmpHtml(); trkWire(el); return; }
   var unit=TRK.m==='st'?'צעדים':TRK.m==='ms'?'ס״מ':'ק״ג';
   if(pts.length){ var vs=pts.map(function(x){ return x.v; }), last=vs[vs.length-1], avg=vs.reduce(function(a,b){ return a+b; },0)/vs.length, ch=last-vs[0];
     var good=TRK.m==='st'?ch>0:((D.goal==='עלייה')?ch>0:ch<0), third=TRK.m==='st'?['שיא',trkFmt(Math.max.apply(null,vs)),'']:['שינוי',(ch>0?'+':ch<0?'−':'')+trkFmt(Math.abs(ch)),ch===0?'':good?'up':'dn'];
@@ -2070,10 +2072,7 @@ function drawTrk(){ var host=document.getElementById('chart'); if(!host||!D) ret
     for(var i=0;i<4;i++){ var gv=mn+(mx-mn)*i/3; g+='<line x1="'+L+'" x2="'+(Wd-R)+'" y1="'+Y(gv).toFixed(1)+'" y2="'+Y(gv).toFixed(1)+'"/><text x="'+(L-6)+'" y="'+(Y(gv)+4).toFixed(1)+'" text-anchor="end">'+(TRK.m==='st'?Math.round(gv/1000*10)/10+'K':(mx-mn)<4?gv.toFixed(1):Math.round(gv))+'</text>'; }
     var lp=P[P.length-1], fp=P[0];
     h+='<div class="tchart"><svg viewBox="0 0 '+Wd+' '+Hd+'" role="img" aria-label="'+W.t+': מ-'+trkFmt(vs[0])+' ל-'+trkFmt(last)+' '+unit+'"><defs><linearGradient id="tgf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".32"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><g class="tgrid">'+g+'</g><path class="tarea" d="'+line+' L'+lp[0].toFixed(1)+' '+(Hd-B)+' L'+fp[0].toFixed(1)+' '+(Hd-B)+' Z" fill="url(#tgf)"/><path class="tline" d="'+line+'"/>'+P.map(function(p,i){ return '<circle class="tpt'+(i===P.length-1?' tlast':'')+'" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="'+(i===P.length-1?5:3)+'" data-ti="'+i+'"/>'; }).join('')+'</svg><div class="ttip" id="ttip" hidden></div></div>'; }
-  el.innerHTML=h; el.style.color='';
-  el.querySelectorAll('[data-tm]').forEach(function(b){ b.onclick=function(){ TRK.m=b.dataset.tm; TRK.o=0; drawTrk(); }; });
-  el.querySelectorAll('[data-tml]').forEach(function(b){ b.onclick=function(){ TRK.ml=+b.dataset.tml; drawTrk(); }; });
-  el.querySelectorAll('[data-tp]').forEach(function(b){ b.onclick=function(){ TRK.p=b.dataset.tp; TRK.o=0; drawTrk(); }; });
+  el.innerHTML=h; el.style.color=''; trkWire(el);
   el.querySelectorAll('[data-tn]').forEach(function(b){ b.onclick=function(){ TRK.o=Math.max(0,TRK.o+(+b.dataset.tn)); drawTrk(); }; });
   var svg=el.querySelector('.tchart svg'), tip=el.querySelector('#ttip');
   if(svg) svg.addEventListener('click',function(ev){ var r=svg.getBoundingClientRect(), x=(ev.clientX-r.left)/r.width*360, best=0, bd=1e9; P.forEach(function(p,i){ var dd=Math.abs(p[0]-x); if(dd<bd){ bd=dd; best=i; } });
@@ -3309,6 +3308,22 @@ function recipeReview(name,sv,r){ var rows=((r&&r.items)||[]).map(function(x){ r
 var _ematchRc=ematch; ematch=function(q){ var r=_ematchRc.apply(this,arguments)||[]; try{ var qq=String(q||'').trim(); if(qq.length>=2){ var rc=recipesGet().filter(function(x){ return x.name.indexOf(qq)>=0; }); r=rc.concat(r.filter(function(x){ return !rc.some(function(y){ return y.name===x.name; }); })); } }catch(e){} return r; };
 (function(){ var fl=document.getElementById('flOpen'); if(!fl||document.getElementById('rcOpen')) return; var b=document.createElement('button'); b.type='button'; b.id='rcOpen'; b.className='linkbtn'; b.textContent='+ מתכון חדש'; b.style.cssText='display:block;margin:6px 0 0'; fl.parentNode.insertBefore(b,fl.nextSibling); b.onclick=recipeOpen; })();
 var _pickExtraRc=pickExtra; pickExtra=function(f){ if(f&&f.recipe){ pick({name:f.name, p:f.p, c:f.c, fat:f.fat, k100:f.k100, units:[['מנה',f.g],['חצי מנה',Math.round(f.g/2)]], g:f.g, own:true}); return; } return _pickExtraRc.apply(this,arguments); };
+
+/* חיבור כפתורי המעקב (משקל/צעדים/היקפים, איבר, תקופה) — משותף לגרף ולהשוואת ההיקפים */
+function trkWire(el){
+  el.querySelectorAll('[data-tm]').forEach(function(b){ b.onclick=function(){ TRK.m=b.dataset.tm; TRK.o=0; if(TRK.m==='ms'&&TRK.p==='w') TRK.p='c'; if(TRK.m!=='ms'&&TRK.p==='c') TRK.p='w'; drawTrk(); }; });
+  el.querySelectorAll('[data-tml]').forEach(function(b){ b.onclick=function(){ TRK.ml=+b.dataset.tml; if(TRK.p==='c') TRK.p='a'; drawTrk(); }; });
+  el.querySelectorAll('[data-tp]').forEach(function(b){ b.onclick=function(){ TRK.p=b.dataset.tp; TRK.o=0; drawTrk(); }; }); }
+function trkCmpHtml(){ var M=(D&&D.measures)||{}, R=(M.rows||[]).filter(function(r){ return r.vals.some(function(v){ return v!==''&&v!=null; }); });
+  if(R.length<2) return '<div class="tempty">'+(R.length?'יש מדידה אחת ('+esc(R[0].date)+'). במדידה הבאה תראו כאן מה השתנה בכל איבר.':'עוד אין מדידות.')+'</div>';
+  var a=R[R.length-2], b=R[R.length-1], loss=D.goal!=='עלייה', sum=0, n=0;
+  var rows=MLABELS.map(function(l){ var i=(M.labels||[]).indexOf(l); if(i<0) return ''; var pv=a.vals[i], cv=b.vals[i]; pv=pv===''||pv==null?null:+pv; cv=cv===''||cv==null?null:+cv; if(pv==null&&cv==null) return '';
+    var df=pv!=null&&cv!=null?Math.round((cv-pv)*10)/10:null; if(df!=null){ sum+=df; n++; } var cls=df==null||df===0?'':((loss?df<0:df>0)?'up':'dn');
+    return '<div class="tcr"><span>'+esc(l)+'</span><span class="num">'+(pv==null?'–':pv)+'</span><span class="num"><b>'+(cv==null?'–':cv)+'</b></span><span class="num '+cls+'" dir="ltr">'+(df==null?'':df===0?'0':(df>0?'+':'−')+Math.abs(df))+'</span></div>'; }).join('');
+  sum=Math.round(sum*10)/10;
+  return '<div class="tcmp"><div class="tcr tch"><span>איבר</span><span class="num">'+esc(a.date)+'</span><span class="num">'+esc(b.date)+'</span><span>שינוי</span></div>'+rows+'</div>'+
+    (n?'<div class="tnote" style="margin-top:8px">'+(sum===0?'בלי שינוי בסך הכל מהמדידה הקודמת':'בסך הכל '+(sum<0?'ירדו ':'נוספו ')+Math.abs(sum)+' ס״מ מהמדידה הקודמת')+'</div>':''); }
+(function(){ var st=document.createElement('style'); st.textContent='.tcmp{margin-top:12px;display:grid;gap:2px}.tcr{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr));gap:8px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--line,rgba(127,127,127,.15));font-size:15px}.tcr:last-child{border-bottom:0}.tcr>span:not(:first-child){text-align:center}.tch{font-size:12.5px;color:var(--mute,#888);padding-top:0}.tcr .up{color:var(--good,#2e8b57);font-weight:700}.tcr .dn{color:var(--bad,#c0392b);font-weight:700}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
