@@ -3525,6 +3525,22 @@ var _renderTrainWK=renderTrain; renderTrain=function(){ _renderTrainWK.apply(thi
     }); }
   var _rmPol=renderMenu; renderMenu=function(){ var r=_rmPol.apply(this,arguments); try{ polish(); }catch(e){} return r; };
 })();
+
+/* ===== 2.11.26 (אביאל: "גם ביומן פחות רעש"): יומן נקי — בלי טקסט הסבר, כפתורים קטנים בשורה אחת, ארוחה ריקה בשורה אחת ===== */
+(function(){
+  var st=document.createElement('style'); st.textContent=
+    'section[data-view="food"]>.sub{display:none}'+
+    '#fTot .mac .sub{font-size:12px}#eatHelp{margin-top:6px}#eatHelp .linkbtn{font-size:13px;padding:6px 12px;border-radius:999px;background:var(--panel2);text-decoration:none}'+
+    '.fsearch #flOpen,.fsearch #rcOpen{display:inline-flex!important;width:auto!important;margin:8px 0 0!important;margin-inline-end:6px!important;padding:6px 12px!important;border-radius:999px!important;font-size:13px!important;background:transparent!important;box-shadow:inset 0 0 0 1px var(--line);color:var(--mute)!important}'+
+    '.ftiles{display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important;margin-top:12px!important}.ftiles .ftile{flex-direction:row!important;align-items:center!important;gap:8px!important;min-height:0!important;padding:10px 12px!important;border-radius:14px!important;text-align:start}.ftiles .ftile small{display:none!important}.ftiles .ftile b{font-size:14px}.ftiles .fti{width:30px!important;height:30px!important;flex:none}.ftiles .fti svg{width:16px;height:16px}'+
+    '#fItems .fmeal.fempty{display:flex;align-items:center;justify-content:space-between;padding-block:10px!important}#fItems .fmeal.fempty .fmh{margin:0!important}#fItems .fmeal.fempty .fmh b{font-weight:600;color:var(--mute)}#fItems .fmeal.fempty .fmadd{margin:0!important;padding:4px 10px!important;font-size:13px!important;border-radius:999px}';
+  document.head.appendChild(st);
+  function tidyFood(){ document.querySelectorAll('#fTot .mac .sub').forEach(function(s){ s.textContent=s.textContent.replace(/\s*·\s*נשאר$/,''); });
+    document.querySelectorAll('#fItems .fmeal').forEach(function(f){ var kids=[].filter.call(f.children,function(c){ return !c.classList.contains('fmh')&&!c.classList.contains('fmadd'); }); var empty=!kids.length; f.classList.toggle('fempty',empty); var a=f.querySelector('.fmadd'); if(a&&empty) a.textContent='+ הוספה'; });
+    var fo=document.getElementById('flOpen'), ro=document.getElementById('rcOpen'); if(fo&&ro&&!fo.parentElement.classList.contains('frow')){ var w=document.createElement('div'); w.className='frow'; w.style.cssText='display:flex;gap:6px;flex-wrap:wrap'; fo.parentNode.insertBefore(w,fo); w.appendChild(fo); w.appendChild(ro); } /* שני הכפתורים בשורה אחת */
+    var mh=document.querySelector('#fTot .mac'); if(mh&&!document.getElementById('macLeftH')) mh.insertAdjacentHTML('beforebegin','<div id="macLeftH" class="sub" style="font-size:12px;margin:10px 0 -4px">נשאר להיום</div>'); }
+  if(typeof renderFood==='function'){ var _rfT=renderFood; renderFood=function(){ var r=_rfT.apply(this,arguments); try{ tidyFood(); }catch(e){} return r; }; }
+})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
