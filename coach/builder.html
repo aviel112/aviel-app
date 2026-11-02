@@ -126,8 +126,13 @@ button.send:hover{background:var(--send-h)}
 @media (max-width:900px){
  main{grid-template-columns:minmax(0,1fr)} header select{flex:1 1 150px;min-width:0} .bar>*{min-width:0;max-width:100%} .exn{flex-wrap:wrap} .exn .mode{max-width:none;flex:1 1 100%} .exn input{flex:1 1 100%} .strip{padding:0 12px 4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none} .strip::-webkit-scrollbar{display:none} .stc{flex:none} .qchips{padding-inline:12px} main>*{min-width:0}
  .side{position:static}
- .op{grid-template-columns:18px minmax(0,1fr) 64px 26px;row-gap:2px}
- .op .u{display:none}.op .mac{grid-column:2/4;justify-content:flex-start}
+ .op{grid-template-columns:18px minmax(0,1fr) 72px 30px;row-gap:6px;padding-block:8px;border-bottom:1px solid var(--line2)}
+ .op .ix{grid-row:1}.op .fs{grid-column:2/5;grid-row:1}
+ .op div.g{grid-column:3;grid-row:2}.op .mac{grid-column:2;grid-row:2;justify-content:flex-start}.op>button.g{grid-column:4;grid-row:2}
+ .op .u{display:none}
+ .op .fs input,.op div.g input{font-size:16px;min-height:42px}
+ .rwh{flex-wrap:wrap}.rwh .hint{order:5;flex-basis:100%}.rwh input.lbl{flex:1 1 120px;width:auto}
+ .savebar{gap:10px}.savebar button{min-width:0;flex:1}
  .ex{grid-template-columns:18px minmax(0,1fr) 54px 54px 26px}
  .ex .mu,.ex .rest,.ex .inc,.ex.head{display:none}
  .exn,.swp{padding-right:14px;padding-left:14px}
@@ -138,6 +143,8 @@ button.send:hover{background:var(--send-h)}
 .savebar span{font-size:14px;color:var(--mute)}
 .savebar button{min-width:200px;padding:11px 20px;font-weight:700}
 .savebar button[disabled]{opacity:.45;cursor:default}
+.rmv{font-size:13px;padding:4px 6px;max-width:130px}
+.vegs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 14px 0;font-size:13px;color:var(--mute)}.vegs .vg{padding:5px 12px;border-radius:999px;font-size:13px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}.vegs .vg.on{background:var(--acc);border-color:var(--acc);color:#fff}
 body{padding-bottom:76px}
 body.simple .guide,body.simple .qchips,body.simple [data-mmv],body.simple #mNew,body.simple label:has(#mAutoAlt),body.simple #mBy,body.simple #mBy+*,body.simple .bar .muted:has(+#mBy),
 body.simple .mac .p,body.simple .mac .c,body.simple .mac .f,body.simple .side .row.mrow,body.simple .side .muted:has(+.row.mrow),body.simple .side .qa,
@@ -362,11 +369,13 @@ function menuMain(){ var M=S.M; if(!M) return '<div class="card empty">טוען�
   M.meals.forEach(function(ml,mi){
     h+='<section class="card meal"><div class="mh"><input class="t" data-mt="'+mi+'" value="'+esc(ml.title)+'" aria-label="שם הארוחה"><span class="kc num">'+mealK(ml)+' קק״ל</span><button class="g" data-mmv="'+mi+'|-1" title="למעלה">↑</button><button class="g" data-mmv="'+mi+'|1" title="למטה">↓</button><button class="g" data-mdel="'+mi+'" title="מחיקת ארוחה">✕</button></div>';
     ml.rows.forEach(function(r,ri){ var R=rowRange(r);
-      h+='<div class="rw"><div class="rwh"><input class="lbl" data-rl="'+mi+'|'+ri+'" value="'+esc(r.label||'')+'" placeholder="קבוצה (חלבון…)"><span class="hint">'+(r.opts.length>1?'לבחור 1 מתוך '+r.opts.length:'')+(R?' · '+(R.lo[0]===R.hi[0]?R.lo[0]:R.lo[0]+'–'+R.hi[0])+' קק״ל':'')+'</span><button class="g" data-rdel="'+mi+'|'+ri+'" title="מחיקת שורה">מחיקת שורה</button></div>';
+      h+='<div class="rw"><div class="rwh"><input class="lbl" data-rl="'+mi+'|'+ri+'" value="'+esc(r.label||'')+'" placeholder="קבוצה (חלבון…)"><span class="hint">'+(r.opts.length>1?'לבחור 1 מתוך '+r.opts.length:'')+(R?' · '+(R.lo[0]===R.hi[0]?R.lo[0]:R.lo[0]+'–'+R.hi[0])+' קק״ל':'')+'</span>'+(M.meals.length>1?'<select class="rmv" data-rmv="'+mi+'|'+ri+'" aria-label="העברת השורה לארוחה אחרת"><option value="">העברה ל…</option>'+M.meals.map(function(m2,j){ return j===mi?'':'<option value="'+j+'">'+esc(String(m2.title||'ארוחה').replace(/\s*\(.*?\)\s*/g,''))+'</option>'; }).join('')+'</select>':'')+'<button class="g" data-rdel="'+mi+'|'+ri+'" title="מחיקת שורה">מחיקת שורה</button></div>';
       r.opts.forEach(function(o,oi){ var key=mi+'|'+ri+'|'+oi;
         h+='<div class="op'+(oi?' alt':'')+(o.unm?' unm':'')+'"><span class="ix">'+(oi?'או':'●')+'</span><div class="fs"><input data-fs="'+key+'" value="'+esc(o.food||o.raw||o.t||'')+'" placeholder="מאכל, או למשל: ביצה + קופסת טונה" autocomplete="off"></div><div class="g"><input type="number" inputmode="numeric" min="0" step="5" data-g="'+key+'" value="'+(o.g||'')+'" '+(o.per?'':'disabled')+' aria-label="גרם"></div><span class="u">גרם</span>'+
           (o.m&&(o.m[0]||o.m[1]||o.m[2])?'<span class="mac num"><b>'+kc(o.m)+'</b> קק״ל <span class="p">ח '+r1(o.m[0])+'</span><span class="c">פ '+r1(o.m[1])+'</span><span class="f">ש '+r1(o.m[2])+'</span></span>':'<span class="mac"><span class="chip w">'+(o.unm?'לבחור מאכל מהמאגר':'בלי ערכים')+'</span></span>')+'<button class="g" data-odel="'+key+'" title="הסרה">✕</button></div>'+(o.unm&&o.raw?candHtml(o.raw,key):''); });
       h+=quickChips(r,mi+'|'+ri)+'<div class="rwf"><button data-oadd="'+mi+'|'+ri+'">'+(r.opts.length?'+ חלופה':'+ מאכל')+'</button></div></div>'; });
+    var vn=/ירק אחד/.test(ml.note||'')?'1':(String(ml.note||'').match(/(\d)\s*ירקות/)||[])[1]||(/ירקות/.test(ml.note||'')?'f':'0');
+    h+='<div class="vegs"><span>ירקות:</span>'+[['0','בלי'],['1','1'],['2','2'],['3','3'],['f','חופשי']].map(function(v){ return '<button type="button" class="vg'+(vn===v[0]?' on':'')+'" data-veg="'+mi+'|'+v[0]+'">'+v[1]+'</button>'; }).join('')+'</div>';
     h+='<div class="mf"><button data-radd="'+mi+'">+ שורה</button><input data-mn="'+mi+'" value="'+esc(ml.note||'')+'" placeholder="הערה לארוחה (תופיע בתפריט)" style="flex:1"></div></section>'; });
   h+='<div class="bar"><button id="mAddMeal">+ ארוחה</button><label class="muted">קלוריות חופשיות <input type="number" id="mFree" value="'+(M.free||0)+'" step="50" min="0" style="width:80px"></label></div>';
   h+='<div class="card pad"><h2>הערות אישיות (בראש התפריט)</h2><textarea id="mNotes" rows="2" style="width:100%" placeholder="למשל: אוכל בחוץ בימי שלישי, מתאמן בערב">'+esc(M.notes||'')+'</textarea></div></div>';
@@ -395,6 +404,8 @@ function wireMenu(){ var M=S.M; if(!M) return; M.meals.forEach(function(ml){ ml.
   document.querySelectorAll('[data-qa]').forEach(function(b){ b.onclick=function(){ var k=b.dataset.qa; if(!k) return; var el=document.querySelector('[data-rl="'+k+'"]'); if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); var row=el.closest('.rw'); if(row){ row.classList.add('flash'); setTimeout(function(){ row.classList.remove('flash'); },1600); } } }; });
   document.querySelectorAll('[data-qadd]').forEach(function(b){ b.onclick=function(){ var k=b.dataset.qadd.split('|'), r=M.meals[+k[0]].rows[+k[1]], q=QUICK[rowKind(r)][+k[2]], o=q&&quickOpt(q,r); if(!o){ toast('לא נמצא במאגר',1); return; } r.opts.push(o); r._lk2=leadSig(r); upd(); }; });
   document.querySelectorAll('[data-oadd]').forEach(function(b){ b.onclick=function(){ var a=at(b.dataset.oadd); a.r.opts.push({t:'',raw:'',g:0,m:[0,0,0]}); render(); var ins=document.querySelectorAll('[data-fs^="'+a.k[0]+'|'+a.k[1]+'|"]'); var last=ins[ins.length-1]; if(last) last.focus(); }; });
+  document.querySelectorAll('[data-veg]').forEach(function(b){ b.onclick=function(){ var k=b.dataset.veg.split('|'), ml=M.meals[+k[0]], rest=String(ml.note||'').replace(/(\d\s*)?ירקות(\s*לבחירה)?(\s*חופשי)?[.,]?\s*|ירק אחד(\s*לבחירה)?[.,]?\s*/g,'').trim(); var v=k[1]==='0'?'':k[1]==='f'?'ירקות לבחירה חופשי':k[1]==='1'?'ירק אחד לבחירה':k[1]+' ירקות לבחירה'; ml.note=[v,rest].filter(Boolean).join('. '); upd(); }; }); /* 2.11.26: ירקות בלחיצה — נכתב כהערה לארוחה ומופיע אצל המתאמן */
+  document.querySelectorAll('[data-rmv]').forEach(function(sel){ sel.onchange=function(){ if(sel.value==='') return; var a=at(sel.dataset.rmv), to=M.meals[+sel.value], row=a.ml.rows.splice(a.k[1],1)[0]; if(to&&row){ to.rows.push(row); toast('השורה עברה ל'+String(to.title||'').replace(/\s*\(.*?\)\s*/g,'')); } upd(); }; });
   document.querySelectorAll('[data-rdel]').forEach(function(b){ b.onclick=function(){ var a=at(b.dataset.rdel); a.ml.rows.splice(a.k[1],1); upd(); }; });
   document.querySelectorAll('[data-rl]').forEach(function(i){ i.onchange=function(){ at(i.dataset.rl).r.label=i.value; saveDraft(); }; });
   document.querySelectorAll('[data-radd]').forEach(function(b){ b.onclick=function(){ M.meals[+b.dataset.radd].rows.push({label:'',opts:[{t:'',raw:'',g:0,m:[0,0,0]}]}); render(); }; });
