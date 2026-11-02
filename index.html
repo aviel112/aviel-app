@@ -3541,6 +3541,28 @@ var _renderTrainWK=renderTrain; renderTrain=function(){ _renderTrainWK.apply(thi
     var mh=document.querySelector('#fTot .mac'); if(mh&&!document.getElementById('macLeftH')) mh.insertAdjacentHTML('beforebegin','<div id="macLeftH" class="sub" style="font-size:12px;margin:10px 0 -4px">נשאר להיום</div>'); }
   if(typeof renderFood==='function'){ var _rfT=renderFood; renderFood=function(){ var r=_rfT.apply(this,arguments); try{ tidyFood(); }catch(e){} return r; }; }
 })();
+
+/* ===== 2.11.26 (אביאל): בקשת החלפה — המתאמן מבקש להחליף מאכל, אביאל מאשר בוואטסאפ, התפריט מתעדכן ===== */
+(function(){
+  var st=document.createElement('style'); st.textContent='.swreq{display:inline-block;margin-top:6px;font-size:12px;color:var(--mute);background:none;border:0;padding:4px 0;text-decoration:underline;text-underline-offset:3px;cursor:pointer}.swpend{margin-top:6px;font-size:12px;color:var(--gold)}'+
+    '.swsh h2{font-size:20px;margin:0 0 4px}.swsh .chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}.swsh .chips button{padding:7px 12px;border-radius:999px;font-size:14px;background:var(--panel2);color:var(--text);border:0;box-shadow:inset 0 0 0 1px var(--line)}.swsh .chips button.on{background:var(--gold);color:#111;box-shadow:none}.swsh label{display:block;font-size:13px;color:var(--mute);margin-top:6px}.swsh textarea{width:100%;min-height:60px;margin-top:6px;font-size:16px}';
+  document.head.appendChild(st);
+  function pend(){ var o=ls('aviel_swq',{}), n=Date.now(), ch=false; Object.keys(o).forEach(function(k){ if(n-o[k].at>4*864e5){ delete o[k]; ch=true; } }); if(ch) lsSet('aviel_swq',o); return o; }
+  function sheet(meal,label,opts,cur,key){ var s=document.createElement('div'); s.className='sheet'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true'); var sel=Math.max(0,cur), why='';
+    var draw=function(){ s.innerHTML='<div class="sheet-in swsh"><h2>בקשת החלפה</h2><div class="sub">'+esc(meal)+'. אביאל יקבל את הבקשה ויאשר תחליף בערכים דומים.</div><label>מה להחליף</label><div class="chips" id="swI">'+opts.map(function(t,i){ return '<button type="button" data-i="'+i+'" class="'+(i===sel?'on':'')+'">'+esc(t)+'</button>'; }).join('')+'</div><label>למה</label><div class="chips" id="swW">'+['לא אוהב/ת','אין לי בבית','לא מתאים לי','סתם רוצה גיוון'].map(function(t){ return '<button type="button" class="'+(t===why?'on':'')+'">'+t+'</button>'; }).join('')+'</div><label>מה היית רוצה במקום? (לא חובה)</label><textarea id="swT" placeholder="למשל: משהו בלי חלב, או טונה"></textarea><button type="button" id="swGo" style="width:100%;margin-top:12px">שליחה לאביאל</button><button type="button" class="ghost" id="swX" style="width:100%;margin-top:8px">ביטול</button></div>';
+      s.querySelectorAll('#swI button').forEach(function(b){ b.onclick=function(){ sel=+b.dataset.i; var t=s.querySelector('#swT').value; draw(); s.querySelector('#swT').value=t; }; });
+      s.querySelectorAll('#swW button').forEach(function(b){ b.onclick=function(){ why=b.textContent; var t=s.querySelector('#swT').value; draw(); s.querySelector('#swT').value=t; }; });
+      s.querySelector('#swX').onclick=function(){ s.remove(); };
+      s.querySelector('#swGo').onclick=function(){ var bt=this; bt.disabled=true; bt.textContent='שולח…'; api('swapreq',{meal:meal,label:label,item:opts[sel],reason:why,want:s.querySelector('#swT').value.trim()}).then(function(r){ var o=pend(); o[key]={item:opts[sel],alt:r&&r.alt||'',at:Date.now()}; lsSet('aviel_swq',o); s.remove(); toast('נשלח לאביאל. תקבל/י התראה כשהוא מאשר'); var y=window.scrollY; renderMenu(); window.scrollTo(0,y); }).catch(function(e){ bt.disabled=false; bt.textContent='שליחה לאביאל'; toast(e.message||'לא נשלח, נסו שוב',1); }); }; };
+    draw(); document.body.appendChild(s); s.addEventListener('click',function(e){ if(e.target===s) s.remove(); }); }
+  function addReq(){ var P0=pend(), M=P&&P.menu; document.querySelectorAll('#menuBox .meal:not(.mnote)').forEach(function(card){ var meal=(card.querySelector('h3')||{}).firstChild; meal=meal?String(meal.textContent||'').trim():''; if(!meal) return; var seen={};
+      card.querySelectorAll('.opt.hasgal').forEach(function(o){ var lab=(o.querySelector('b')||{}).textContent||'', nth=seen[lab]=(seen[lab]||0)+1, key='sw|'+meal+'|'+lab+'|'+nth; if(o.querySelector('.swreq,.swpend')) return; var lis=[].map.call(o.querySelectorAll('li'),function(li){ return li.textContent.replace(/^✓\s*/,'').trim(); }); if(!lis.length) return;
+        var p=P0[key]; if(p&&lis.indexOf(p.item)>=0){ o.insertAdjacentHTML('beforeend','<div class="swpend">נשלחה בקשה להחליף את "'+esc(p.item)+'". ממתין לאישור של אביאל</div>'); return; }
+        if(p){ delete P0[key]; lsSet('aviel_swq',P0); } /* המאכל כבר לא בתפריט → אביאל אישר */
+        var g=o.querySelector('.mgal'), cur=0; if(g){ var on=g.querySelector('.mgc.on'); if(on) cur=+on.dataset.i; }
+        var b=document.createElement('button'); b.type='button'; b.className='swreq'; b.textContent='לבקש החלפה'; b.onclick=function(){ sheet(meal,lab,lis,cur,key); }; o.appendChild(b); }); }); }
+  var _rmSw=renderMenu; renderMenu=function(){ var r=_rmSw.apply(this,arguments); try{ addReq(); }catch(e){} return r; };
+})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
