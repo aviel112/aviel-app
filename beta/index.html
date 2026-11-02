@@ -3465,6 +3465,66 @@ var _renderTrainWK=renderTrain; renderTrain=function(){ _renderTrainWK.apply(thi
   }
   function tog(lk){ var l2=ls('aviel_pickl_'+TODAY,{}); if(l2[lk]) delete l2[lk]; else l2[lk]=1; lsSet('aviel_pickl_'+TODAY,l2); var y=window.scrollY; renderMenu(); window.scrollTo(0,y); }
 })();
+
+/* ===== 2.11.26 (אביאל, לפי AutoFit): מה שאכלת בולט בירוק, ופס "נשאר להיום" בראש התפריט — חלבון/פחמימה/שומן בגרמים לפי מה שנרשם ביומן ===== */
+(function(){
+  var st=document.createElement('style'); st.textContent=
+    '.mcur.picked{background:rgba(52,199,123,.13)!important;box-shadow:inset 0 0 0 1.5px var(--good)!important}.mcur.picked .mchk{background:var(--good)!important;border-color:var(--good)!important;color:#fff!important}.mcur.picked small{color:var(--good)!important;font-weight:700}'+
+    '.mitem{padding-block:8px!important;padding-inline-end:10px!important;margin:4px 0!important}.mitem.on{background:rgba(52,199,123,.10);box-shadow:inset 0 0 0 1px rgba(52,199,123,.45);color:var(--text)!important}.mitem.on::before{background:var(--good)!important;border-color:var(--good)!important;color:#fff!important}'+
+    '.meal.alldone{box-shadow:inset 0 0 0 1.5px rgba(52,199,123,.55)}.meal.alldone .ate{background:var(--good)!important;color:#fff!important;border-color:var(--good)!important}'+
+    '.mleft{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:2px 0 10px}.mleft div{text-align:center;padding:10px 4px 8px;border-radius:14px;background:var(--panel2)}.mleft b{display:block;font-size:26px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}.mleft b small{font-size:12px;font-weight:600;color:var(--mute);margin-inline-start:2px}.mleft span{display:block;font-size:12px;color:var(--mute);margin-top:4px}.mleft i{display:block;height:3px;border-radius:2px;margin:6px auto 0;width:60%}.mleft .over b{color:#e5675f}.mlefth{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}.mlefth b{font-size:15px}.mlefth span{font-size:12.5px;color:var(--mute)}';
+  document.head.appendChild(st);
+  function dayTarget(){ var M=P&&P.menu, t={k:0,p:0,c:0,fat:0}, n=0; if(!M||!M.blocks) return null; M.blocks.forEach(function(b){ if(!b.title||/לפני אימון|חופשי/.test(b.title)) return; var v=typeof mealVals==='function'?mealVals(b):null; if(v){ n++; t.k+=v.k||0; t.p+=v.p||0; t.c+=v.c||0; t.fat+=v.fat||0; } }); return n?t:null; }
+  function eatenToday(){ var t={k:0,p:0,c:0,fat:0}; ((typeof FDAY!=='undefined'&&FDAY&&FDAY.d===TODAY&&FDAY.items)||[]).forEach(function(x){ if(x.m==='חופשי') return; t.k+=+x.k||0; t.p+=+x.p||0; t.c+=+x.c||0; t.fat+=+(x.fat!=null?x.fat:x.f_)||0; }); return t; }
+  function leftCard(){ var box=document.getElementById('menuBox'); if(!box) return; var T=dayTarget(); var old=document.getElementById('mLeft'); if(old) old.remove(); if(!T) return;
+    var E=eatenToday(), cell=function(lab,key,col){ var left=Math.round(T[key]-E[key]); return '<div class="'+(left<0?'over':'')+'"><b>'+Math.abs(left)+'<small>ג׳</small></b><span>'+(left<0?lab+' מעל':lab)+'</span><i style="background:'+col+'"></i></div>'; };
+    var first=box.querySelector('.card'), cnt=''; if(first&&/ארוחות היום/.test(first.textContent)){ var nb=first.querySelector('b.num'); cnt=nb?nb.textContent:''; first.style.display='none'; } /* כרטיס "ארוחות היום" נכנס לפס */
+    var h='<div class="card" id="mLeft"><div class="mlefth"><b>נשאר להיום</b><span>'+(cnt?cnt+' ארוחות · ':'')+(E.k?'אכלת '+Math.round(E.k)+' מתוך כ-'+Math.round(T.k)+' קק״ל':'מסמנים מה אכלת והמספרים יורדים')+'</span></div><div class="mleft">'+cell('חלבון','p','#5b9be0')+cell('פחמימה','c','#d9a347')+cell('שומן','fat','#c46b9e')+'</div></div>';
+    if(first) first.insertAdjacentHTML('afterend',h); else box.insertAdjacentHTML('afterbegin',h);
+    var ate=ls('aviel_ate_'+TODAY,[]); box.querySelectorAll('.meal').forEach(function(card){ var h3=card.querySelector('h3'); card.classList.toggle('alldone',!!(h3&&ate.indexOf(h3.textContent)>=0)); }); }
+  var _rmLeft=renderMenu; renderMenu=function(){ var r=_rmLeft.apply(this,arguments); try{ leftCard(); }catch(e){} return r; };
+  if(typeof renderFood==='function'){ var _rfLeft=renderFood; renderFood=function(){ var r=_rfLeft.apply(this,arguments); try{ if(document.getElementById('mLeft')) leftCard(); }catch(e){} return r; }; } /* היומן התעדכן (סימון נרשם) → הפס מתעדכן */
+})();
+
+/* ===== 2.11.26 (אביאל: "שהעיצוב יהיה יותר יפה"): כרטיס ארוחה נקי — קלוריות בכותרת, ערכים כשבבים, תוויות קצרות, הערות שקטות ===== */
+(function(){
+  var st=document.createElement('style'); st.textContent=
+    '#menuBox .meal{padding:18px 16px 14px!important}#menuBox .mealhead{margin-bottom:12px}#menuBox .mealhead h3{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}'+
+    '.mkc{font-family:var(--f-body,inherit);font-size:13px;font-weight:600;color:var(--mute);font-variant-numeric:tabular-nums}'+
+    '#menuBox .opt{margin:12px 0 4px}#menuBox .opt>b{font-size:12.5px!important;letter-spacing:.2px;color:var(--gold)!important;margin-bottom:8px!important;font-weight:700}'+
+    '#menuBox .mcar{grid-template-columns:34px 1fr 34px!important;gap:8px!important}#menuBox .mcar .swarr{width:34px!important;height:34px!important;opacity:.85}'+
+    '#menuBox .mcur{min-height:64px;justify-content:center;border-radius:16px!important;font-size:16px!important;line-height:1.35}#menuBox .mcur small{font-size:12px!important;font-weight:500;color:var(--mute)}'+
+    '#menuBox .mall{font-size:12px!important;text-decoration:none!important;color:var(--mute)!important;opacity:.8;padding-top:8px!important}#menuBox .mall::after{content:" ›"}'+
+    '#menuBox .swaphint{font-size:12px;color:var(--mute);margin:10px 0 2px;opacity:.85}'+
+    '.mvals{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}.mvals span{font-size:12.5px;padding:5px 10px;border-radius:999px;background:var(--panel2);color:var(--text);font-variant-numeric:tabular-nums}.mvals span b{font-weight:700}.mvals .k{background:transparent;box-shadow:inset 0 0 0 1px var(--line);color:var(--mute)}'+
+    '.mvals i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-inline-end:5px;vertical-align:1px}'+
+    '#menuBox p.plain.mquiet{font-size:13px;color:var(--mute);margin:6px 0 0}'+
+    '.opt.hasgal .mcar,.opt.hasgal .mall,.opt.hasgal ul,.opt.hasgal .swaphint{display:none!important}'+
+    '.mgal{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 8px;margin:0 -16px;padding-inline:16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}.mgal::-webkit-scrollbar{display:none}'+
+    '.mgc{flex:0 0 72%;scroll-snap-align:center;position:relative;text-align:start;display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:92px;padding:14px 14px 12px;border-radius:18px;border:0;background:var(--panel2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line);font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}'+
+    '.mgc .mgt{font-size:16px;font-weight:600;line-height:1.35;padding-inline-end:26px}.mgc small{font-size:12px;color:var(--mute)}'+
+    '.mgc .mgk{position:absolute;inset-inline-end:12px;top:12px;width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--gold-d,#8a6d35);display:flex;align-items:center;justify-content:center;font-size:12px;color:transparent}'+
+    '.mgc.on{background:rgba(52,199,123,.13);box-shadow:inset 0 0 0 1.5px var(--good)}.mgc.on .mgk{background:var(--good);box-shadow:none;color:#fff}.mgc.on small{color:var(--good);font-weight:700}'+
+    '.mgalhint{font-size:12px;color:var(--mute);margin-top:4px;opacity:.85}';
+  document.head.appendChild(st);
+  function gallery(card){ var meal=(card.querySelector('h3')||{}).textContent||'', seen={}, pick=ls('aviel_pick_'+TODAY,{}), hinted=document.querySelector('#menuBox .mgalhint');
+    card.querySelectorAll('.opt').forEach(function(o){ var lab=(o.querySelector('b')||{}).textContent||'', nth=seen[lab]=(seen[lab]||0)+1, key=meal+'|'+lab+(nth>1?'#'+nth:''), lis=o.querySelectorAll('li'); if(!o.classList.contains('car')||lis.length<2) return;
+      var txt=[].map.call(lis,function(li){ return li.textContent.replace(/^✓\s*/,'').trim(); }), on=pick[key], cur=(typeof MSEL!=='undefined'&&MSEL[key]!=null)?MSEL[key]:0;
+      var g=document.createElement('div'); g.className='mgal'; g.innerHTML=txt.map(function(t,i){ return '<button type="button" class="mgc'+(on===i?' on':'')+'" data-i="'+i+'"><span class="mgk" aria-hidden="true">✓</span><span class="mgt">'+esc(t)+'</span><small>'+(on===i?'אכלתי':(i+1)+' מתוך '+txt.length)+'</small></button>'; }).join('');
+      o.appendChild(g); o.classList.add('hasgal');
+      g.querySelectorAll('.mgc').forEach(function(b){ b.onclick=function(){ var i=+b.dataset.i, p2=ls('aviel_pick_'+TODAY,{}), L=ls('aviel_menu_learn',{}); if(p2[key]===i) delete p2[key]; else { p2[key]=i; L[key]=L[key]||{}; L[key][txt[i]]=(L[key][txt[i]]||0)+1; lsSet('aviel_menu_learn',L); } lsSet('aviel_pick_'+TODAY,p2); if(typeof MSEL!=='undefined') MSEL[key]=i; var y=window.scrollY; renderMenu(); window.scrollTo(0,y); }; });
+      var tgt=g.children[on!=null?on:cur]; if(tgt) requestAnimationFrame(function(){ g.scrollLeft=tgt.offsetLeft-(g.clientWidth-tgt.offsetWidth)/2; });
+      if(!hinted){ o.insertAdjacentHTML('beforeend','<div class="mgalhint">מחליקים לצדדים כדי לראות אפשרויות, ולוחצים על מה שאכלת</div>'); hinted=1; } }); }
+  function polish(){ var M=P&&P.menu; document.querySelectorAll('#menuBox .meal').forEach(function(card){ try{ gallery(card); }catch(e){}
+      card.querySelectorAll('.opt>b').forEach(function(b){ var t=b.textContent.replace(/\s*[–-]\s*לבחור\s*1\s*:?\s*$/,'').replace(/^לבחור 1\s*:?$/,'לבחור אחד').replace(/:$/,''); if(t!==b.textContent) b.textContent=t; });
+      card.querySelectorAll('p.plain').forEach(function(p){ var t=p.textContent.trim();
+        var m=t.match(/^(ערכים ממוצעים|ערכי הארוחה)[^:]*:\s*(.*)$/); if(m){ var g=function(re){ var x=m[2].match(re); return x?Math.round(+x[1].replace(/,/g,'')):null; }, k=g(/([\d.,]+)\s*קלוריות/), pr=g(/([\d.,]+)\s*גרם חלבון/), c=g(/([\d.,]+)\s*גרם פחמימ/), f=g(/([\d.,]+)\s*גרם שומן/);
+          var d=document.createElement('div'); d.className='mvals'; d.innerHTML=(k!=null?'<span class="k">כ-<b>'+k+'</b> קק״ל</span>':'')+(pr!=null?'<span><i style="background:#5b9be0"></i>חלבון <b>'+pr+'</b></span>':'')+(c!=null?'<span><i style="background:#d9a347"></i>פחמימה <b>'+c+'</b></span>':'')+(f!=null?'<span><i style="background:#c46b9e"></i>שומן <b>'+f+'</b></span>':''); p.replaceWith(d);
+          var h3=card.querySelector('.mealhead h3'); if(h3&&k!=null&&!h3.querySelector('.mkc')) h3.insertAdjacentHTML('beforeend','<span class="mkc">'+k+' קק״ל</span>'); return; }
+        if(!p.classList.contains('mitem')&&!p.querySelector('b')) p.classList.add('mquiet'); });
+    }); }
+  var _rmPol=renderMenu; renderMenu=function(){ var r=_rmPol.apply(this,arguments); try{ polish(); }catch(e){} return r; };
+})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
