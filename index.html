@@ -3620,6 +3620,46 @@ var _renderTrainWK=renderTrain; renderTrain=function(){ _renderTrainWK.apply(thi
     if(!was&&!ls('aviel_dcshown_'+TODAY,0)){ lsSet('aviel_dcshown_'+TODAY,1); setTimeout(sheet,600); } }
   if(typeof renderFood==='function'){ var _rfDc=renderFood; renderFood=function(){ var r=_rfDc.apply(this,arguments); try{ check(); }catch(e){} return r; }; }
 })();
+
+/* ===== 2.11.26 (אביאל): סרטון "החודש שלי" — 10 שניות, שחור-זהב, נוצר בטלפון (canvas + MediaRecorder) ומוכן לסטורי ===== */
+(function(){
+  var MON=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  function ymd(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+  function data(){ var w=((D&&D.weekly)||[]).filter(function(x){ return +x>0; }).slice(-6), cut=new Date(); cut.setDate(cut.getDate()-30); var ck=ymd(cut), days={};
+    Object.keys((P&&P.lifts)||{}).forEach(function(k){ ((P.lifts[k]||{}).hist||[]).forEach(function(h){ if(h.d&&h.d>=ck) days[h.d]=1; }); });
+    var closed=0, d=new Date(); for(var i=0;i<30;i++){ if(ls('aviel_dayclosed_'+ymd(d),0)) closed++; d.setDate(d.getDate()-1); }
+    var diff=w.length>1?Math.round((w[w.length-1]-w[0])*10)/10:0; return {w:w, diff:diff, train:Object.keys(days).length, closed:closed, first:(D&&D.first)||'', goal:(D&&D.goal)||''}; }
+  function ease(t){ return t<0?0:t>1?1:1-Math.pow(1-t,3); }
+  function frame(x,o,t){ var W=1080,H=1920,G='#d6b066',IV='#f3ede2',MU='#a59c8d',serif="'Frank Ruhl Libre', Georgia, serif",sans="'Assistant', Arial, sans-serif", now=new Date();
+    x.fillStyle='#0e0d0b'; x.fillRect(0,0,W,H); x.strokeStyle='rgba(214,176,102,.55)'; x.lineWidth=3; x.strokeRect(54,54,W-108,H-108); x.direction='rtl'; x.textAlign='center';
+    var a1=ease(t/0.8); x.globalAlpha=a1; x.fillStyle=G; x.font='800 46px '+sans; x.save(); x.direction='ltr'; x.fillText('A V I E L   A M I R A',W/2,190); x.restore();
+    x.fillStyle=IV; x.font='700 92px '+serif; x.fillText('החודש שלי',W/2,330); x.fillStyle=MU; x.font='600 46px '+sans; x.fillText(MON[now.getMonth()]+' '+now.getFullYear(),W/2,405); x.globalAlpha=1;
+    if(o.w.length>1&&t>1.6){ var p=ease((t-1.6)/2.6), gx=150, gw=W-300, gy=560, gh=420, mn=Math.min.apply(null,o.w)-0.3, mx=Math.max.apply(null,o.w)+0.3, n=o.w.length;
+      var pt=function(i){ return [gx+gw-(i/(n-1))*gw, gy+gh-((o.w[i]-mn)/(mx-mn))*gh]; }; /* ימין לשמאל: ההתחלה מימין */
+      x.strokeStyle='rgba(214,176,102,.18)'; x.lineWidth=2; for(var g=0;g<=3;g++){ x.beginPath(); x.moveTo(gx,gy+g*gh/3); x.lineTo(gx+gw,gy+g*gh/3); x.stroke(); }
+      var upto=p*(n-1); x.strokeStyle=G; x.lineWidth=10; x.lineCap='round'; x.lineJoin='round'; x.beginPath(); for(var i=0;i<=Math.floor(upto);i++){ var q=pt(i); if(!i) x.moveTo(q[0],q[1]); else x.lineTo(q[0],q[1]); }
+      var fi=Math.floor(upto); if(fi<n-1){ var q0=pt(fi), q1=pt(fi+1), r=upto-fi; x.lineTo(q0[0]+(q1[0]-q0[0])*r,q0[1]+(q1[1]-q0[1])*r); } x.stroke();
+      var c0=pt(0); x.fillStyle=G; x.beginPath(); x.arc(c0[0],c0[1],14,0,Math.PI*2); x.fill(); if(p>=1){ var cl=pt(n-1); x.beginPath(); x.arc(cl[0],cl[1],18,0,Math.PI*2); x.fill(); }
+      var dv=Math.round(o.diff*p*10)/10; x.fillStyle=IV; x.font='800 150px '+sans; x.save(); x.direction='ltr'; x.fillText((dv>0?'+':'')+dv.toFixed(1),W/2,1180); x.restore(); x.fillStyle=MU; x.font='600 44px '+sans; x.fillText('ק״ג בממוצע השבועי',W/2,1250); }
+    if(t>4.6&&(o.train||o.closed)){ var a2=ease((t-4.6)/1.2), c=[[Math.round(o.train*a2),'ימי אימון',o.train],[Math.round(o.closed*a2),'ימים סגורים',o.closed]].filter(function(z){ return z[2]>0; }), cx=c.length>1?[W/2+220,W/2-220]:[W/2];
+      x.globalAlpha=a2; c.forEach(function(z,i){ x.fillStyle=G; x.font='800 140px '+sans; x.fillText(String(z[0]),cx[i],1470); x.fillStyle=MU; x.font='600 42px '+sans; x.fillText(z[1],cx[i],1535); }); x.globalAlpha=1; }
+    if(t>7){ var a3=ease((t-7)/1); x.globalAlpha=a3; x.fillStyle=IV; x.font='600 48px '+sans; x.fillText('בלי קיצורי דרך. חודש אחרי חודש',W/2,1680); x.fillStyle=G; x.font='700 46px '+sans; x.save(); x.direction='ltr'; x.fillText('@avielife1',W/2,1780); x.restore(); x.globalAlpha=1; } }
+  function make(btn){ if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream){ toast('הטלפון לא תומך ביצירת סרטון. נסו לעדכן את הדפדפן',1); return; }
+    var o=data(); if(o.w.length<2&&!o.train){ toast('עוד אין מספיק נתונים לחודש. אחרי שבועיים של שקילות הסרטון יהיה מוכן',1); return; }
+    btn.disabled=true; var old=btn.textContent; btn.textContent='מכין סרטון… 10 שניות';
+    var ready=(document.fonts&&document.fonts.load)?Promise.all([document.fonts.load("700 100px 'Frank Ruhl Libre'"),document.fonts.load("800 40px 'Assistant'")]).catch(function(){}):Promise.resolve();
+    ready.then(function(){ var c=document.createElement('canvas'); c.width=1080; c.height=1920; var x=c.getContext('2d'), st=c.captureStream(30), mt=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm'].filter(function(m){ return MediaRecorder.isTypeSupported(m); })[0]||'', rec=new MediaRecorder(st,mt?{mimeType:mt,videoBitsPerSecond:5e6}:undefined), ch=[];
+      rec.ondataavailable=function(e){ if(e.data&&e.data.size) ch.push(e.data); };
+      rec.onstop=function(){ btn.disabled=false; btn.textContent=old; var typ=(rec.mimeType||mt||'video/mp4').split(';')[0], b=new Blob(ch,{type:typ}), ext=/mp4/.test(typ)?'mp4':'webm', f; try{ f=new File([b],'aviel-month.'+ext,{type:typ}); }catch(e){}
+        if(f&&navigator.canShare&&navigator.canShare({files:[f]})){ navigator.share({files:[f]}).catch(function(){}); return; }
+        var u=URL.createObjectURL(b), v=document.createElement('div'); v.className='sheet'; v.setAttribute('role','dialog'); v.setAttribute('aria-modal','true'); v.innerHTML='<div class="sheet-in" style="text-align:center"><video src="'+u+'" controls playsinline autoplay muted loop style="width:62%;border-radius:14px"></video><div class="sub" style="margin-top:10px">לחיצה ארוכה על הסרטון ← שמירה, ואז מעלים לסטורי</div><button type="button">סגירה</button></div>'; v.querySelector('button').onclick=function(){ v.remove(); URL.revokeObjectURL(u); }; document.body.appendChild(v); };
+      var t0=performance.now(), D10=10; rec.start(200); (function loop(){ var t=(performance.now()-t0)/1000; frame(x,o,t); if(t<D10) setTimeout(loop,33); else setTimeout(function(){ rec.stop(); },150); })(); }); }
+  function card(){ var sec=document.querySelector('section[data-view="prog"]'); if(!sec||document.getElementById('moCard')) return; var h1=sec.querySelector('h1'); var el=document.createElement('div'); el.className='card'; el.id='moCard';
+    el.innerHTML='<div class="row" style="align-items:center;gap:10px"><div><h3 style="margin:0;font-size:16px">החודש שלי, בסרטון</h3><div class="sub" style="font-size:12.5px;margin-top:4px">10 שניות: המשקל, האימונים והימים שסגרת. מוכן לסטורי</div></div><button type="button" id="moGo" style="flex:none">יצירה</button></div>';
+    if(h1&&h1.nextSibling) sec.insertBefore(el,h1.nextElementSibling&&h1.nextElementSibling.classList.contains('sub')?h1.nextElementSibling.nextSibling:h1.nextSibling); else sec.prepend(el); el.querySelector('#moGo').onclick=function(){ make(this); }; }
+  var _shMo=show; show=function(v){ var r=_shMo.apply(this,arguments); if(v==='prog') try{ card(); }catch(e){} return r; };
+  window.__moFrame=function(cv,t){ frame(cv.getContext('2d'),data(),t); };
+})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
