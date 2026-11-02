@@ -590,7 +590,8 @@ a.vplay{text-decoration:none}.vmeet .vplay{margin:8px 0 0}.paycard .vplay{margin
 .swnav{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:6px}
 .swarr{width:40px;height:40px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;background:var(--panel);color:var(--text);border:1px solid var(--line);min-height:0}
 .swarr svg{width:18px;height:18px}
-.swarr.prev svg{transform:scaleX(-1)}
+.swarr svg{transform:scaleX(-1)}
+.swarr.prev svg{transform:none} /* 2.11.26: חצים מצביעים החוצה, ימין = הקודם, שמאל = הבא */
 .swcur{text-align:center;display:flex;flex-direction:column;gap:2px}
 .swcur b{font-size:15px}
 .swcur small{font-size:12px;color:var(--mute)}
@@ -947,7 +948,7 @@ document.addEventListener('visibilitychange',function(){ if(document.visibilityS
 /* ---------- תפריט ---------- */
 function renderMenu(){
   var m=P&&P.menu, box=$('#menuBox');
-  $('#menuName').textContent=m?(m.title||''):'';
+  $('#menuName').textContent=m?String(m.title||'').replace(/\s*[·•|–-]\s*[\d,]+\s*קלוריות\s*$/,''):''; /* 2.11.26: בלי מספר קלוריות בכותרת */
   if(!P){ box.innerHTML='<div class="skel"></div><div class="skel"></div>'; return; }
   if(!m){ box.innerHTML=emptyBlock('תפריט'); return; }
   if(m.file||!m.blocks||!m.blocks.length){ box.innerHTML=fileBlock(m,'תפריט'); return; }
@@ -1768,7 +1769,7 @@ function altsFor(e){ if(!LIB) return []; var orig=e._orig||e.ex, g=grpOf({mu:e.m
 function openSwap(i,e){ var box=document.getElementById('swb'+i); if(!box) return; if(!box.hidden){ box.hidden=true; return; }
   if(!LIB){ box.hidden=false; box.innerHTML='<div class="exnote">טוען חלופות…</div>'; loadLib(function(){ box.hidden=true; if(LIB) openSwap(i,e); else box.hidden=false, box.innerHTML='<div class="exnote">אין חיבור כרגע. נסו שוב בעוד רגע</div>'; }); return; }
   var L=altsFor(e); if(!L.length){ box.hidden=false; box.innerHTML='<div class="exnote">אין חלופות במאגר לתרגיל הזה.</div>'; return; }
-  var k=0, draw=function(){ var a=L[k]; box.innerHTML='<div class="swnav"><button type="button" class="swarr" data-d="1" aria-label="החלופה הבאה">'+IC_GO+'</button><div class="swcur"><b>'+esc(a.n)+'</b><small>'+(k+1)+' מתוך '+L.length+(a.pop?' · נבחר '+a.pop+' פעמים':'')+'</small></div><button type="button" class="swarr prev" data-d="-1" aria-label="החלופה הקודמת">'+IC_GO+'</button></div><div class="swact"><button type="button" data-pick="day">להיום</button><button type="button" class="ghost" data-pick="perm">קבוע</button></div>';
+  var k=0, draw=function(){ var a=L[k]; box.innerHTML='<div class="swnav"><button type="button" class="swarr" data-d="-1" aria-label="החלופה הקודמת">'+IC_GO+'</button><div class="swcur"><b>'+esc(a.n)+'</b><small>'+(k+1)+' מתוך '+L.length+(a.pop?' · נבחר '+a.pop+' פעמים':'')+'</small></div><button type="button" class="swarr prev" data-d="1" aria-label="החלופה הבאה">'+IC_GO+'</button></div><div class="swact"><button type="button" data-pick="day">להיום</button><button type="button" class="ghost" data-pick="perm">קבוע</button></div>';
     box.querySelectorAll('.swarr').forEach(function(b){ b.onclick=function(){ k=(k+(+b.dataset.d)+L.length)%L.length; draw(); }; });
     box.querySelectorAll('[data-pick]').forEach(function(b){ b.onclick=function(){ var orig=e._orig||e.ex, st=swapStore(); if(b.dataset.pick==='perm'){ st.perm[orig]=a.n; delete st.day[orig]; } else st.day[orig]=a.n; swapSave(st.day,st.perm);
       var lr=ls('aviel_swap_learn',{}); lr[orig]=lr[orig]||{}; lr[orig][a.n]=(lr[orig][a.n]||0)+1; lsSet('aviel_swap_learn',lr);
@@ -1787,7 +1788,7 @@ function menuCarousel(o,key,lis,pick){
   var k=Math.max(0,order.indexOf(MSEL[key])), idx=order[k], on=pick[key]===idx, n=learn[txt[idx]]||0;
   o.classList.add('car'); o.classList.toggle('open',!!MOPEN[key]); var old=o.querySelector('.mcar'); if(old) old.remove(); var oa=o.querySelector('.mall'); if(oa) oa.remove();
   var hd=o.querySelector('b');
-  hd.insertAdjacentHTML('afterend','<div class="mcar"><button type="button" class="swarr" data-d="1" aria-label="האפשרות הבאה">'+IC_GO+'</button><button type="button" class="mcur'+(on?' picked':'')+'" aria-pressed="'+on+'">'+esc(txt[idx])+'<small>'+(on?'✓ זה מה שאכלתי':(k+1)+' מתוך '+order.length+(n?' · בחרת '+n+' פעמים':''))+'</small></button><button type="button" class="swarr prev" data-d="-1" aria-label="האפשרות הקודמת">'+IC_GO+'</button></div>');
+  hd.insertAdjacentHTML('afterend','<div class="mcar"><button type="button" class="swarr" data-d="-1" aria-label="האפשרות הקודמת">'+IC_GO+'</button><button type="button" class="mcur'+(on?' picked':'')+'" aria-pressed="'+on+'">'+esc(txt[idx])+'<small>'+(on?'✓ זה מה שאכלתי':(k+1)+' מתוך '+order.length+(n?' · בחרת '+n+' פעמים':''))+'</small></button><button type="button" class="swarr prev" data-d="1" aria-label="האפשרות הבאה">'+IC_GO+'</button></div>');
   o.querySelector('.swaphint').insertAdjacentHTML('beforebegin','<button type="button" class="mall">'+(o.classList.contains('open')?'הסתרת הרשימה':'כל '+order.length+' האפשרויות')+'</button>');
   o.querySelectorAll('.mcar .swarr').forEach(function(b){ b.onclick=function(){ MSEL[key]=order[(k+(+b.dataset.d)+order.length)%order.length]; renderMenu(); }; });
   o.querySelector('.mcur').onclick=function(){ var p2=ls('aviel_pick_'+TODAY,{}), L=ls('aviel_menu_learn',{});
