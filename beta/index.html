@@ -306,9 +306,10 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offse
 .scale button,.pct button{background:var(--panel);color:var(--text);border:1px solid var(--line);min-height:42px;font-weight:700}
 .scale button[aria-pressed="true"],.pct button[aria-pressed="true"]{background:var(--cta);color:var(--cta-t);border-color:var(--cta)}
 .spec span{background:var(--panel2);border-color:transparent}
-.dot{background:var(--panel2);border-color:transparent;border-radius:12px}
+.dot{background:var(--panel2);border-color:transparent;border-radius:12px;max-width:none;aspect-ratio:auto;height:38px;padding:0 1px;line-height:1;white-space:nowrap;font-size:10.5px;letter-spacing:-.4px;overflow:hidden}
 .dot.on{background:var(--soft);border-color:var(--gold-d);color:var(--gold)}
 .dot.today{outline:1.5px solid var(--gold);outline-offset:2px}
+.week .dot.today{padding:0 1px!important;outline:1.5px solid var(--gold)!important;border:1px solid var(--gold-d)!important}
 .cal{border-radius:14px}
 .cal i{background:var(--cta);color:var(--cta-t)}
 .cal b{background:var(--panel)}
