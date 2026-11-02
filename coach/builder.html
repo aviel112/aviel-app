@@ -139,6 +139,12 @@ button.send:hover{background:var(--send-h)}
 .savebar button{min-width:200px;padding:11px 20px;font-weight:700}
 .savebar button[disabled]{opacity:.45;cursor:default}
 body{padding-bottom:76px}
+body.simple .guide,body.simple .qchips,body.simple [data-mmv],body.simple #mNew,body.simple label:has(#mAutoAlt),body.simple #mBy,body.simple #mBy+*,body.simple .bar .muted:has(+#mBy),
+body.simple .mac .p,body.simple .mac .c,body.simple .mac .f,body.simple .side .row.mrow,body.simple .side .muted:has(+.row.mrow),body.simple .side .qa,
+body.simple .side .card:has(#mCreate),body.simple .side .card:has(#pCreate),body.simple .side .card:has(#nfN),body.simple .side .vol,
+body.simple #bcBox,body.simple #pNew,body.simple select.mode,body.simple .swp,body.simple .card:has(#mNotes),body.simple .card:has(#pNotes){display:none!important}
+body.simple main{gap:18px}
+body.simple .op{padding-block:6px}
 </style></head><body>
 <div id="app"></div>
 <script>
@@ -297,13 +303,16 @@ function clientStrip(){ var c=S.clients.filter(function(x){ return x.name===S.cl
   return chips.length?'<div class="strip">'+chips.join('')+'</div>':''; }
 
 /* ===== רינדור ===== */
+/* 2.11.26: תצוגה פשוטה כברירת מחדל — רק מה שצריך כדי לערוך ולשמור. "כל הכלים" מחזיר הכל */
+var SIMPLE=lsg('coach_simple',true)!==false; document.body.classList.toggle('simple',SIMPLE);
+document.addEventListener('click',function(e){ if(!e.target||e.target.id!=='advT') return; SIMPLE=!SIMPLE; lss('coach_simple',SIMPLE); document.body.classList.toggle('simple',SIMPLE); render(); });
 function render(){
   var app=$('#app');
   if(!K){ app.innerHTML='<div class="card gate"><h2>בונה תפריטים ותוכניות</h2><p class="muted">פותחים את הדף מהדשבורד (כפתור "בונה"), או מדביקים כאן את מפתח המאמן.</p><input id="kIn" placeholder="מפתח מאמן"><button class="p" id="kGo">כניסה</button></div>'; $('#kGo').onclick=function(){ K=$('#kIn').value.trim(); lss('coach_k',K); boot(); }; return; }
   var cl=S.clients.filter(function(c){ return c.status!=='הסתיים'; });
   var h='<header><span class="brand">AVIEL · בונה</span><select id="cSel" aria-label="מתאמן"><option value="">בחירת מתאמן…</option>'+cl.map(function(c){ return '<option'+(c.name===S.client?' selected':'')+'>'+esc(c.name)+'</option>'; }).join('')+'</select>'+
     '<div class="tabs" role="tablist"><button class="'+(S.tab==='menu'?'on':'')+'" data-tab="menu">תפריט</button><button class="'+(S.tab==='prog'?'on':'')+'" data-tab="prog">תוכנית אימון</button></div><span class="sp"></span>'+
-    '<a href="./">לדשבורד</a></header>';
+    '<button type="button" class="g" id="advT" title="'+(SIMPLE?'מציג גם תבניות, יעדי מאקרו, חלופות ואופן ביצוע':'מסתיר את הכלים המתקדמים')+'">'+(SIMPLE?'כל הכלים':'תצוגה פשוטה')+'</button><a href="./">לדשבורד</a></header>';
   if(!S.client){ app.innerHTML=h+'<main><div class="card empty" style="grid-column:1/-1;font-size:17px"><b style="display:block;font-size:20px;color:var(--ink);margin-bottom:6px">שלב ראשון: בוחרים מתאמן</b>בתיבה למעלה, ליד AVIEL, בוחרים את השם. אחר כך הדף יגיד בדיוק מה לעשות.</div></main>'; wireTop(); return; }
   h+=clientStrip()+'<main>'+(S.tab==='menu'?menuMain():progMain())+'</main>';
   app.innerHTML=h; wireTop(); if(S.tab==='menu') wireMenu(); else wireProg(); }
