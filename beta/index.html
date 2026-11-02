@@ -2283,7 +2283,8 @@ if(typeof MEALS!=='undefined'&&MEALS.indexOf('חופשי')<0) MEALS.push('חופ
 var FREE_TRIED=false;
 function freeBudget(b){ var m=String((b.title||'')+' '+(b.lines||[]).join(' ')).match(/([\d,]{2,5})\s*קלוריות חופשיות/); return m?+m[1].replace(/,/g,''):0; }
 function freeUsed(){ return ((typeof FDAY!=='undefined'&&FDAY&&FDAY.d===TODAY&&FDAY.items)||[]).filter(function(x){ return x.m==='חופשי'; }); }
-function freeGo(scan){ FMEAL='חופשי'; show('food'); try{ FVIEW=null; api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){}); }catch(e){}
+var FREE_LOG=0; /* 2.11.26: מתאמן במצב תפריט שנכנס ליומן כדי לרשום חופשיות — לא מוחזר לתפריט עד שהוא עובר לשונית בעצמו */
+function freeGo(scan){ FMEAL='חופשי'; FREE_LOG=Date.now(); show('food'); try{ FVIEW=null; api('foodday',{}).then(function(r){ FDAY=r; renderFood(); }).catch(function(){}); }catch(e){}
   setTimeout(function(){ if(scan&&typeof scanStart==='function') scanStart(); else { var q=$('#fQ'); if(q){ q.scrollIntoView({block:'center',behavior:'smooth'}); q.focus(); } } if(typeof drawMealChips==='function') drawMealChips(); },250); }
 function renderFreeBox(){ var M=P&&P.menu; if(!M||!M.blocks) return; var cards=document.querySelectorAll('#menuBox .meal');
   M.blocks.forEach(function(b,i){ var Y=freeBudget(b), card=cards[i]; if(!Y||!card) return;
@@ -2577,8 +2578,9 @@ function coachRules(){ try{ lsSet('aviel_goal_kg',(D&&+D.goalKg)||0); }catch(e){
   var mode=P&&P.mode, hasMenu=!!(P&&P.menu&&P.menu.blocks&&P.menu.blocks.length), useMenu=mode==='תפריט'||(mode!=='ערכים'&&hasMenu);
   document.querySelectorAll('#tabs button[data-tab="food"]').forEach(function(b){ b.classList.toggle('mhide',useMenu); });
   document.querySelectorAll('#tabs button[data-tab="menu"]').forEach(function(b){ b.classList.toggle('mhide',!useMenu); });
-  var cur=(document.querySelector('section[data-view]:not([hidden])')||{}).dataset; cur=cur&&cur.view; if(useMenu&&cur==='food') show('menu'); if(!useMenu&&cur==='menu') show('food'); }
+  var cur=(document.querySelector('section[data-view]:not([hidden])')||{}).dataset; cur=cur&&cur.view; if(useMenu&&cur==='food'&&!FREE_LOG) show('menu'); if(!useMenu&&cur==='menu') show('food'); }
 var _renderMenuCR=renderMenu; renderMenu=function(){ if(P&&P.menu&&P.menu.blocks) P.menu.blocks=P.menu.blocks.filter(function(b){ return !/סיכום ערכים/.test(b.title||''); }); _renderMenuCR.apply(this,arguments); try{ coachRules(); }catch(e){} };
+(function(){ var _shFL=show; show=function(v){ if(v!=='food') FREE_LOG=0; return _shFL.apply(this,arguments); }; })();
 var _renderCR=render; render=function(){ try{ lsSet('aviel_goal_kg',(D&&+D.goalKg)||0); }catch(e){} _renderCR.apply(this,arguments); try{ coachRules(); }catch(e){} };
 (function(){ var st=document.createElement('style'); st.textContent='#trkGoal,#goalSet{display:none!important}.mhide{display:none!important}'; document.head.appendChild(st); })();
 
