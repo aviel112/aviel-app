@@ -3563,6 +3563,38 @@ var _renderTrainWK=renderTrain; renderTrain=function(){ _renderTrainWK.apply(thi
         var b=document.createElement('button'); b.type='button'; b.className='swreq'; b.textContent='לבקש החלפה'; b.onclick=function(){ sheet(meal,lab,lis,cur,key); }; o.appendChild(b); }); }); }
   var _rmSw=renderMenu; renderMenu=function(){ var r=_rmSw.apply(this,arguments); try{ addReq(); }catch(e){} return r; };
 })();
+
+/* ===== 2.11.26: "סגרת את היום" — כל הארוחות סומנו → מסך חגיגה פעם ביום + תמונה לסטורי (שחור-זהב, כמו הכרטיס השבועי) ===== */
+(function(){
+  var st=document.createElement('style'); st.textContent='.dclose{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(52,199,123,.10);box-shadow:inset 0 0 0 1px rgba(52,199,123,.45)}.dclose b{font-size:15px}.dclose .sub{font-size:12.5px}.dclose button{flex:none;padding:8px 14px;border-radius:999px;font-size:13px}'+
+    '.dcsh{text-align:center}.dcsh .big{font-family:var(--f-display,inherit);font-size:30px;font-weight:700;margin:6px 0 2px}.dcsh .ring{width:86px;height:86px;border-radius:50%;margin:4px auto 10px;display:flex;align-items:center;justify-content:center;background:var(--good);color:#fff;font-size:42px;font-weight:800}.dcsh .row3{display:flex;justify-content:center;gap:18px;margin:12px 0 14px}.dcsh .row3 b{display:block;font-size:22px}.dcsh .row3 span{font-size:12px;color:var(--mute)}';
+  document.head.appendChild(st);
+  function ymd(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+  function streak(){ var n=0, d=new Date(); for(var i=0;i<60;i++){ if(ls('aviel_dayclosed_'+ymd(d),0)) n++; else if(i>0) break; d.setDate(d.getDate()-1); } return n; }
+  function meals(){ return [].filter.call(document.querySelectorAll('#menuBox .meal:not(.mnote)'),function(c){ var h=c.querySelector('h3'), t=h&&h.firstChild?String(h.firstChild.textContent).trim():''; return t&&!/לפני אימון|חופשי/.test(t); }).map(function(c){ return String(c.querySelector('h3').firstChild.textContent).trim(); }); }
+  function stats(){ var p=0,k=0; ((typeof FDAY!=='undefined'&&FDAY&&FDAY.d===TODAY&&FDAY.items)||[]).forEach(function(x){ p+=+x.p||0; k+=+x.k||0; }); return {p:Math.round(p),k:Math.round(k),n:meals().length,s:streak()}; }
+  function canvas(){ var o=stats(), c=document.createElement('canvas'); c.width=1080; c.height=1920; var x=c.getContext('2d'), W=1080, G='#d6b066', IV='#f3ede2', MU='#a59c8d', serif="'Frank Ruhl Libre', Georgia, serif", sans="'Assistant', Arial, sans-serif";
+    x.fillStyle='#0e0d0b'; x.fillRect(0,0,W,1920); x.strokeStyle='rgba(214,176,102,.55)'; x.lineWidth=3; x.strokeRect(54,54,W-108,1920-108); x.direction='rtl'; x.textAlign='center';
+    x.fillStyle=G; x.font='800 46px '+sans; x.save(); x.direction='ltr'; x.fillText('A V I E L   A M I R A',W/2,190); x.restore();
+    x.beginPath(); x.arc(W/2,560,190,0,Math.PI*2); x.strokeStyle=G; x.lineWidth=14; x.stroke(); x.strokeStyle=G; x.lineWidth=22; x.lineCap='round'; x.lineJoin='round'; x.beginPath(); x.moveTo(W/2-80,565); x.lineTo(W/2-18,628); x.lineTo(W/2+92,492); x.stroke();
+    x.fillStyle=IV; x.font='700 104px '+serif; x.fillText('סגרתי את היום',W/2,930);
+    x.fillStyle=MU; x.font='600 44px '+sans; x.fillText(o.n+' מתוך '+o.n+' ארוחות לפי התפריט',W/2,1020);
+    var cells=[[o.s>1?o.s:'1',o.s>1?'ימים ברצף':'יום ראשון']].concat(o.p?[[o.p+'','גרם חלבון']]:[]), cx=cells.length>1?[W/2+190,W/2-190]:[W/2];
+    cells.forEach(function(cl,i){ x.fillStyle=G; x.font='800 120px '+sans; x.fillText(String(cl[0]),cx[i],1270); x.fillStyle=MU; x.font='600 40px '+sans; x.fillText(cl[1],cx[i],1335); });
+    x.fillStyle=IV; x.font='600 46px '+sans; x.fillText('בלי קיצורי דרך. יום אחרי יום',W/2,1560);
+    x.fillStyle=G; x.font='700 44px '+sans; x.save(); x.direction='ltr'; x.fillText('@avielife1',W/2,1760); x.restore(); return c; }
+  function sheet(){ var o=stats(), s=document.createElement('div'); s.className='sheet'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true');
+    s.innerHTML='<div class="sheet-in dcsh"><div class="ring" aria-hidden="true">✓</div><div class="big">סגרת את היום</div><div class="sub">כל הארוחות לפי התפריט. ככה בונים תוצאה.</div><div class="row3"><div><b>'+o.n+'/'+o.n+'</b><span>ארוחות</span></div>'+(o.p?'<div><b>'+o.p+'</b><span>גרם חלבון</span></div>':'')+'<div><b>'+(o.s||1)+'</b><span>'+((o.s||1)>1?'ימים ברצף':'יום ברצף')+'</span></div></div><button type="button" id="dcShare" style="width:100%">שיתוף לסטורי</button><button type="button" class="ghost" id="dcX" style="width:100%;margin-top:8px">סגירה</button></div>';
+    document.body.appendChild(s); s.querySelector('#dcX').onclick=function(){ s.remove(); }; s.addEventListener('click',function(e){ if(e.target===s) s.remove(); }); s.querySelector('#dcShare').onclick=function(){ shareStory(this,{canvas:canvas}); }; }
+  function check(){ var box=document.getElementById('menuBox'); if(!box) return; var M=meals(), ate=ls('aviel_ate_'+TODAY,[]), all=M.length>0&&M.every(function(t){ return ate.indexOf(t)>=0; }), was=ls('aviel_dayclosed_'+TODAY,0);
+    var old=document.getElementById('dClose'); if(old) old.remove();
+    if(!all){ if(was) lsSet('aviel_dayclosed_'+TODAY,0); return; }
+    lsSet('aviel_dayclosed_'+TODAY,1); var sk=streak(); var h='<div class="card dclose" id="dClose"><div><b>סגרת את היום</b><div class="sub">'+(sk>1?sk+' ימים ברצף':'כל הארוחות לפי התפריט')+'</div></div><button type="button">שיתוף לסטורי</button></div>';
+    var left=document.getElementById('mLeft'); if(left) left.insertAdjacentHTML('beforebegin',h); else box.insertAdjacentHTML('afterbegin',h); document.querySelector('#dClose button').onclick=function(){ shareStory(this,{canvas:canvas}); };
+    if(!was&&!ls('aviel_dcshown_'+TODAY,0)){ lsSet('aviel_dcshown_'+TODAY,1); setTimeout(sheet,500); } }
+  var _rmDc=renderMenu; renderMenu=function(){ var r=_rmDc.apply(this,arguments); try{ check(); }catch(e){} return r; };
+  window.__dcCanvas=canvas;
+})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
