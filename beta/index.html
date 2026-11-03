@@ -1509,14 +1509,13 @@ function renderTrain(){
       var Rh=/כשל/.test(e.r)?null:rng(e.r), nsh=parseInt(e.s,10)||0, tdTop=today.length?Math.max.apply(null,today.map(function(x){ return x.kg; })):0, tdAt=today.filter(function(x){ return x.kg===tdTop; });
       if(!repsArr(e.r)&&Rh&&nsh&&tdAt.length>=nsh&&tdAt.every(function(x){ return x.reps>=Rh[1]; })) h+='<div class="hit">'+IC_UP+'<span>יעד הושג היום! בפעם הבאה <b dir="ltr">'+(Math.round((tdTop+incFor(e,tdTop))*100)/100)+' ק״ג</b></span></div>';
       else if(sg&&sg.up&&!today.length) h+='<div class="lvl">'+IC_UP+'<span>עולים במשקל היום</span><b>מ-'+sg.from+' ל-'+sg.kg+' ק״ג</b></div>';
-      if(sg) h+='<div class="last"'+(sg.stall?' style="color:var(--warn,#d98a1c)"':'')+'>היום: <b dir="ltr">'+sg.kg+'×'+sg.reps+'</b> · '+esc(sg.why)+'</div>';
-      h+=e1Line(L);
+      if(sg) h+='<div class="tgt'+(sg.stall?' st':'')+'"><span>היום</span><b dir="ltr">'+sg.kg+'×'+sg.reps+'</b><small>'+esc(sg.why)+'</small></div>'; /* 3.11.26: יעד אחד ברור במקום שורה ירוקה ארוכה; 1RM עבר להתקדמות */
       var wk=sg?sg.kg:(ps.length?Math.max.apply(null,ps.map(function(x){ return x.kg; })):0);
       var WU=warmOf(e)&&!today.length&&wk>0;
       if(!WU&&wk>=30&&incFor(e,wk)>=2.5&&heavyN<2&&!today.length){ heavyN++; h+='<div class="exnote">סטי חימום לפני (לא נרשמים): <bdi dir="ltr">'+r25(wk*0.5)+'×10</bdi> · <bdi dir="ltr">'+r25(wk*0.7)+'×5</bdi> · <bdi dir="ltr">'+r25(wk*0.85)+'×2</bdi></div>'; }
-      else if(ps.length) h+='<div class="last">בפעם הקודמת: '+ps.map(function(x){ return '<bdi dir="ltr">'+x.kg+'×'+x.reps+'</bdi>'; }).join(' · ')+'</div>';
+      else if(ps.length&&FXOFF) h+='<div class="last">בפעם הקודמת: '+ps.map(function(x){ return '<bdi dir="ltr">'+x.kg+'×'+x.reps+'</bdi>'; }).join(' · ')+'</div>';
       var gr=growthLine(L); if(gr) h+=gr;
-      else h+='<div class="exnote">פעם ראשונה בתרגיל: בוחרים משקל שאפשר לעשות איתו את כל החזרות בטכניקה נקייה.</div>';
+      else if(!prev.length) h+='<div class="exnote">פעם ראשונה בתרגיל: בוחרים משקל שאפשר לעשות איתו את כל החזרות בטכניקה נקייה.</div>';
       h+='<div class="sets"><div class="sh"><span>סט</span><span>ק״ג</span><span>חזרות</span><span>כמה קשה</span><span></span></div>';
       /* 1.11.26 (אביאל): "כולל סטי חימום" בתוכנית → שתי שורות חימום לפני סטי העבודה. מסמנים ✓ אבל לא נרשמות להתקדמות */
       if(WU) [[0.5,10],[0.75,5]].forEach(function(w,j){ var wkk=wk<=10?Math.max(1,Math.round(wk*w[0])):r25(wk*w[0]); h+='<div class="wurow" data-wu="'+i+'|'+j+'"><span class="num">ח</span><span class="wv"><bdi dir="ltr">'+wkk+' ק״ג</bdi></span><span class="wv">'+w[1]+'</span><span class="wl">חימום'+(j?' כבד':' קל')+'</span><button type="button" class="wuck" aria-label="סט חימום בוצע" aria-pressed="false">✓</button></div>'; });
@@ -3084,7 +3083,7 @@ function fxPrev(){ try{ var days=fxDays(), d=days[DAY]?applySwaps(days[DAY]):nul
   cards.forEach(function(c){ var f0=c.querySelector('form.setrow'); if(!f0) return; var e=d.ex[+f0.dataset.i]; if(!e) return; var L=P.lifts&&P.lifts[e.ex], hist=L&&L.hist||[], prev=hist.filter(function(x){ return x.d&&x.d<TODAY; }); if(!prev.length) return;
     var lastD=prev[prev.length-1].d, ps=prev.filter(function(x){ return x.d===lastD; });
     c.querySelectorAll('form.setrow').forEach(function(f,k){ if(f.querySelector('.pvv')) return; var pv=ps[k]; if(!pv) return; var el=document.createElement('div'); el.className='pvv';
-      el.innerHTML='<span></span><span>('+pv.kg+' ק״ג)</span><span>('+pv.reps+' חזרות)</span><span>'+(pv.rir!=null&&pv.rir!==''?'(עוד '+pv.rir+')':'')+'</span><span></span>'; f.appendChild(el); }); }); }catch(e){} }
+      el.innerHTML='<span>קודם</span><span dir="ltr">'+pv.kg+'</span><span>'+pv.reps+'</span><span>'+(pv.rir!=null&&pv.rir!==''?'עוד '+pv.rir:'')+'</span><span></span>'; f.appendChild(el); }); }); }catch(e){} }
 function fxApply(){ var box=document.getElementById('progBox'); if(!box) return; ['fxHead','fxNext','fxSet'].forEach(function(id){ var o=document.getElementById(id); if(o) o.remove(); });
   var cards=fxCards(); box.classList.remove('fx-on'); cards.forEach(function(c){ c.classList.remove('fxhide'); });
   var fin=document.getElementById('finish'); if(fin) fin.classList.remove('fxhide'); /* 1.11.26: בתצוגת כל התרגילים הכפתור נשאר מוסתר אחרי מצב תרגיל-תרגיל */
@@ -3730,6 +3729,24 @@ var PICK_ON=true, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-legs.jpg','wk-glute
 })();
 /* "מחכה לך" מתעדכן גם כש-#extras נטען אחרי מסך הבית */
 (function(){ if(typeof renderExtras!=='function') return; var _reHx=renderExtras; renderExtras=function(){ var r=_reHx.apply(this,arguments); try{ if(document.getElementById('hx')&&window.__hxBuild&&!window.__hxB){ window.__hxB=1; setTimeout(function(){ try{ window.__hxBuild(); }finally{ window.__hxB=0; } },0); } }catch(e){} return r; }; })();
+
+/* ===== 3.11.26 (אביאל: "מסך האימון לא נוח ומבולגן"): בתוך אימון — בלי כרטיס השבוע, בלי פס האימונים והכותרות; שורת חזרה אחת; כרטיס תרגיל נקי ===== */
+(function(){
+  var st=document.createElement('style'); st.textContent=
+   'body.wkin #train h1,body.wkin h1:has(+#progName),body.wkin #progName,body.wkin #wkCard,body.wkin #progBox .wk1,body.wkin #progBox .wkcs{display:none!important}'+
+   'body.wkin #progBox{padding-bottom:96px}'+
+   'body.wkin #progBox .wback{align-self:flex-start;background:none;border:0;padding:4px 0;color:var(--mute);font-size:13px;font-weight:600}'+
+   'body.wkin #progBox .wback+.sub,body.wkin #progBox > .sub{font-size:17px;font-weight:800;color:var(--fg,#fff);line-height:1.35;margin:2px 0 4px}'+
+   '#progBox .fxlinks{white-space:nowrap;text-align:center}'+
+   '#progBox .card.ex .tgt{display:grid;grid-template-columns:auto 1fr;align-items:baseline;column-gap:10px;row-gap:2px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--gold) 9%,transparent);margin:6px 0 2px}'+
+   '#progBox .card.ex .tgt span{font-size:12px;color:var(--mute)}#progBox .card.ex .tgt b{font-size:20px;font-weight:800;color:var(--gold);justify-self:start}'+
+   '#progBox .card.ex .tgt small{grid-column:1/-1;font-size:12px;color:var(--mute);line-height:1.4}#progBox .card.ex .tgt.st b{color:var(--warn,#d98a1c)}'+
+   '#progBox .card.ex .vid.ghost{display:inline-flex;width:auto;background:none;border:0;padding:0;font-size:12px;color:var(--mute);opacity:.8}'+
+   '#progBox .card.ex .pvv{color:var(--mute);opacity:.65;font-size:11px}#progBox .card.ex .pvv span:first-child{font-size:10px}'+
+   '#progBox .card.ex .exnote{color:var(--mute)}';
+  document.head.appendChild(st);
+  var _rtWin=renderTrain; renderTrain=function(){ var r=_rtWin.apply(this,arguments); try{ var box=document.getElementById('progBox'); document.body.classList.toggle('wkin',!!(box&&box.querySelector('.wback'))); }catch(e){} return r; };
+})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
