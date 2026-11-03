@@ -3660,6 +3660,23 @@ var _renderTrainWK=renderTrain; renderTrain=function(){ _renderTrainWK.apply(thi
   var _shMo=show; show=function(v){ var r=_shMo.apply(this,arguments); if(v==='prog') try{ card(); }catch(e){} return r; };
   window.__moFrame=function(cv,t){ frame(cv.getContext('2d'),data(),t); };
 })();
+
+/* ===== 3.11.26 (אביאל): בחירת אימון — גלילה של כרטיסי האימונים (תמונה, שם, תרגילים, זמן), לחיצה נכנסת לאימון. באמצע אימון (יש סטים היום) נכנסים ישר ===== */
+var PICK_ON=true, WK_IMG={}; /* WK_IMG: מילת מפתח בשם האימון → תמונה (אביאל ישלח) */
+(function(){
+  var st=document.createElement('style'); st.textContent='.wpk h2{font-size:15px;color:var(--mute);font-weight:600;margin:4px 0 10px}.wpl{display:flex;flex-direction:column;gap:12px}.wpc{position:relative;display:block;width:100%;text-align:start;border:0;padding:0;border-radius:20px;overflow:hidden;background:var(--panel2);color:var(--text);font:inherit;cursor:pointer;box-shadow:inset 0 0 0 1px var(--line)}.wpc .wim{height:132px;background:linear-gradient(135deg,#2a2419,#0f0e0b 70%);display:flex;align-items:flex-end;justify-content:flex-start;padding:12px 16px;position:relative}.wpc .wim img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.85}.wpc .wim .wl{position:relative;font-family:var(--f-display,inherit);font-size:54px;font-weight:700;color:var(--gold);line-height:1;opacity:.9}.wpc .wbd{padding:12px 16px 14px}.wpc .wbd b{display:block;font-size:17px;margin-bottom:4px}.wpc .wbd span{font-size:12.5px;color:var(--mute)}.wpc.done .wim::after{content:"✓ בוצע השבוע";position:absolute;top:10px;inset-inline-end:12px;background:var(--good);color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px}.wpc.next{box-shadow:inset 0 0 0 1.5px var(--gold)}.wback{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:var(--mute);font:inherit;font-size:13.5px;padding:2px 0 10px;cursor:pointer}';
+  document.head.appendChild(st);
+  function imgFor(t){ var k=Object.keys(WK_IMG).filter(function(x){ return t.indexOf(x)>=0; })[0]; return k?WK_IMG[k]:''; }
+  function picker(){ var p=P&&P.program, box=$('#progBox'); if(!p||!box) return false; var days=(p.blocks||[]).filter(function(b){ return b.ex&&b.ex.length; }); if(days.length<2) return false;
+    var done=doneMap(), next=-1; for(var q=0;q<days.length;q++){ if(!done[q]){ next=q; break; } }
+    var h='<div class="wpk"><h2>השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים. בוחרים אימון</h2><div class="wpl">'+days.map(function(b,i){ var t=String(b.title||('אימון '+(i+1))), nm=t.replace(/^אימון\s*\d+\s*[–-]\s*/,''), ex=b.ex||[], mins=Math.round(ex.reduce(function(a,e){ var s=parseInt(e.s,10)||3, r=parseFloat(e.rest)||1.5; return a+s*(r+0.8); },0)/5)*5, mus=[]; ex.forEach(function(e){ var m=String(e.mu||'').trim(); if(m&&mus.indexOf(m)<0) mus.push(m); });
+        var letter=String(i+1), im=imgFor(t);
+        return '<button type="button" class="wpc'+(done[i]?' done':'')+(i===next?' next':'')+'" data-wp="'+i+'"><div class="wim">'+(im?'<img src="'+esc(im)+'" alt="">':'')+'<span class="wl">'+esc(letter)+'</span></div><div class="wbd"><b>'+esc(nm)+'</b><span>'+ex.length+' תרגילים · בערך '+mins+' דק׳'+(mus.length?' · '+esc(mus.slice(0,3).join(', ')):'')+'</span></div></button>'; }).join('')+'</div></div>';
+    box.innerHTML=h; box.querySelectorAll('[data-wp]').forEach(function(b){ b.onclick=function(){ DAY=+b.dataset.wp; DAYSET=true; SHOWALL=true; PICK_ON=false; renderTrain(); window.scrollTo(0,0); }; }); return true; }
+  function today(){ var L=(P&&P.lifts)||{}; return Object.keys(L).some(function(k){ return ((L[k]||{}).hist||[]).some(function(x){ return x.d===TODAY; }); }); }
+  var _rtPk=renderTrain; renderTrain=function(){ if(PICK_ON&&P&&P.program&&!today()){ if(picker()) return; } var r=_rtPk.apply(this,arguments);
+    try{ var box=$('#progBox'), days=((P&&P.program&&P.program.blocks)||[]).filter(function(b){ return b.ex&&b.ex.length; }); if(box&&days.length>1&&!box.querySelector('.wback')){ box.insertAdjacentHTML('afterbegin','<button type="button" class="wback">→ כל האימונים</button>'); box.querySelector('.wback').onclick=function(){ PICK_ON=true; renderTrain(); window.scrollTo(0,0); }; } }catch(e){} return r; };
+})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
