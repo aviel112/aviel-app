@@ -2511,7 +2511,7 @@ var _renderPL=render; render=function(){ _renderPL.apply(this,arguments); try{ i
 
 /* ===== לשונית המדריכים (28.10.26) ===== */
 function renderGuides(){ var box=document.getElementById('gdBox'); if(!box) return; if(GUIDES==null){ guidesHtml(); return; }
-  if(!GUIDES.length){ box.innerHTML='<div class="card"><div class="sub">המדריכים יעלו לכאן בקרוב.</div></div>'; return; }
+  if(!GUIDES.length){ box.innerHTML='<div class="card gempty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg><b>המדריכים בדרך</b><div class="sub">כל מדריך שאביאל מעלה יופיע כאן.</div></div>'; return; }
   var tp=function(g){ var x=(g.t||'')+' '+(g.d||''); return /מתכונ|בישול/.test(x)?'מתכונים':/תוסף|תוספי|קריאטין|ויטמין/.test(x)?'תוספים':/פסח|מימונה|חנוכה|כיפור|העצמאות|שבת|שישי|טסים|חופש|אלכוהול|יציאות|בחוץ/.test(x)?'חגים ויציאות':/אימון|ידיים|בטן|גב|חזה|רגליים|ישבן|שריר|כוח|מסה|פיק|תחרות/.test(x)?'אימון':/סופר|עגלה|עגלת|קני|נקניק|מעדני|חלבון|מזונ|קלורי|תזונ|אוכל|נשנוש|ארוח/.test(x)?'תזונה':'אורח חיים'; }; /* 29.10.26: 40 מדריכים → קטגוריות */
   var T=['הכל'].concat(['תזונה','אימון','חגים ויציאות','תוספים','מתכונים','אורח חיים'].filter(function(k){ return GUIDES.some(function(g){ return tp(g)===k; }); }));
   var gid=function(u){ var m=String(u||'').match(/\/d\/([\w-]{20,})|[?&]id=([\w-]{20,})/); return m?(m[1]||m[2]):''; };
@@ -2599,9 +2599,10 @@ function cardioWeek(){ var C=D&&D.cardio; if(!C||!C.cfg) return null; var lg=C.l
 function cardioLog(min,del){ var C=D&&D.cardio; if(!C) return; C.log=C.log||{}; var L=(C.log[TODAY]||[]).slice(); if(del!=null) L.splice(del,1); else L.push({min:min,type:C.cfg.type}); if(L.length) C.log[TODAY]=L; else delete C.log[TODAY];
   try{ renderCardio(); renderTodayCard(); }catch(e){} api('cardio',del!=null?{d:TODAY,del:del}:{d:TODAY,min:min,type:C.cfg.type}).then(function(r){ if(r&&r.log&&D.cardio) D.cardio.log=r.log; }).catch(function(e){ toast(e.message||'לא נשמר',1); }); }
 function cardioHtml(where){ var w=cardioWeek(); if(!w) return ''; var c=w.cfg, pc=Math.min(100,Math.round(w.tot/c.weekly*100)), left=Math.max(0,c.weekly-w.tot), per=c.per||10;
-  return '<div class="card cardio" data-where="'+where+'"><div class="row"><h2 class="tdh">'+esc(c.type)+(where==='train'?' אחרי האימון':' השבוע')+'</h2><span class="tdn num">'+w.tot+'/'+c.weekly+' דק׳</span></div><div class="tdbar"><i style="width:'+pc+'%"></i></div>'+
-    '<div class="sub" style="margin:6px 0 10px">'+(left?(c.note?esc(c.note)+' · ':'')+'עוד '+left+' דקות השבוע. פספסת? משלימים בכל יום':'סגרת את היעד השבועי')+'</div>'+
-    '<div class="wvbtn"><button type="button" data-cmin="'+per+'">עשיתי '+per+' דק׳</button></div><div class="cqk">'+[5,10,15,20].filter(function(x){ return x!==per; }).map(function(x){ return '<button type="button" class="ghost sm" data-cmin="'+x+'">+'+x+'</button>'; }).join('')+'<button type="button" class="ghost sm" data-cother>אחר</button></div>'+
+  return '<div class="card cardio" data-where="'+where+'"><div class="cdh"><span>'+esc(c.type)+(where==='train'?' אחרי האימון':' השבוע')+'</span><small>'+(left?'עוד '+left+' דק׳':'היעד נסגר')+'</small></div>'+
+    '<div class="cdn num"><b>'+w.tot+'</b><small>מתוך '+c.weekly+' דק׳</small></div><div class="cdbar'+(left?'':' ok')+'"><i style="width:'+pc+'%"></i></div>'+
+    '<div class="sub cdsub">'+(left?(c.note?esc(c.note)+'. ':'')+'פספסת יום? משלימים בכל יום אחר':'סגרת את היעד השבועי, כל הכבוד')+'</div>'+
+    '<div class="wvbtn"><button type="button" data-cmin="'+per+'">עשיתי '+per+' דק׳</button></div><div class="cqk">'+[5,10,15,20].filter(function(x){ return x!==per; }).map(function(x){ return '<button type="button" class="ghost sm" dir="ltr" data-cmin="'+x+'">+'+x+'</button>'; }).join('')+'<button type="button" class="ghost sm" data-cother>אחר</button></div>'+
     (w.today.length?'<div class="sub" style="margin-top:8px">היום: '+w.today.map(function(x,i){ return '<span class="cchip">'+x.min+' דק׳ <b data-cdel="'+i+'" role="button" aria-label="מחיקה">×</b></span>'; }).join(' ')+'</div>':'')+'</div>'; }
 function wireCardio(el){ if(!el) return; el.querySelectorAll('[data-cmin]').forEach(function(b){ b.onclick=function(){ cardioLog(+b.dataset.cmin); toast('נרשם'); }; });
   el.querySelectorAll('[data-cother]').forEach(function(b){ b.onclick=function(){ var box=b.closest('.cardio'); if(box.querySelector('.cin')) return; b.insertAdjacentHTML('afterend','<form class="cin"><input inputmode="numeric" placeholder="דקות" aria-label="דקות"><button type="submit" class="ghost sm">הוספה</button></form>'); var f=box.querySelector('.cin'); f.querySelector('input').focus(); f.onsubmit=function(ev){ ev.preventDefault(); var v=+f.querySelector('input').value; if(v>0&&v<=300) cardioLog(Math.round(v)); }; }; });
@@ -3796,6 +3797,19 @@ var PICK_ON=true, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-legs.jpg','wk-glute
   var bar=document.getElementById('rest'); if(bar) bar.addEventListener('click',function(ev){ if(ev.target.id==='restX') return; if(left()){ MIN=false; draw(); } });
 })();
 (function(){ var st=document.createElement('style'); st.textContent='section[data-view="home"] .card.cardio .tdh{font-size:15px;font-weight:700}section[data-view="home"] .card.cardio .tdn{font-size:14px}'; document.head.appendChild(st); })(); /* 3.11.26: כרטיס האירובי בבית בגודל של כרטיסי הזכוכית */
+
+(function(){ var st=document.createElement('style'); st.textContent=
+  '#hx .hxbrand{display:none}'+
+  'section[data-view]>h1{margin-bottom:14px}section[data-view]>.card+.card{margin-top:12px}'+
+  '.card.cardio{border:0;border-radius:20px;box-shadow:inset 0 0 0 1px var(--line);padding:16px}section[data-view="home"] .card.cardio{margin-top:6px}'+
+  '.cardio .cdh{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:15px}.cardio .cdh small{font-weight:500;font-size:12px;color:var(--mute)}'+
+  '.cardio .cdn{display:flex;align-items:baseline;gap:6px;margin-top:8px}.cardio .cdn b{font-size:26px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}.cardio .cdn small{font-size:13px;font-weight:600;color:var(--mute)}'+
+  '.cardio .cdbar{height:6px;border-radius:3px;background:var(--panel2);overflow:hidden;margin:10px 0 8px}.cardio .cdbar i{display:block;height:100%;border-radius:3px;background:var(--gold)}.cardio .cdbar.ok i{background:var(--good)}'+
+  '.cardio .cdsub{font-size:12.5px;margin:0 0 12px}'+
+  '.cardio .cqk{gap:8px}.cardio .cqk button{border-radius:99px;background:var(--panel2);font-weight:600;padding:8px 0;font-variant-numeric:tabular-nums}'+
+  '.week .dot.on{border-color:transparent}'+
+  '.gempty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:34px 20px;color:var(--gold)}.gempty b{color:var(--text);font-size:17px}.gempty .sub{max-width:260px}';
+  document.head.appendChild(st); })(); /* 3.11.26: מעבר ליטוש — רווחים אחידים, כרטיס אירובי בסגנון כרטיסי הבית, ימי שקילה בלי מסגרות, מצב ריק למדריכים */
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
