@@ -1433,8 +1433,9 @@ var DL=null;
 function deloadState(){ if(DL) return DL; var ws=(P&&P.wk)||[];
   if(!ws.length&&P&&P.lifts){ var m={}; Object.keys(P.lifts).forEach(function(k){ ((P.lifts[k]&&P.lifts[k].hist)||[]).forEach(function(x){ if(x.d) m[wkKey(x.d)]=1; }); }); ws=Object.keys(m); }
   var cur=wkKey(TODAY), past=ws.filter(function(w){ return w<cur; }).sort(), dw={};
-  past.forEach(function(w,i){ if((i+1)%7===0) dw[w]=1; });
-  DL={on:past.length>=6&&(past.length+1)%7===0, dw:dw, n:past.length%7+1}; return DL; }
+  var PG=P&&P.program, adv=/מתקדם/.test(String((PG&&PG.title)||''))||((PG&&PG.blocks)||[]).filter(function(b){ return b.ex&&b.ex.length; }).length>=5, C=8; /* מתקדם = כתוב בתוכנית, או 5+ אימונים בשבוע */ /* 3.11.26 (אביאל): דילואד רק למתקדמים, כל 8 שבועות (7 עבודה + שבוע קל) */
+  past.forEach(function(w,i){ if(adv&&(i+1)%C===0) dw[w]=1; });
+  DL={on:adv&&past.length>=C-1&&(past.length+1)%C===0, dw:dw, n:past.length%C+1, adv:adv}; return DL; }
 /* חזרות שונות לכל סט (1.11.26, אביאל): "12/10/8" = 12 בסט הראשון, 10 בשני, 8 בשלישי */
 function repsArr(r){ var t=String(r||''); if(t.indexOf('/')<0) return null; var a=t.split('/').map(function(x){ return parseInt(x,10); }).filter(function(x){ return x>0; }); return a.length>1?a:null; }
 function warmOf(e){ return /סטי?\s*חימום/.test(String(e.note||'')+' '+String(e.s||'')); } /* "כולל סטי חימום" מהבונה. לא "חימום מפרקי" בהערה */
@@ -1457,6 +1458,13 @@ sugg=function(e,L){
   var ds=[]; prev.forEach(function(x){ if(ds.indexOf(x.d)<0) ds.push(x.d); }); ds=ds.slice(-4);
   if(ds.length===4&&top>0){ var st=ds.map(function(d){ var ss=prev.filter(function(x){ return x.d===d; }), t=Math.max.apply(null,ss.map(function(x){ return x.kg; })); return {t:t, r:Math.max.apply(null,ss.filter(function(x){ return x.kg===t; }).map(function(x){ return x.reps; }))}; });
     if(st.every(function(z){ return z.t===top; })&&st[3].r<=st[0].r){ var stp=Math.max(inc||2.5,top>10?2.5:1), dl=Math.round((top-stp)*100)/100; return {kg:dl,reps:R?R[1]:minR,why:'ארבעה אימונים באותו משקל בלי שיפור. מדרגה אחת למטה ל-'+dl+' ק״ג, כל החזרות עד הסוף, ושבוע הבא חוזרים ל-'+top+' ושוברים אותו',stall:true}; } }
+  /* 3.11.26 (אביאל: "שהאפליקציה תדחוף קדימה לפי RIR"): כוח משוער לפי אפליי כולל החזרות שנשארו בטנק, e1=ק״ג×(1+(חזרות+RIR)/30).
+     היעד: לעבוד עם חזרה אחת בטנק. אם במשקל הנוכחי אפשר יותר מהקצה העליון — עולים במשקל (עד 10% באימון); אחרת יעד החזרות לפי הכוח, ותמיד לפחות +1 */
+  if(R&&rirAll&&(!ns||atTop.length>=ns)){ var TR=1, e1=atTop.reduce(function(a,x){ return a+x.kg*(1+(x.reps+(+x.rir))/30); },0)/atTop.length, can=Math.floor(30*(e1/top-1)+1e-9)-TR;
+    if(can>R[1]&&inc>0){ var kT=e1/(1+(R[0]+TR)/30), nk=top+inc; while(nk+inc<=kT&&nk+inc<=top*1.1) nk+=inc; nk=Math.round(nk*100)/100;
+      return {up:true,from:top,kg:nk,reps:R[0],why:'לפי מה שנשאר לך בטנק, אתה חזק יותר מ-'+top+' ק״ג. עולים ל-'+nk+' ומתחילים מ-'+R[0]+' חזרות'}; }
+    var tr3=Math.max(minR+1,Math.min(R[1],can));
+    return {kg:top,reps:tr3,why:'אותו משקל, הפעם '+tr3+' חזרות'+(tr3-minR>1?' כי נשאר לך כוח בפעם הקודמת':'')+' (כשמגיעים ל-'+R[1]+' בכל הסטים עולים '+inc+' ק״ג)'}; }
   /* 28.10.26: RIR 4+ בכל הסטים בתוך הטווח = המשקל קל מדי — עולים כבר עכשיו, לא מחכים לחזרות העליונות */
   if(R&&rirMin!=null&&rirMin>=4&&minR>=R[0]&&(!ns||atTop.length>=ns)) return {up:true,from:top,kg:Math.round((top+inc)*100)/100,reps:R[0],why:'בפעם הקודמת נשארו לך 4+ חזרות בטנק בכל הסטים. המשקל קל מדי, אז עולים '+inc+' ק״ג כבר עכשיו'};
   var add=rirMin!=null&&rirMin>=2?2:1, tr=R?Math.min(R[1],minR+add):minR+add;
@@ -1493,7 +1501,7 @@ function renderTrain(){
   var vis=SHOWALL?days.map(function(x,i){ return i; }):left;
   var d=applySwaps(days[DAY]), h='<div class="sub">השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים</div>';
   h+=(vis.length>1?'<div class="chips" role="group" aria-label="בחירת אימון">'+vis.map(function(i){ return '<button type="button" class="chip'+(done[i]?' done':'')+'" data-day="'+i+'" aria-pressed="'+(i===DAY)+'">אימון '+(i+1)+'</button>'; }).join('')+'</div>':'');
-  var S0=deloadState(); if(S0.on) h+='<div class="card" style="border-color:var(--gold);margin-top:8px"><b>השבוע: שבוע הורדה (דילואד)</b><div class="exnote" style="margin-top:4px">אחרי 6 שבועות של עבודה הגוף צריך שבוע קל כדי להתאושש ולהתחזק. השבוע עובדים על 85% מהמשקל, סט אחד פחות בכל תרגיל, ולא מגיעים לכשל. בשבוע הבא חוזרים חזקים יותר.</div></div>';
+  var S0=deloadState(); if(S0.on) h+='<div class="card" style="border-color:var(--gold);margin-top:8px"><b>השבוע: שבוע הורדה (דילואד)</b><div class="exnote" style="margin-top:4px">אחרי 7 שבועות של עבודה הגוף צריך שבוע קל כדי להתאושש ולהתחזק. השבוע עובדים על 85% מהמשקל, סט אחד פחות בכל תרגיל, ולא מגיעים לכשל. בשבוע הבא חוזרים חזקים יותר.</div></div>';
   /* 28.10.26: בלי "שבוע X מתוך 6" — ההסבר מופיע רק בשבוע ההורדה עצמו */
   h+='<div class="sub" style="margin-top:4px">'+esc(d.title)+'</div>';
   var heavyN=0, rirHelp=0;
@@ -3746,6 +3754,38 @@ var PICK_ON=true, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-legs.jpg','wk-glute
    '#progBox .card.ex .exnote{color:var(--mute)}';
   document.head.appendChild(st);
   var _rtWin=renderTrain; renderTrain=function(){ var r=_rtWin.apply(this,arguments); try{ var box=document.getElementById('progBox'); document.body.classList.toggle('wkin',!!(box&&box.querySelector('.wback'))); }catch(e){} return r; };
+})();
+
+/* ===== 3.11.26 (אביאל): טיימר מנוחה כטבעת גדולה באמצע המסך. נגיעה ברקע מקטינה לפס התחתון; ‎-15 / +15 / דלג ===== */
+(function(){
+  var st=document.createElement('style'); st.textContent=
+   '#rring{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:color-mix(in srgb,var(--ink) 82%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}'+
+   '#rring[hidden]{display:none}#rring .rrc{position:relative;width:min(240px,64vw);aspect-ratio:1}#rring svg{width:100%;height:100%;transform:rotate(-90deg)}'+
+   '#rring circle{fill:none;stroke-width:5}#rring .rbg{stroke:var(--line)}#rring .rfg{stroke:var(--gold);stroke-linecap:round;transition:stroke-dashoffset .25s linear}'+
+   '#rring .rrt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}#rring .rrt small{font-size:13px;color:var(--mute)}'+
+   '#rring .rrt b{font-size:56px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:-1px;line-height:1.05}'+
+   '#rring #rrN{max-width:300px;text-align:center;font-size:14px;color:var(--mute);line-height:1.4;min-height:20px}'+
+   '#rring .rrb{display:flex;gap:10px}#rring .rrb button{min-width:76px;min-height:46px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:15px;font-weight:700}'+
+   '#rring .rrb #rrSkip{background:var(--gold);border-color:var(--gold);color:var(--ink)}#rring .rrb button:focus-visible,#rring #rrMin:focus-visible{outline:2px solid var(--gold);outline-offset:2px}'+
+   '#rring #rrMin{background:none;border:0;color:var(--mute);font:inherit;font-size:13px;padding:8px}'+
+   '@media (prefers-reduced-motion:reduce){#rring .rfg{transition:none}}';
+  document.head.appendChild(st);
+  var el=document.createElement('div'); el.id='rring'; el.hidden=true; el.setAttribute('role','timer'); el.setAttribute('aria-live','off');
+  el.innerHTML='<div class="rrc"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="rbg" cx="60" cy="60" r="54"/><circle class="rfg" cx="60" cy="60" r="54" stroke-dasharray="339.3" stroke-dashoffset="0"/></svg><div class="rrt"><small>מנוחה</small><b id="rrT">0:00</b></div></div><div id="rrN"></div><div class="rrb" dir="ltr"><button type="button" id="rrMinus" aria-label="פחות 15 שניות">−15</button><button type="button" id="rrSkip">דלג</button><button type="button" id="rrPlus" aria-label="עוד 15 שניות">+15</button></div><button type="button" id="rrMin">להקטין</button>';
+  document.body.appendChild(el);
+  var TOT=0, MIN=false, IV=0, fg=el.querySelector('.rfg');
+  function left(){ return typeof REST_END!=='undefined'&&REST_END?Math.max(0,(REST_END-Date.now())/1000):0; }
+  function draw(){ var r=document.getElementById('rest'), l=left(); if(!r||r.hidden||!l){ el.hidden=true; clearInterval(IV); IV=0; return; }
+    el.hidden=MIN; var s=Math.ceil(l); document.getElementById('rrT').textContent=Math.floor(s/60)+':'+('0'+s%60).slice(-2);
+    fg.setAttribute('stroke-dashoffset',String(339.3*(1-Math.min(1,l/(TOT||l))))); var n=document.getElementById('restN'); document.getElementById('rrN').textContent=n?n.textContent:''; }
+  function run(){ clearInterval(IV); IV=setInterval(draw,250); draw(); }
+  var _rs=restStart; restStart=function(min){ _rs.apply(this,arguments); var sec=Math.round(min*60); if(!(sec>0)) return; TOT=sec; MIN=false; setTimeout(run,0); };
+  function adj(d){ var l=left(); if(!l) return; var nl=Math.max(1,Math.round(l+d)), tot=Math.max(TOT+d,nl); _rs(nl/60); TOT=tot; run(); }
+  el.querySelector('#rrMinus').onclick=function(){ adj(-15); }; el.querySelector('#rrPlus').onclick=function(){ adj(15); };
+  el.querySelector('#rrSkip').onclick=function(){ var x=document.getElementById('restX'); if(x) x.click(); el.hidden=true; };
+  el.querySelector('#rrMin').onclick=function(){ MIN=true; el.hidden=true; };
+  el.addEventListener('click',function(ev){ if(ev.target===el){ MIN=true; el.hidden=true; } });
+  var bar=document.getElementById('rest'); if(bar) bar.addEventListener('click',function(ev){ if(ev.target.id==='restX') return; if(left()){ MIN=false; draw(); } });
 })();
 </script>
 <script>
