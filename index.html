@@ -1452,14 +1452,14 @@ sugg=function(e,L){
   var rr=atTop.map(function(x){ return x.rir; }).filter(function(x){ return x!=null&&x!==''; }).map(Number), rirAll=rr.length&&rr.length===atTop.length, rirMin=rirAll?Math.min.apply(null,rr):null;
   if(R&&minR>=R[1]&&(!ns||atTop.length>=ns)){ var big=rirMin!=null&&rirMin>=3, up=big?inc*2:inc; return {up:true,from:top,kg:Math.round((top+up)*100)/100,reps:R[0],why:big?'הגעת ל-'+R[1]+' חזרות והיה לך כוח לעוד 3 חזרות לפחות, אז קפיצה כפולה: +'+up+' ק״ג':'בפעם הקודמת הגעת ל-'+R[1]+' חזרות בכל הסטים, אז עולים '+inc+' ק״ג וחוזרים ל-'+R[0]}; }
   // RIR 0 בכל הסטים ועדיין מתחת לטווח — המשקל כבד מדי
-  if(R&&rirMin===0&&minR<R[0]&&top>inc){ var st2=Math.max(inc,top>10?2.5:inc), dn2=Math.floor(top*(1+minR/30)/(1+R[0]/30)/st2)*st2; if(!(dn2<top)) dn2=top-st2; dn2=Math.round(dn2*100)/100; /* 30.10.26: לפי הערכת 1RM ובקפיצות של 2.5 לפחות (לא 29 במכונה) */ return {kg:dn2,reps:R[0],why:'בפעם הקודמת הגעת לכשל לפני '+R[0]+' חזרות. יורדים ל-'+dn2+' ק״ג ונכנסים לטווח',stall:true}; }
+  if(R&&rirMin===0&&minR<R[0]&&top>inc){ var st2=Math.max(inc,top>10?2.5:inc), dn2=Math.round((top-st2)*100)/100; /* 3.11.26 אביאל: "שידחפו, לא ילכו אחורה" — מקסימום מדרגה אחת למטה */ /* 30.10.26: לפי הערכת 1RM ובקפיצות של 2.5 לפחות (לא 29 במכונה) */ return {kg:dn2,reps:R[0],why:'בפעם הקודמת הגעת לכשל לפני '+R[0]+' חזרות. יורדים ל-'+dn2+' ק״ג ונכנסים לטווח',stall:true}; }
   // תקיעות: 3 אימונים אחרונים באותו משקל עליון בלי שיפור בחזרות — יורדים 10% ובונים מחדש
-  var ds=[]; prev.forEach(function(x){ if(ds.indexOf(x.d)<0) ds.push(x.d); }); ds=ds.slice(-3);
-  if(ds.length===3&&top>0){ var st=ds.map(function(d){ var ss=prev.filter(function(x){ return x.d===d; }), t=Math.max.apply(null,ss.map(function(x){ return x.kg; })); return {t:t, r:Math.max.apply(null,ss.filter(function(x){ return x.kg===t; }).map(function(x){ return x.reps; }))}; });
-    if(st.every(function(z){ return z.t===top; })&&st[2].r<=st[0].r){ var dl=Math.max(0,Math.round(top*0.9/(inc||2.5))*(inc||2.5)); return {kg:dl,reps:R?R[1]:minR,why:'שלושה אימונים באותו משקל בלי שיפור. היום יורדים ל-'+dl+' ק״ג, עושים את כל החזרות טוב, ובונים מחדש',stall:true}; } }
+  var ds=[]; prev.forEach(function(x){ if(ds.indexOf(x.d)<0) ds.push(x.d); }); ds=ds.slice(-4);
+  if(ds.length===4&&top>0){ var st=ds.map(function(d){ var ss=prev.filter(function(x){ return x.d===d; }), t=Math.max.apply(null,ss.map(function(x){ return x.kg; })); return {t:t, r:Math.max.apply(null,ss.filter(function(x){ return x.kg===t; }).map(function(x){ return x.reps; }))}; });
+    if(st.every(function(z){ return z.t===top; })&&st[3].r<=st[0].r){ var stp=Math.max(inc||2.5,top>10?2.5:1), dl=Math.round((top-stp)*100)/100; return {kg:dl,reps:R?R[1]:minR,why:'ארבעה אימונים באותו משקל בלי שיפור. מדרגה אחת למטה ל-'+dl+' ק״ג, כל החזרות עד הסוף, ושבוע הבא חוזרים ל-'+top+' ושוברים אותו',stall:true}; } }
   /* 28.10.26: RIR 4+ בכל הסטים בתוך הטווח = המשקל קל מדי — עולים כבר עכשיו, לא מחכים לחזרות העליונות */
   if(R&&rirMin!=null&&rirMin>=4&&minR>=R[0]&&(!ns||atTop.length>=ns)) return {up:true,from:top,kg:Math.round((top+inc)*100)/100,reps:R[0],why:'בפעם הקודמת נשארו לך 4+ חזרות בטנק בכל הסטים. המשקל קל מדי, אז עולים '+inc+' ק״ג כבר עכשיו'};
-  var add=rirMin!=null&&rirMin>=3?2:1, tr=R?Math.min(R[1],minR+add):minR+add;
+  var add=rirMin!=null&&rirMin>=2?2:1, tr=R?Math.min(R[1],minR+add):minR+add;
   return {kg:top,reps:tr,why:'אותו משקל, הפעם '+tr+' חזרות'+(add>1?' כי נשאר לך כוח בפעם הקודמת':'')+(R?' (כשמגיעים ל-'+R[1]+' בכל הסטים עולים '+inc+' ק״ג)':'')};
 };
 var IC_CAM='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="12.5" r="3.5"/></svg>';
