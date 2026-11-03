@@ -3764,6 +3764,7 @@ var PICK_ON=true, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-legs.jpg','wk-glute
    '#rring circle{fill:none;stroke-width:5}#rring .rbg{stroke:var(--line)}#rring .rfg{stroke:var(--gold);stroke-linecap:round;transition:stroke-dashoffset .25s linear}'+
    '#rring .rrt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}#rring .rrt small{font-size:13px;color:var(--mute)}'+
    '#rring .rrt b{font-size:56px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:-1px;line-height:1.05}'+
+   '#rring #rrX{display:flex;flex-direction:column;align-items:center;gap:4px}#rring #rrX[hidden]{display:none}#rring #rrX small{font-size:13px;color:var(--mute)}#rring #rrX b{display:flex;gap:22px;font-size:30px;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}#rring #rrX b span{display:flex;align-items:baseline;gap:5px}#rring #rrX b small{font-size:14px;font-weight:600;color:var(--mute)}'+
    '#rring #rrN{max-width:300px;text-align:center;font-size:14px;color:var(--mute);line-height:1.4;min-height:20px}'+
    '#rring .rrb{display:flex;gap:10px}#rring .rrb button{min-width:76px;min-height:46px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:15px;font-weight:700}'+
    '#rring .rrb #rrSkip{background:var(--gold);border-color:var(--gold);color:var(--ink)}#rring .rrb button:focus-visible,#rring #rrMin:focus-visible{outline:2px solid var(--gold);outline-offset:2px}'+
@@ -3771,13 +3772,20 @@ var PICK_ON=true, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-legs.jpg','wk-glute
    '@media (prefers-reduced-motion:reduce){#rring .rfg{transition:none}}';
   document.head.appendChild(st);
   var el=document.createElement('div'); el.id='rring'; el.hidden=true; el.setAttribute('role','timer'); el.setAttribute('aria-live','off');
-  el.innerHTML='<div class="rrc"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="rbg" cx="60" cy="60" r="54"/><circle class="rfg" cx="60" cy="60" r="54" stroke-dasharray="339.3" stroke-dashoffset="0"/></svg><div class="rrt"><small>מנוחה</small><b id="rrT">0:00</b></div></div><div id="rrN"></div><div class="rrb" dir="ltr"><button type="button" id="rrMinus" aria-label="פחות 15 שניות">−15</button><button type="button" id="rrSkip">דלג</button><button type="button" id="rrPlus" aria-label="עוד 15 שניות">+15</button></div><button type="button" id="rrMin">להקטין</button>';
+  el.innerHTML='<div class="rrc"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="rbg" cx="60" cy="60" r="54"/><circle class="rfg" cx="60" cy="60" r="54" stroke-dasharray="339.3" stroke-dashoffset="0"/></svg><div class="rrt"><small>מנוחה</small><b id="rrT">0:00</b></div></div><div id="rrX" hidden><small id="rrXl">הסט הבא</small><b id="rrXv"></b></div><div id="rrN"></div><div class="rrb" dir="ltr"><button type="button" id="rrMinus" aria-label="פחות 15 שניות">−15</button><button type="button" id="rrSkip">דלג</button><button type="button" id="rrPlus" aria-label="עוד 15 שניות">+15</button></div><button type="button" id="rrMin">להקטין</button>';
   document.body.appendChild(el);
   var TOT=0, MIN=false, IV=0, fg=el.querySelector('.rfg');
   function left(){ return typeof REST_END!=='undefined'&&REST_END?Math.max(0,(REST_END-Date.now())/1000):0; }
   function draw(){ var r=document.getElementById('rest'), l=left(); if(!r||r.hidden||!l){ el.hidden=true; clearInterval(IV); IV=0; return; }
     el.hidden=MIN; var s=Math.ceil(l); document.getElementById('rrT').textContent=Math.floor(s/60)+':'+('0'+s%60).slice(-2);
-    fg.setAttribute('stroke-dashoffset',String(339.3*(1-Math.min(1,l/(TOT||l))))); var n=document.getElementById('restN'); document.getElementById('rrN').textContent=n?n.textContent:''; }
+    fg.setAttribute('stroke-dashoffset',String(339.3*(1-Math.min(1,l/(TOT||l))))); nextSet(); }
+  /* 3.11.26 (אביאל): בטבעת גם המשקל והחזרות של הסט הבא — הסט הפתוח הראשון באימון (באותו תרגיל או בבא) */
+  function nextSet(){ var x=document.getElementById('rrX'), nn=document.getElementById('rrN'), f=document.querySelector('#progBox form.setrow:not(.ok)');
+    if(!f){ x.hidden=true; nn.textContent='סט אחרון באימון. עוד רגע מסיימים'; return; }
+    var ins=f.querySelectorAll('input'), kg=ins[0]?String(ins[0].value).trim():'', rp=ins[1]?String(ins[1].value).trim():'', c=f.closest('.card.ex'), nm=c&&c.querySelector('.nm')?c.querySelector('.nm').textContent.trim():'', same=c&&c.querySelector('form.setrow.ok');
+    document.getElementById('rrXl').textContent=same?'הסט הבא · סט '+(f.querySelector('.num')?f.querySelector('.num').textContent:''):'התרגיל הבא';
+    document.getElementById('rrXv').innerHTML=(kg?'<span><bdi dir="ltr">'+esc(kg)+'</bdi><small>ק״ג</small></span>':'')+(rp?'<span>'+esc(rp)+'<small>חזרות</small></span>':'');
+    x.hidden=!(kg||rp); nn.textContent=same?'':nm; }
   function run(){ clearInterval(IV); IV=setInterval(draw,250); draw(); }
   var _rs=restStart; restStart=function(min){ _rs.apply(this,arguments); var sec=Math.round(min*60); if(!(sec>0)) return; TOT=sec; MIN=false; setTimeout(run,0); };
   function adj(d){ var l=left(); if(!l) return; var nl=Math.max(1,Math.round(l+d)), tot=Math.max(TOT+d,nl); _rs(nl/60); TOT=tot; run(); }
