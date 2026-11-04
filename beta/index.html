@@ -802,7 +802,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
         <form class="fadd" id="fAdd" hidden><input id="fG" inputmode="numeric" aria-label="גרם"><button type="submit" id="fBtn">הוספה</button></form>
         <div class="sub" id="fPick"></div>
         <div id="fLabel" class="label-form" hidden>
-          <div class="sub">לא נמצא במאגרים. כותבים את שם המוצר ומצלמים את טבלת הערכים התזונתיים. אביאל מאשר, ומאז המוצר בחיפוש.</div>
+          <div class="sub">המוצר עוד לא במאגר. כותבים את השם ומצלמים את טבלת הערכים התזונתיים. האפליקציה קוראת את הערכים, ומיד אפשר להוסיף ליומן.</div>
           <input id="flName" placeholder="שם המוצר, למשל: קוטג׳ 5% תנובה" aria-label="שם המוצר">
           <label class="installbtn" for="flIn" style="text-align:center;cursor:pointer">צילום התווית</label>
           <input type="file" id="flIn" accept="image/*" capture="environment" hidden>
@@ -1362,8 +1362,11 @@ function onCode(code){ code=String(code||'').replace(/\D/g,''); if(!code) return
 }
 function showLabel(code,q){ var L=$('#fLabel'); L.hidden=false; L.dataset.code=code||''; $('#fList').innerHTML=''; $('#fAdd').hidden=true; $('#flName').value=q||''; $('#flName').focus(); }
 $('#fScan').onclick=scanStart; $('#scanX').onclick=scanStop;
-$('#flIn').addEventListener('change',function(){ var file=this.files&&this.files[0]; if(!file) return; var nm=$('#flName').value.trim(); if(!nm){ toast('קודם כותבים את שם המוצר',1); this.value=''; return; } toast('שולח לאביאל…');
-  shrink(file,1280,.82).then(function(img){ return fetch(API,{method:'POST',body:JSON.stringify({api:'foodlabel',t:T,p:{code:$('#fLabel').dataset.code||'',name:nm,photo:img}})}).then(function(r){ return r.json(); }).then(function(j){ if(!j.ok) throw new Error(j.error); $('#fLabel').hidden=true; $('#fQ').value=''; toast('נשלח. כשאביאל יאשר, המוצר יופיע בחיפוש ותקבל הודעה'); }); })
+$('#flIn').addEventListener('change',function(){ var file=this.files&&this.files[0]; if(!file) return; var nm=$('#flName').value.trim(); if(!nm){ toast('קודם כותבים את שם המוצר',1); this.value=''; return; } toast('קורא את התווית…');
+  shrink(file,1280,.82).then(function(img){ return fetch(API,{method:'POST',body:JSON.stringify({api:'foodlabel',t:T,p:{code:$('#fLabel').dataset.code||'',name:nm,photo:img}})}).then(function(r){ return r.json(); }).then(function(j){ if(!j.ok) throw new Error(j.error); $('#fLabel').hidden=true; $('#fQ').value='';
+    var r=j.r||j; if(!(r&&r.approved)){ toast('לא הצלחתי לקרוא את הערכים מהתמונה. אביאל יבדוק ויוסיף, ובינתיים אפשר לרשום ביומן ידנית',1); return; }
+    /* 4.11.26 (אביאל: "שמי שסורק יוכל גם להוסיף אותו ישר"): הערכים נקראו מהתווית — המוצר נפתח מיד להוספה ליומן */
+    return api('foods',{}).then(function(L){ EXTRA=L||[]; var nm2=nm.trim(), it=EXTRA.filter(function(f){ return String(f.name).trim()===nm2; }).pop(); if(it){ pickExtra(it); toast('נקרא מהתווית: '+Math.round(it.k100)+' קק״ל ל-100 ג׳. בוחרים כמות ומוסיפים'); } else toast('נשמר במאגר. מחפשים אותו בשם ומוסיפים'); }); }); })
   .catch(function(e){ toast((e&&e.message)||'לא נשלח',1); }); this.value=''; });
 if(T) loadExtra();
 
