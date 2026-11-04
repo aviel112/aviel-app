@@ -1524,4 +1524,70 @@ function moWire(d){ var on=$('#moOn'); if(!on) return; var redraw=function(r){ d
   var sv=$('#moSave'); if(sv) sv.onclick=function(){ save(true); };
   var pd=$('#moPaid'); if(pd) pd.onclick=function(){ pd.disabled=true; google.script.run.withSuccessHandler(function(r){ toast('נרשם. התשלום הבא ב-'+moFmt(r.due)+(d.monthly&&d.monthly.locked?', האפליקציה נפתחה':'')); redraw(r||{}); }).withFailureHandler(function(e){ pd.disabled=false; toast(e.message); }).dashboardMonthlyPaid(d.name); }; }
 </script>
+<style>
+#brief{padding:14px 16px}#brief .bh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}#brief .bh b{font-size:17px}#brief .bh span{font-size:12px;color:var(--mute)}
+#brief .bl{display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 0;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:14.5px;text-align:start;cursor:pointer}#brief .bl:first-of-type{border-top:0}#brief .bl b{font-variant-numeric:tabular-nums;min-width:28px;text-align:center;padding:2px 8px;border-radius:99px;background:var(--line)}#brief .bl b.hot{background:var(--orange);color:#fff}#brief .bl.ok{color:var(--mute)}
+.card.czc>:first-child{cursor:pointer;position:relative;padding-inline-end:22px}.card.czc>:first-child::after{content:'';position:absolute;inset-inline-end:2px;top:50%;width:7px;height:7px;border:solid var(--mute);border-width:0 2px 2px 0;transform:translateY(-70%) rotate(45deg);transition:transform .2s}.card.czc.cz>:first-child::after{transform:translateY(-30%) rotate(-135deg)}
+.card.cz>:not(:first-child){display:none!important}.card.cz{padding-bottom:12px}
+details.tgrp>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:700}details.tgrp>summary::-webkit-details-marker{display:none}details.tgrp>summary small{font-weight:500;color:var(--mute);font-size:12.5px}details.tgrp[open]>summary{margin-bottom:8px}details.tgrp .card.task{margin:8px 0 0;box-shadow:none;border:1px solid var(--line)}
+.card.task .td{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}.card.task .td.op{display:block}
+#tMore{width:100%}
+#foodRev .fr{padding:10px 0;border-top:1px solid var(--line)}#foodRev .fr:first-of-type{border-top:0}#foodRev .frn{display:flex;justify-content:space-between;gap:8px;font-weight:700;font-size:14.5px}#foodRev .frn small{font-weight:500;color:var(--mute);font-size:12px;white-space:nowrap}#foodRev .frv{font-size:13px;color:var(--mute);margin:3px 0 8px}#foodRev .frb{display:flex;gap:8px;flex-wrap:wrap}#foodRev .frb .btn{flex:1;min-width:80px}#foodRev .fri{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:4px 0 8px}#foodRev .fri input{width:100%;min-width:0;font:inherit;font-size:16px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);text-align:center}#foodRev img{display:block;max-width:100%;max-height:260px;border-radius:10px;margin:6px 0}
+</style>
+<script>
+/* 4.11.26 (אביאל): "שכל אפליקציית המאמן תהיה יותר קצרה, ברייף קצר בבוקר" — בריף למעלה, כל השאר מתקפל, משימות דומות בקבוצה אחת, לחיצה נעלמת מיד, ומאכלים שמתאמנים הוסיפו לבדיקה */
+(function(){
+  var CZK='coach_cz4', FR=null, SHOW_ALL=false, GOPEN={};
+  function czGet(){ try{ return JSON.parse(localStorage.getItem(CZK)||'{}'); }catch(e){ return {}; } }
+  function czSet(o){ try{ localStorage.setItem(CZK,JSON.stringify(o)); }catch(e){} }
+  function e2(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function loadFood(){ try{ google.script.run.withSuccessHandler(function(r){ FR=r||[]; post(); }).withFailureHandler(function(){ if(FR==null) FR=[]; post(); }).dashboardFoodReview(); }catch(e){} }
+  function box(){ return document.querySelector('section[data-v="today"]'); }
+  function foodHtml(){ if(!FR||!FR.length) return ''; var L=FR.slice(0,SHOW_ALL?40:5);
+    return '<div class="card" id="foodRev"><div class="gh">מאכלים לבדיקה · '+FR.length+'</div><div class="s" style="font-size:12.5px;color:var(--mute);margin-bottom:4px">מה שמתאמנים סרקו כבר נכנס למאגר. משאירים או מסירים</div>'+L.map(function(f){
+      var need=!f.k100, v=need?'':Math.round(f.k100)+' קק״ל ל-100 ג׳ · ח׳ '+f.p+' · פ׳ '+f.c+' · ש׳ '+f.fat;
+      return '<div class="fr" data-row="'+f.row+'"><div class="frn"><span>'+e2(f.name)+(f.brand?' · '+e2(f.brand):'')+'</span><small>'+e2(String(f.by||'').split(' ')[0])+(f.at?' · '+e2(f.at):'')+'</small></div>'+
+        (need?'<div class="frv">אין ערכים. ממלאים ל-100 גרם</div><div class="fri"><input inputmode="decimal" data-fk="k100" placeholder="קק״ל" aria-label="קלוריות"><input inputmode="decimal" data-fk="p" placeholder="חלבון" aria-label="חלבון"><input inputmode="decimal" data-fk="c" placeholder="פחמ׳" aria-label="פחמימה"><input inputmode="decimal" data-fk="fat" placeholder="שומן" aria-label="שומן"></div>':'<div class="frv">'+v+'</div>')+
+        '<div class="frb">'+(need?'<button class="btn p" data-fok="'+f.row+'">אישור</button>':'<button class="btn p" data-fkeep="'+f.row+'">השאר</button>')+'<button class="btn" data-fdel="'+f.row+'">הסר</button>'+(f.photoId?'<button class="btn" data-fph="'+e2(f.photoId)+'">תמונה</button>':'')+'</div></div>'; }).join('')+
+      (FR.length>5&&!SHOW_ALL?'<button class="btn" id="frMore" style="width:100%;margin-top:8px">עוד '+(FR.length-5)+'</button>':'')+'</div>'; }
+  function frDone(row,msg){ FR=(FR||[]).filter(function(f){ return String(f.row)!==String(row); }); post(); if(msg) toast(msg); }
+  function wireFood(b){ var c=b.querySelector('#foodRev'); if(!c) return;
+    var mo=c.querySelector('#frMore'); if(mo) mo.onclick=function(){ SHOW_ALL=true; post(); };
+    c.querySelectorAll('[data-fkeep]').forEach(function(x){ x.onclick=function(){ var r=x.dataset.fkeep, f=FR.filter(function(y){ return String(y.row)===r; })[0]; frDone(r,'נשאר במאגר'); google.script.run.withFailureHandler(function(e){ toast(e.message); loadFood(); }).dashboardFoodSeen(+r,f?f.name:''); }; });
+    c.querySelectorAll('[data-fdel]').forEach(function(x){ x.onclick=function(){ var r=x.dataset.fdel; frDone(r,'הוסר מהמאגר'); google.script.run.withFailureHandler(function(e){ toast(e.message); loadFood(); }).dashboardFoodSet(+r,{},'נדחה'); }; });
+    c.querySelectorAll('[data-fok]').forEach(function(x){ x.onclick=function(){ var r=x.dataset.fok, row=x.closest('.fr'), f=FR.filter(function(y){ return String(y.row)===r; })[0]||{}, v={name:f.name,brand:f.brand,g:f.g}; row.querySelectorAll('[data-fk]').forEach(function(i){ v[i.dataset.fk]=String(i.value).replace(',','.'); }); if(!(+v.k100>0)){ toast('ממלאים קלוריות ל-100 גרם'); return; } frDone(r,'אושר ונכנס למאגר'); google.script.run.withFailureHandler(function(e){ toast(e.message); loadFood(); }).dashboardFoodSet(+r,v,'מאושר'); }; });
+    c.querySelectorAll('[data-fph]').forEach(function(x){ x.onclick=function(){ var row=x.closest('.fr'); if(row.querySelector('img')){ row.querySelector('img').remove(); return; } x.disabled=true; google.script.run.withSuccessHandler(function(d){ x.disabled=false; var im=document.createElement('img'); im.src=d; im.alt='תמונת המוצר'; row.insertBefore(im,row.querySelector('.frb')); }).withFailureHandler(function(e){ x.disabled=false; toast(e.message); }).dashboardFoodPhoto(x.dataset.fph); }; }); }
+  function briefHtml(){ var op=(TK&&TK.open)||[], act=typeof active==='function'?active():[], reds=PU?act.filter(function(c){ var p=PU[c.name]; return p&&p.risk&&p.risk.lvl==='red'; }):[],
+      nl=(typeof LEADS!=='undefined'&&LEADS?LEADS:[]).filter(function(l){ return l.status==='חדש'; }).length, hot=op.filter(function(t){ return t.hot; }).length, fr=FR?FR.length:0, w3=0;
+    if(PU) act.forEach(function(c){ var p=PU[c.name]; if(p&&!p.err&&(p.never||p.gap>=3)) w3++; });
+    var d=new Date(), hr=d.getHours(), hi=hr<12?'בוקר טוב':hr<17?'צהריים טובים':'ערב טוב';
+    var L=[['לידים חדשים',nl,nl>0,'leads'],['מתאמנים באדום',reds.length,reds.length>0,'reds'],['3+ ימים בלי שקילה',w3,false,'reds'],['משימות'+(hot?' ('+hot+' דחופות)':''),op.length,hot>0,'tasks'],['מאכלים לבדיקה',fr,false,'food']];
+    return '<div class="card" id="brief"><div class="bh"><b>הבריף של היום</b><span>'+d.getHours()+':'+('0'+d.getMinutes()).slice(-2)+'</span></div>'+L.map(function(x){ return '<button type="button" class="bl'+(x[1]?'':' ok')+'" data-bgo="'+x[3]+'"><span>'+x[0]+'</span><b'+(x[2]?' class="hot"':'')+'>'+x[1]+'</b></button>'; }).join('')+'</div>'; }
+  function post(){ var b=box(); if(!b||!TK) return;
+    var old=b.querySelector('#brief'); if(old) old.remove(); var of=b.querySelector('#foodRev'); if(of) of.remove();
+    b.insertAdjacentHTML('afterbegin',briefHtml()+foodHtml()); wireFood(b);
+    b.querySelectorAll('[data-bgo]').forEach(function(x){ x.onclick=function(){ var g=x.dataset.bgo, t=null;
+      if(g==='leads'){ var tb=document.querySelector('[data-v="leads"]'); if(tb&&tb.tagName!=='SECTION'){ tb.click(); return; } }
+      if(g==='food') t=b.querySelector('#foodRev'); else if(g==='tasks') t=b.querySelector('.card.task,details.tgrp'); else if(g==='reds') t=[].slice.call(b.querySelectorAll('.card')).filter(function(c){ return /באדום/.test((c.querySelector('.gh')||{}).textContent||''); })[0];
+      if(t){ if(t.classList.contains('cz')){ t.classList.remove('cz'); var o=czGet(); o[t.dataset.czk]=0; czSet(o); } t.scrollIntoView({behavior:'smooth',block:'start'}); } }; });
+    /* מתקפלים: מה שלא צריך כל בוקר — סגור עד שפותחים, והטלפון זוכר */
+    var st=czGet();
+    [].slice.call(b.children).forEach(function(c){ if(!c.classList||!c.classList.contains('card')||c.classList.contains('task')||c.id==='brief'||c.id==='foodRev'||c.classList.contains('addf')) return; var h=c.firstElementChild; if(!h||getComputedStyle(c).display==='flex') return;
+      var key=c.id||((h.textContent||'').replace(/[\d·\s]+/g,' ').trim().slice(0,18)); if(!key) return; c.dataset.czk=key; c.classList.add('czc'); if(st[key]!==0) c.classList.add('cz');
+      if(!h._cz){ h._cz=1; h.addEventListener('click',function(ev){ if(ev.target.closest('button,a,input,select,textarea,label')&&ev.target!==h) return; var on=c.classList.toggle('cz'), o=czGet(); o[key]=on?1:0; czSet(o); }); } });
+    /* משימות דומות בקבוצה אחת: שיאים, צ׳ק-אין, תמונות התחלה */
+    var byId={}; ((TK&&TK.open)||[]).forEach(function(t){ byId[t.id]=t; });
+    var G=[['pr','שיאים חדשים','לשלוח "כל הכבוד" למי שבא לך'],['checkin','צ׳ק-אין חסר','תזכורת לכל אחד'],['photo','לא העלו תמונות התחלה','']], cards=[].slice.call(b.querySelectorAll(':scope > .card.task'));
+    var ruleOf=function(c){ var d=c.querySelector('[data-done]'), t=d&&byId[d.dataset.done]; if(!t) return ''; if(t.rule==='pr'||/^שיא חדש/.test(t.title)) return 'pr'; if(t.rule==='checkin') return 'checkin'; if(/תמונות התחלה/.test(t.title)) return 'photo'; return ''; };
+    G.forEach(function(g){ var mine=cards.filter(function(c){ return ruleOf(c)===g[0]; }); if(mine.length<3) return; var dt=document.createElement('details'); dt.className='card tgrp'; if(GOPEN[g[0]]) dt.open=true; dt.addEventListener('toggle',function(){ GOPEN[g[0]]=dt.open; });
+      dt.innerHTML='<summary><span>'+g[1]+' · '+mine.length+'</span><small>'+(dt.open?'סגירה':'פתיחה')+'</small></summary>'+(g[2]?'<div class="s" style="font-size:12.5px;color:var(--mute)">'+g[2]+'</div>':''); mine[0].parentNode.insertBefore(dt,mine[0]); mine.forEach(function(c){ dt.appendChild(c); }); dt.addEventListener('toggle',function(){ dt.querySelector('summary small').textContent=dt.open?'סגירה':'פתיחה'; }); });
+    var rest=[].slice.call(b.querySelectorAll(':scope > .card.task')), om=b.querySelector('#tMore'); if(om) om.remove();
+    if(rest.length>6&&!SHOW_ALL){ rest.slice(6).forEach(function(c){ c.style.display='none'; }); var mb=document.createElement('button'); mb.className='btn'; mb.id='tMore'; mb.textContent='עוד '+(rest.length-6)+' משימות'; mb.onclick=function(){ SHOW_ALL=true; rest.forEach(function(c){ c.style.display=''; }); mb.remove(); }; rest[5].parentNode.insertBefore(mb,rest[5].nextSibling); }
+    b.querySelectorAll('.card.task .td').forEach(function(td){ td.onclick=function(){ td.classList.toggle('op'); }; }); }
+  var _rt=renderToday; renderToday=function(){ var r=_rt.apply(this,arguments); try{ post(); }catch(e){ console.error('[brief]',e); } return r; };
+  /* לחיצה על "בוצע" / דחייה: הכרטיס נעלם מיד, השרת מתעדכן ברקע (קודם חיכינו לרשימה מחדש, 3-10 שניות) */
+  document.addEventListener('click',function(ev){ var x=ev.target.closest&&ev.target.closest('[data-done],[data-snz],[data-skip]'); if(!x) return; var c=x.closest('.card.task'); if(!c) return; setTimeout(function(){ c.style.display='none'; var g=c.closest('details.tgrp'); if(g){ var n=[].slice.call(g.querySelectorAll('.card.task')).filter(function(y){ return y.style.display!=='none'; }).length, sp=g.querySelector('summary span'); if(sp) sp.textContent=sp.textContent.replace(/· \d+$/,'· '+n); if(!n) g.remove(); } },0); },true);
+  loadFood(); setInterval(loadFood,10*60000);
+})();
+</script>
 </body></html>
