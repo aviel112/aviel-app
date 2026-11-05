@@ -3821,7 +3821,7 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
 /* 4.11.26 (אביאל): טיימר מנוחה שנשמע גם מחוץ לאפליקציה. iOS מקפיא את הדף ברקע, אז בלחיצה על הסט מתחילים לנגן קובץ שקט באורך המנוחה
    שבסופו כבר מוקלטים 3 הטיקים והפעמון. אודיו שמתנגן ממשיך ברקע. בינתיים רק אצל אביאל (או aviel_bgt=1) עד שייבדק באייפון באימון */
 (function(){
-  function on(){ return false; } /* 5.11.26: כבוי. באייפון הקובץ עצר את המוזיקה ולא נשמע מחוץ לאפליקציה. במקומו: התראה מהשרת (למטה) */
+  function on(){ try{ if(localStorage.getItem('aviel_bgt')==='0') return false; if(localStorage.getItem('aviel_bgt')==='1') return true; }catch(e){} return typeof D!=='undefined'&&D&&/^אביאל/.test(String(D.name||'')); } /* 5.11.26 ערב (אביאל: "זה עבד פעם", רק מתוך האפליקציה): הוחזר. ההתראה מהשרת נשארת בנוסף */
   var SR=16000, au=null, url='', endAt=0;
   function wav(sec){ var n=Math.round(sec*SR), b=new ArrayBuffer(44+n*2), v=new DataView(b), s=new Int16Array(b,44,n);
     function w(o,t){ for(var i=0;i<t.length;i++) v.setUint8(o+i,t.charCodeAt(i)); }
@@ -3870,7 +3870,7 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
 /* 5.11.26 (אביאל: "לא שמעתי. רוצה שישמעו את זה בנוסף למוזיקה, גם מחוץ לאפליקציה"): בתחילת מנוחה האפליקציה שולחת לשרת את זמן הסוף,
    והשרת שולח התראה עם צליל בדיוק אז. המוזיקה ממשיכה. כשהאפליקציה פתוחה בסוף המנוחה, מבטלים את ההתראה והפעמון הרגיל מצלצל */
 (function(){ var sentEnd=0, dropped=0;
-  function can(){ try{ return localStorage.getItem('aviel_push')==='1'&&localStorage.getItem('aviel_clock')!=='1'&&'Notification' in window&&Notification.permission==='granted'; }catch(e){ return false; } }
+  function can(){ try{ return localStorage.getItem('aviel_push')==='1'&&'Notification' in window&&Notification.permission==='granted'; }catch(e){ return false; } }
   function send(end){ var seq=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     var u=API+'?api=restpush&t='+encodeURIComponent(T)+'&p='+encodeURIComponent(JSON.stringify({end:end,seq:seq}))+'&_='+Date.now();
     try{ fetch(u,{keepalive:true}).catch(function(){}); }catch(e){} }
@@ -3883,22 +3883,6 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
 })();
 
 
-/* 5.11.26 (אביאל: "ההתראה מגיעה אבל אין פעמון"): התראה מאתר לא יכולה לצלצל בצליל משלה. פתרון: קיצור דרך "מנוחה AVIEL" שמפעיל את הטיימר של השעון באייפון —
-   הוא מצלצל חזק, גם מחוץ לאפליקציה ועם מוזיקה. מפעילים פעם אחת מכפתור בפס המנוחה; כל מנוחה מתחילה גם טיימר בשעון */
-(function(){ if(typeof restStart!=='function') return; var K='aviel_clock', SC='מנוחה AVIEL';
-  function on(){ try{ return localStorage.getItem(K)==='1'; }catch(e){ return false; } }
-  function setOn(v){ try{ localStorage.setItem(K,v?'1':'0'); }catch(e){} lab(); }
-  function lab(){ var b=document.getElementById('restClk'); if(b) b.textContent=on()?'שעון: פועל':'פעמון מהשעון'; }
-  function guide(){ var s=document.createElement('div'); s.className='sheet'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true');
-    s.innerHTML='<div class="sheet-in"><div class="big" style="font-size:20px;font-weight:800;margin-bottom:8px">פעמון אמיתי בסוף המנוחה</div><div class="sub" style="line-height:1.6">כל מנוחה תפעיל גם את הטיימר של השעון באייפון. הוא מצלצל חזק, גם כשיוצאים מהאפליקציה ועם מוזיקה. מגדירים פעם אחת, דקה:<br><br>1. פותחים את אפליקציית "קיצורים" ולוחצים +<br>2. מוסיפים פעולה "הפעל טיימר" (Start Timer)<br>3. בשדה הזמן בוחרים "קלט קיצור הדרך" ובוחרים יחידה: שניות<br>4. בהגדרות הקיצור (i למטה) מדליקים "קבלת קלט" מסוג טקסט<br>5. קוראים לקיצור בדיוק: <b>'+SC+'</b></div><button type="button" id="clkGo" style="width:100%;margin-top:14px">הגדרתי, להפעיל</button><button type="button" class="ghost" id="clkX" style="width:100%;margin-top:8px">לא עכשיו</button></div>';
-    document.body.appendChild(s); s.querySelector('#clkX').onclick=function(){ s.remove(); }; s.addEventListener('click',function(e){ if(e.target===s) s.remove(); });
-    s.querySelector('#clkGo').onclick=function(){ s.remove(); setOn(true); toast('מהמנוחה הבאה השעון יצלצל'); }; }
-  function addBtn(){ var r=document.getElementById('rest'); if(!r||document.getElementById('restClk')) return; var b=document.createElement('button'); b.type='button'; b.className='ghost sm'; b.id='restClk';
-    b.onclick=function(){ if(on()){ setOn(false); toast('הפעמון מהשעון כובה'); } else guide(); }; var x=document.getElementById('restX'); r.insertBefore(b,x||null); lab(); }
-  addBtn();
-  var orig=restStart; restStart=function(min){ orig.apply(this,arguments); var sec=Math.round(min*60); if(!(sec>3)||!on()) return;
-    try{ location.href='shortcuts://run-shortcut?name='+encodeURIComponent(SC)+'&input=text&text='+sec; }catch(e){} };
-})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
