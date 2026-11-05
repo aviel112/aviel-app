@@ -3954,6 +3954,17 @@ restMin=function(r){ var t=String(r||'').replace(',','.'), m=t.match(/(\d+):(\d+
   'body.wkin #progBox .setrow.ok{background:rgba(48,209,88,.10);box-shadow:none}'+
   'body.wkin #progBox .card.ex .setrow.ok input,body.wkin #progBox .card.ex .setrow.ok select{background:transparent!important}';
   document.head.appendChild(st); })();
+
+/* ===== 6.11.26 (אביאל אישר): יעד היום הוא השורה הראשית של כרטיס התרגיל — מספר גדול מיד מתחת לשם; ההסבר בשורה אחת, נגיעה פותחת אותו ===== */
+(function(){ var st=document.createElement('style'); st.textContent=
+  'body.wkin #progBox .card.ex>*{order:3}body.wkin #progBox .card.ex>.mu,body.wkin #progBox .card.ex>.nmrow,body.wkin #progBox .card.ex>.swapbox{order:0}body.wkin #progBox .card.ex>.tgt{order:1}body.wkin #progBox .card.ex>.spec,body.wkin #progBox .card.ex>.exnote,body.wkin #progBox .card.ex>.vid{order:2}'+
+  'body.wkin #progBox .card.ex .tgt{padding:12px 14px;border-radius:14px;margin:4px 0 2px;column-gap:12px;row-gap:0;align-items:center}'+
+  'body.wkin #progBox .card.ex .tgt span{font-size:13px;font-weight:600}'+
+  'body.wkin #progBox .card.ex .tgt b{font-size:30px;line-height:1.1;letter-spacing:-.01em}'+
+  'body.wkin #progBox .card.ex .tgt small{margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}'+
+  'body.wkin #progBox .card.ex .tgt.open small{white-space:normal}';
+  document.head.appendChild(st);
+  document.addEventListener('click',function(e){ var t=e.target.closest&&e.target.closest('#progBox .card.ex .tgt'); if(t) t.classList.toggle('open'); }); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
