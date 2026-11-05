@@ -1069,10 +1069,10 @@ function drawMeasures(m){
   $('#mGrid').innerHTML = MLABELS.map(function(l,i){ return '<label for="mi'+i+'">'+esc(l)+'<input id="mi'+i+'" data-l="'+esc(l)+'" inputmode="decimal"></label>'; }).join('');
   document.querySelectorAll('#mGrid input').forEach(function(i){ if(mKeep[i.dataset.l]) i.value=mKeep[i.dataset.l]; });
   $('#mOpen').hidden = !MLABELS.length;
-  if(!m||!m.rows||!m.rows.length){ $('#mTable').innerHTML='<div class="sub" style="padding-top:8px">עוד אין מדידות. המדידה הראשונה נותנת נקודת התחלה.</div>'; return; }
+  if(!m||!m.rows||!m.rows.length){ $('#mTable').innerHTML='<div class="sub" style="padding-top:8px">עוד אין מדידות. המדידה הראשונה נותנת נקודת התחלה, ואביאל יגיד מתי מודדים.</div>'; return; }
   var f=m.rows[0], l=m.rows[m.rows.length-1], h='<table><thead><tr><th>היקף</th><th>'+esc(f.date)+'</th>'+(m.rows.length>1?'<th>'+esc(l.date)+'</th><th>שינוי</th>':'')+'</tr></thead><tbody>';
-  var seenL={}; m.labels.forEach(function(lb,i){ var a=f.vals[i], b=l.vals[i]; if(!lb||(a===''&&b==='')||seenL[String(lb).trim()]) return; seenL[String(lb).trim()]=1; var ch=(m.rows.length>1&&a!==''&&b!=='')?Math.round((b-a)*10)/10:null;
-    h+='<tr><td>'+esc(lb)+'</td><td class="num">'+esc(a)+'</td>'+(m.rows.length>1?'<td class="num">'+esc(b)+'</td><td class="num '+(ch<0?'good':'')+'">'+(ch==null?'':(ch>0?'+':ch<0?'−':'')+Math.abs(ch))+'</td>':'')+'</tr>'; });
+  var seenL={}, gainG=(typeof D!=='undefined'&&D&&D.goal==='עלייה'); m.labels.forEach(function(lb,i){ var a=f.vals[i], b=l.vals[i]; if(!lb||/ממוצע/.test(lb)||(a===''&&b==='')||seenL[String(lb).trim()]) return; /* 5.11.26: בלי שורות "ממוצע" מהקובץ (יצאו מספרים שגויים) */ seenL[String(lb).trim()]=1; var ch=(m.rows.length>1&&a!==''&&b!=='')?Math.round((b-a)*10)/10:null;
+    h+='<tr><td>'+esc(lb)+'</td><td class="num">'+esc(a)+'</td>'+(m.rows.length>1?'<td class="num">'+esc(b)+'</td><td class="num '+(ch!=null&&ch!==0&&(gainG?ch>0:ch<0)?'good':'')+'" dir="ltr">'+(ch==null?'':(ch>0?'+':ch<0?'−':'')+Math.abs(ch))+'</td>':'') /* הסימן לפני המספר; ירוק לפי המטרה (מסה: עלייה) */+'</tr>'; });
   $('#mTable').innerHTML=h+'</tbody></table>';
 }
 
@@ -2504,11 +2504,11 @@ function progLayout(){ var sec=document.querySelector('section[data-view="prog"]
   var fmt=function(v){ return v==null?'—':(v>0?'+':'')+v; };
   /* 1.11.26 (אביאל): בלי "לא זז לכיוון" שמבאס. שבוע הפוך מקבל הסבר רגוע + כמה כבר עשית מההתחלה */
   var totGood=tot!=null&&(down?tot<0:up?tot>0:false), ab=function(v){ return Math.abs(v); };
-  var verdict=wd==null?'עוד שבוע של שקילות, ותראו כאן אם אתם בכיוון':good?'השבוע בכיוון הנכון. ממשיכים בדיוק ככה':(down||up)?(totGood?'קפיצה קטנה השבוע, זה טבעי. מההתחלה כבר '+(down?'ירדת ':'עלית ')+ab(tot)+' ק״ג':'שבוע של תנודות, זה חלק מהדרך. ממשיכים לפי התוכנית'):'השבוע יציב';
+  var verdict=wd==null?'עוד שבוע של שקילות, ונראה כאן אם הכיוון נכון':good?'השבוע בכיוון הנכון. ממשיכים בדיוק ככה':(down||up)?(totGood?'קפיצה קטנה השבוע, זה טבעי. מההתחלה כבר '+(down?'ירדת ':'עלית ')+ab(tot)+' ק״ג':'שבוע של תנודות, זה חלק מהדרך. ממשיכים לפי התוכנית'):'השבוע יציב';
   if(good===false&&totGood) good=null;
   hero.innerHTML='<div class="phv'+(good===false?' warn':good?' ok':'')+'">'+esc(verdict)+'</div><div class="phg"><div><b class="num" dir="ltr">'+fmt(tot)+'</b><small>ק״ג מההתחלה</small></div><div><b class="num" dir="ltr">'+fmt(wd)+'</b><small>ק״ג השבוע</small></div><div><b class="num">'+tr+'</b><small>אימונים ב-30 יום</small></div></div>';
   var seg=document.getElementById('progSeg'); if(!seg){ seg=document.createElement('div'); seg.id='progSeg'; seg.className='pseg'; seg.setAttribute('role','tablist'); stack.parentNode.insertBefore(seg,stack); }
-  var P4=[['w','משקל'],['st','כוח'],['me','היקפים'],['ph','תמונות']];
+  var P4=[['w','משקל'],['st','כוח'],['me','היקפים'],['ph','תמונות']]; if(typeof npOn==='function'&&npOn()){ P4=P4.filter(function(x){ return x[0]!=='st'; }); if(PROG_PANE==='st') PROG_PANE='w'; } /* 5.11.26: רק תפריט — בלי לשונית כוח */
   seg.innerHTML=P4.map(function(x){ return '<button type="button" role="tab" data-pp="'+x[0]+'" aria-selected="'+(PROG_PANE===x[0])+'">'+x[1]+'</button>'; }).join('');
   seg.querySelectorAll('[data-pp]').forEach(function(b){ b.onclick=function(){ PROG_PANE=b.dataset.pp; lsSet('aviel_ppane',PROG_PANE); progLayout(); }; });
   [].forEach.call(stack.children,function(c){ c.classList.toggle('pphide',progPaneOf(c)!==PROG_PANE); }); }
