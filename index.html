@@ -2902,7 +2902,7 @@ var _renderTrainWo=renderTrain; renderTrain=function(){ var w=woGet(); if(w){ DA
 function woPill(){ var w=woGet(), p=document.getElementById('woPill'), onTrain=!document.querySelector('section[data-view="train"]')||!document.querySelector('section[data-view="train"]').hidden;
   if(!w||onTrain){ if(p) p.remove(); return; }
   if(!p){ p=document.createElement('button'); p.type='button'; p.id='woPill'; p.onclick=function(){ show('train'); renderTrain(); }; document.body.appendChild(p); }
-  var tb=document.getElementById('tabs'); p.style.bottom=((tb?tb.offsetHeight:70)+12)+'px'; p.textContent='חזרה לאימון '+(w.day+1)+' ('+woMin(w)+' דק׳)'; }
+  p.style.bottom='auto'; p.style.top='calc(10px + env(safe-area-inset-top, 0px))'; /* 5.11.26 (אביאל): "חזרה לאימון" למעלה */ p.textContent='חזרה לאימון '+(w.day+1)+' ('+woMin(w)+' דק׳)'; }
 var _showWo=show; show=function(tab){ var r=_showWo.apply(this,arguments); try{ woPill(); }catch(e){} return r; };
 function woResume(){ try{ if(woGet()){ var sec=document.querySelector('section[data-view="train"]'); if(sec&&sec.hidden){ show('train'); renderTrain(); } } woPill(); }catch(e){} }
 document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') woResume(); });
@@ -3690,7 +3690,7 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
         return '<button type="button" class="wpc'+(done[i]?' done':'')+(i===next?' next':'')+'" data-wp="'+i+'"><div class="wim">'+(im?'<img src="'+esc(im)+'" alt="">':'')+'<span class="wl">'+esc(letter)+'</span></div><div class="wbd"><b>'+esc(nm)+'</b><span>'+ex.length+' תרגילים · בערך '+mins+' דק׳'+(mus.length?' · '+esc(mus.slice(0,3).join(', ')):'')+'</span></div></button>'; }).join('')+'</div></div>';
     box.innerHTML=h; box.querySelectorAll('[data-wp]').forEach(function(b){ b.onclick=function(){ DAY=+b.dataset.wp; DAYSET=true; SHOWALL=true; PICK_ON=false; PICK_FORCE=false; try{ var w=woGet(); if(w&&w.day!==DAY) localStorage.removeItem('aviel_wo'); }catch(e){} renderTrain(); woPill(); window.scrollTo(0,0); }; }); return true; }
   function today(){ var L=(P&&P.lifts)||{}; return Object.keys(L).some(function(k){ return ((L[k]||{}).hist||[]).some(function(x){ return x.d===TODAY; }); }); }
-  var _rtPk=renderTrain; renderTrain=function(){ if(PICK_ON&&P&&P.program&&(PICK_FORCE||!today())){ if(picker()) return; } var r=_rtPk.apply(this,arguments);
+  var _rtPk=renderTrain; renderTrain=function(){ if(PICK_ON&&P&&P.program&&(PICK_FORCE||(!today()&&!woGet()))){ /* 5.11.26: במצב אימון (גם אחרי רענון, כשהסטים עוד בתור) — לא בחירת אימון */ if(picker()) return; } var r=_rtPk.apply(this,arguments);
     try{ var box=$('#progBox'), days=((P&&P.program&&P.program.blocks)||[]).filter(function(b){ return b.ex&&b.ex.length; }); if(box&&days.length>1&&!box.querySelector('.wback')){ box.insertAdjacentHTML('afterbegin','<button type="button" class="wback">→ כל האימונים</button>'); box.querySelector('.wback').onclick=function(){ PICK_ON=true; PICK_FORCE=true; renderTrain(); window.scrollTo(0,0); }; /* 4.11.26 (אביאל: "לא נותן לי לצאת"): גם כשיש סטים היום, "כל האימונים" באמת פותח את הבחירה */ } }catch(e){} return r; };
 })();
 
@@ -3887,6 +3887,9 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
 /* 5.11.26 (אביאל): כשחוזרים לאפליקציה — התראות "המנוחה נגמרה" נמחקות ממרכז העדכונים, שלא יצטברו */
 (function(){ function clr(){ try{ if(!('serviceWorker' in navigator)) return; navigator.serviceWorker.ready.then(function(r){ return r.getNotifications?r.getNotifications():[]; }).then(function(ns){ (ns||[]).forEach(function(n){ if(n.tag==='rest') n.close(); }); }).catch(function(){}); }catch(e){} }
   clr(); document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') clr(); }); })();
+
+/* 5.11.26 (אביאל: "עשיתי עדכון וזה הוציא אותי מהאימון"): אחרי רענון/עדכון באמצע אימון — חוזרים ישר לאימון שהיה פתוח */
+(function(){ var n=0, t=setInterval(function(){ n++; if(n>40){ clearInterval(t); return; } var tb=document.getElementById('tabs'); if(!tb||tb.hidden||typeof P==='undefined'||!P) return; clearInterval(t); try{ if(woGet()){ PICK_ON=false; woResume(); } }catch(e){} },250); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
