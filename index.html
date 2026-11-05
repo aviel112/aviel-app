@@ -3883,6 +3883,10 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
 })();
 
 
+
+/* 5.11.26 (אביאל): כשחוזרים לאפליקציה — התראות "המנוחה נגמרה" נמחקות ממרכז העדכונים, שלא יצטברו */
+(function(){ function clr(){ try{ if(!('serviceWorker' in navigator)) return; navigator.serviceWorker.ready.then(function(r){ return r.getNotifications?r.getNotifications():[]; }).then(function(ns){ (ns||[]).forEach(function(n){ if(n.tag==='rest') n.close(); }); }).catch(function(){}); }catch(e){} }
+  clr(); document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') clr(); }); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
