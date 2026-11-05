@@ -3908,6 +3908,12 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
 
 /* "סיימתי": בכניסה הבאה לאימונים — שוב רשימת האימונים */
 document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('#finish')){ PICK_ON=true; PICK_FORCE=false; window.PICK_AT=0; } });
+
+/* 5.11.26 (אביאל: "לרז אין טיימר ואין התראה, תעשה לכולם"): תרגיל בלי זמן מנוחה בתוכנית (ריק, "-") לא הפעיל טיימר בכלל.
+   עכשיו: ברירת מחדל 1.5 דק׳, וגם מנוחה שנכתבה בשניות ("90", "60-90 שנ׳") מובנת */
+restMin=function(r){ var t=String(r||'').replace(',','.'), m=t.match(/(\d+):(\d+)/); if(m) return Math.min(10,+m[1]+(+m[2])/60);
+  var ns=(t.match(/\d+(\.\d+)?/g)||[]).map(Number).filter(function(x){ return x>0; }); if(!ns.length) return 1.5;
+  var f=Math.max.apply(null,ns), sec=/שנ|sec/i.test(t)||f>=10; return Math.min(10,sec?f/60:f); };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
