@@ -3689,9 +3689,12 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
     var h='<div class="wpk"><h2>השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים. בוחרים אימון</h2><div class="wpl">'+days.map(function(b,i){ var t=String(b.title||('אימון '+(i+1))), nm=t.replace(/^אימון\s*\d+\s*[–-]\s*/,''), ex=b.ex||[], mins=Math.round(ex.reduce(function(a,e){ var s=parseInt(e.s,10)||3, r=parseFloat(e.rest)||1.5; return a+s*(r+0.8); },0)/5)*5, mus=[]; ex.forEach(function(e){ var m=String(e.mu||'').trim(); if(m&&mus.indexOf(m)<0) mus.push(m); });
         var letter=String(i+1), im=imgFor(t,b);
         return '<button type="button" class="wpc'+(done[i]?' done':'')+(i===next?' next':'')+'" data-wp="'+i+'"><div class="wim">'+(im?'<img src="'+esc(im)+'" alt="">':'')+'<span class="wl">'+esc(letter)+'</span></div><div class="wbd"><b>'+esc(nm)+'</b><span>'+ex.length+' תרגילים · בערך '+mins+' דק׳'+(mus.length?' · '+esc(mus.slice(0,3).join(', ')):'')+'</span></div></button>'; }).join('')+'</div></div>';
-    box.innerHTML=h; box.querySelectorAll('[data-wp]').forEach(function(b){ b.onclick=function(){ DAY=+b.dataset.wp; DAYSET=true; SHOWALL=true; PICK_ON=false; PICK_FORCE=false; try{ var w=woGet(); if(w&&w.day!==DAY) localStorage.removeItem('aviel_wo'); }catch(e){} renderTrain(); woPill(); window.scrollTo(0,0); }; }); return true; }
+    box.innerHTML=h; box.querySelectorAll('[data-wp]').forEach(function(b){ b.onclick=function(){ DAY=+b.dataset.wp; DAYSET=true; SHOWALL=true; PICK_ON=false; PICK_FORCE=false; window.PICK_AT=Date.now(); try{ var w=woGet(); if(w&&w.day!==DAY) localStorage.removeItem('aviel_wo'); }catch(e){} renderTrain(); woPill(); window.scrollTo(0,0); }; }); return true; }
   function today(){ var L=(P&&P.lifts)||{}; return Object.keys(L).some(function(k){ return ((L[k]||{}).hist||[]).some(function(x){ return x.d===TODAY; }); }); }
-  var _rtPk=renderTrain; renderTrain=function(){ if(PICK_ON&&P&&P.program&&(PICK_FORCE||(!today()&&!woGet()))){ /* 5.11.26: במצב אימון (גם אחרי רענון, כשהסטים עוד בתור) — לא בחירת אימון */ if(picker()) return; } var r=_rtPk.apply(this,arguments);
+  /* 5.11.26 (אביאל: "נותן לי את האימון הבא במקום הרשימה, ואם בא לי קודם 6 ואז 5?"): בכניסה לאימונים תמיד רשימת האימונים.
+     נשארים בתוך אימון רק כשהוא באמת פעיל (יש סטים ב-90 הדקות האחרונות) או שנבחר בחצי השעה האחרונה */
+  var _rtPk=renderTrain; renderTrain=function(){ if(!PICK_ON&&!woGet()&&Date.now()-(window.PICK_AT||0)>30*60000) PICK_ON=true;
+    if(PICK_ON&&P&&P.program&&(PICK_FORCE||!woGet())){ /* 5.11.26: במצב אימון (גם אחרי רענון, כשהסטים עוד בתור) — לא בחירת אימון */ if(picker()) return; } var r=_rtPk.apply(this,arguments);
     try{ var box=$('#progBox'), days=((P&&P.program&&P.program.blocks)||[]).filter(function(b){ return b.ex&&b.ex.length; }); if(box&&days.length>1&&!box.querySelector('.wback')){ box.insertAdjacentHTML('afterbegin','<button type="button" class="wback">→ כל האימונים</button>'); box.querySelector('.wback').onclick=function(){ PICK_ON=true; PICK_FORCE=true; renderTrain(); window.scrollTo(0,0); }; /* 4.11.26 (אביאל: "לא נותן לי לצאת"): גם כשיש סטים היום, "כל האימונים" באמת פותח את הבחירה */ } }catch(e){} return r; };
 })();
 
@@ -3902,6 +3905,9 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
   ':root[data-theme="light"] #hx .wk b{color:var(--text)}:root[data-theme="light"] #hx .wk:not(.on){box-shadow:inset 0 0 0 1px var(--line)}'+
   ':root[data-theme="light"] #hx .bar{background:rgba(0,0,0,.08)}';
   document.head.appendChild(st); })();
+
+/* "סיימתי": בכניסה הבאה לאימונים — שוב רשימת האימונים */
+document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('#finish')){ PICK_ON=true; PICK_FORCE=false; window.PICK_AT=0; } });
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
