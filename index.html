@@ -3931,6 +3931,29 @@ restMin=function(r){ var t=String(r||'').replace(',','.'), m=t.match(/(\d+):(\d+
   '.wnx i{display:block;font-style:normal;text-align:center;margin-top:14px;padding:13px;border-radius:999px;background:#0f0e0b;color:#f3ede2;font-weight:800;font-size:15.5px}'+
   '.wnx:focus-visible{outline:2px solid var(--text);outline-offset:3px}.wpk h2.wall{margin-top:0}';
   document.head.appendChild(st); })();
+
+/* ===== 6.11.26 (אביאל: "מסך האימון מגושם"): מצב אימון נקי — בלי הסרגל העליון, ניווט תרגילים דק עם פס התקדמות, נתוני התרגיל בשורה אחת, שורות סטים בלי מסגרות (רק הסט הנוכחי מסומן) ===== */
+(function(){ var st=document.createElement('style'); st.textContent=
+  'body.wkin header{display:none}body.wkin #progBox{position:relative}'+
+  'body.wkin #progBox .wback{font-size:13px;padding:8px 0;margin:0}'+
+  'body.wkin #progBox > .sub:not(.wk1){font-size:15px;font-weight:700;line-height:1.3;margin:0!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}'+
+  'body.wkin #fxHead.fxhead{grid-template-columns:36px 1fr 36px;gap:4px;margin:8px 0 10px}'+
+  'body.wkin #fxHead>b{font-size:14px;font-weight:600;color:var(--mute)}body.wkin #fxHead>b .num{color:var(--text);font-weight:800}'+
+  'body.wkin .fxarr{width:36px;height:36px;padding:0;background:none;color:var(--mute)}body.wkin .fxarr svg{width:18px;height:18px}'+
+  'body.wkin .fxdots{gap:4px;margin-top:4px}body.wkin .fxdots i,body.wkin .fxdots i.on{flex:1;width:auto;height:3px;border-radius:2px}'+
+  'body.wkin #progBox .fxhead .fxlinks{position:absolute;top:0;inset-inline-end:0;gap:14px}body.wkin #progBox .fxhead .fxlinks .linkbtn{padding:8px 0;font-size:13px}'+
+  'body.wkin #progBox .card.ex{padding:14px 14px 12px;gap:8px;border-radius:20px}'+
+  'body.wkin #progBox .card.ex .spec{gap:0}'+
+  'body.wkin #progBox .card.ex .spec>span{background:none;padding:0;border-radius:0;font-size:13px}'+
+  'body.wkin #progBox .card.ex .spec>span+span{margin-inline-start:12px;padding-inline-start:12px;border-inline-start:1px solid var(--line)}'+
+  'body.wkin #progBox .card.ex .spec span span{padding:0;margin:0;border:0}'+
+  'body.wkin #progBox .setrow{padding:5px 8px;border-radius:14px;background:none;box-shadow:none}body.wkin #progBox .sets .sh{padding:0 8px}'+
+  'body.wkin #progBox .card.ex .setrow input,body.wkin #progBox .card.ex .setrow select{min-height:40px;background:var(--panel2)!important}'+
+  'body.wkin #progBox .card.ex .setrow button{min-height:40px;height:40px;width:40px;justify-self:center}'+
+  'body.wkin #progBox .setrow.cur{background:color-mix(in srgb,var(--gold) 8%,transparent);box-shadow:inset 0 0 0 1px var(--gold)}'+
+  'body.wkin #progBox .setrow.ok{background:rgba(48,209,88,.10);box-shadow:none}'+
+  'body.wkin #progBox .card.ex .setrow.ok input,body.wkin #progBox .card.ex .setrow.ok select{background:transparent!important}';
+  document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
