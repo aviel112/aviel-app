@@ -3914,6 +3914,11 @@ document.addEventListener('click',function(e){ if(e.target.closest&&e.target.clo
 restMin=function(r){ var t=String(r||'').replace(',','.'), m=t.match(/(\d+):(\d+)/); if(m) return Math.min(10,+m[1]+(+m[2])/60);
   var ns=(t.match(/\d+(\.\d+)?/g)||[]).map(Number).filter(function(x){ return x>0; }); if(!ns.length) return 1.5;
   var f=Math.max.apply(null,ns), sec=/שנ|sec/i.test(t)||f>=10; return Math.min(10,sec?f/60:f); };
+
+/* 5.11.26 (בדיקת מסכים): ביומן מספרים של אלף ומעלה הוצגו בלי פסיק ("3600", "2088 קק״ל") מול "3,600" בבית. מיישרים: פסיק אלפים בכל מספר ביומן */
+(function(){ var sec=document.querySelector('section[data-view="food"]'); if(!sec||!window.MutationObserver) return; var q=false;
+  function fix(){ q=false; sec.querySelectorAll('.num').forEach(function(el){ if(el.children.length) return; var t=el.textContent, m=t.match(/^(\s*)(\d{4,6})(\s*קק״ל)?(\s*)$/); if(m) el.textContent=m[1]+(+m[2]).toLocaleString('he-IL')+(m[3]||'')+m[4]; }); }
+  new MutationObserver(function(){ if(!q){ q=true; requestAnimationFrame(fix); } }).observe(sec,{childList:true,subtree:true,characterData:true}); fix(); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
