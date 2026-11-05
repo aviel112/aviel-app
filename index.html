@@ -3821,7 +3821,7 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
 /* 4.11.26 (אביאל): טיימר מנוחה שנשמע גם מחוץ לאפליקציה. iOS מקפיא את הדף ברקע, אז בלחיצה על הסט מתחילים לנגן קובץ שקט באורך המנוחה
    שבסופו כבר מוקלטים 3 הטיקים והפעמון. אודיו שמתנגן ממשיך ברקע. בינתיים רק אצל אביאל (או aviel_bgt=1) עד שייבדק באייפון באימון */
 (function(){
-  function on(){ try{ if(localStorage.getItem('aviel_bgt')==='0') return false; if(localStorage.getItem('aviel_bgt')==='1') return true; }catch(e){} return typeof D!=='undefined'&&D&&/^אביאל/.test(String(D.name||'')); } /* 5.11.26 ערב (אביאל: "זה עבד פעם", רק מתוך האפליקציה): הוחזר. ההתראה מהשרת נשארת בנוסף */
+  function on(){ return false; } /* 5.11.26 ערב (אביאל): כבוי — המוזיקה ממשיכה, ומחוץ לאפליקציה מגיעה ההתראה מהשרת עם צליל הטלפון */
   var SR=16000, au=null, url='', endAt=0;
   function wav(sec){ var n=Math.round(sec*SR), b=new ArrayBuffer(44+n*2), v=new DataView(b), s=new Int16Array(b,44,n);
     function w(o,t){ for(var i=0;i<t.length;i++) v.setUint8(o+i,t.charCodeAt(i)); }
