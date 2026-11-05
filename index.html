@@ -3916,9 +3916,9 @@ restMin=function(r){ var t=String(r||'').replace(',','.'), m=t.match(/(\d+):(\d+
   var f=Math.max.apply(null,ns), sec=/שנ|sec/i.test(t)||f>=10; return Math.min(10,sec?f/60:f); };
 
 /* 5.11.26 (בדיקת מסכים): ביומן מספרים של אלף ומעלה הוצגו בלי פסיק ("3600", "2088 קק״ל") מול "3,600" בבית. מיישרים: פסיק אלפים בכל מספר ביומן */
-(function(){ var sec=document.querySelector('section[data-view="food"]'); if(!sec||!window.MutationObserver) return; var q=false;
+(function go(n){ var sec=document.querySelector('section[data-view="food"]'); if(!window.MutationObserver) return; if(!sec){ if((n||0)<40) setTimeout(function(){ go((n||0)+1); },500); return; } var q=false; /* הלשונית נבנית אחרי הטעינה */
   function fix(){ q=false; sec.querySelectorAll('.num').forEach(function(el){ if(el.children.length) return; var t=el.textContent, m=t.match(/^(\s*)(\d{4,6})(\s*קק״ל)?(\s*)$/); if(m) el.textContent=m[1]+(+m[2]).toLocaleString('he-IL')+(m[3]||'')+m[4]; }); }
-  new MutationObserver(function(){ if(!q){ q=true; requestAnimationFrame(fix); } }).observe(sec,{childList:true,subtree:true,characterData:true}); fix(); })();
+  new MutationObserver(function(){ if(!q){ q=true; requestAnimationFrame(fix); } }).observe(sec,{childList:true,subtree:true,characterData:true}); fix(); })(0);
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
