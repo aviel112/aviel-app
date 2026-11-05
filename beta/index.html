@@ -1530,6 +1530,7 @@ function renderTrain(){
       if(!WU&&wk>=30&&incFor(e,wk)>=2.5&&heavyN<2&&!today.length){ heavyN++; h+='<div class="exnote">סטי חימום לפני (לא נרשמים): <bdi dir="ltr">'+r25(wk*0.5)+'×10</bdi> · <bdi dir="ltr">'+r25(wk*0.7)+'×5</bdi> · <bdi dir="ltr">'+r25(wk*0.85)+'×2</bdi></div>'; }
       else if(ps.length&&FXOFF) h+='<div class="last">בפעם הקודמת: '+ps.map(function(x){ return '<bdi dir="ltr">'+x.kg+'×'+x.reps+'</bdi>'; }).join(' · ')+'</div>';
       var gr=growthLine(L); if(gr) h+=gr;
+      else if(!prev.length&&!sg&&!today.length) h+='<div class="tgt first"><span>היום</span><b>בוחרים משקל</b><small>פעם ראשונה בתרגיל: משקל שאפשר לעשות איתו את כל החזרות בטכניקה נקייה.</small></div>'; /* 6.11.26: אותו מקום ואותו עיצוב כמו יעד רגיל */
       else if(!prev.length) h+='<div class="exnote">פעם ראשונה בתרגיל: בוחרים משקל שאפשר לעשות איתו את כל החזרות בטכניקה נקייה.</div>';
       h+='<div class="sets"><div class="sh"><span>סט</span><span>ק״ג</span><span>חזרות</span><span>עוד כמה יכולת?</span><span></span></div>';
       /* 1.11.26 (אביאל): "כולל סטי חימום" בתוכנית → שתי שורות חימום לפני סטי העבודה. מסמנים ✓ אבל לא נרשמות להתקדמות */
@@ -3942,7 +3943,7 @@ restMin=function(r){ var t=String(r||'').replace(',','.'), m=t.match(/(\d+):(\d+
   'body.wkin .fxarr{width:36px;height:36px;padding:0;background:none;color:var(--mute)}body.wkin .fxarr svg{width:18px;height:18px}'+
   'body.wkin .fxdots{gap:4px;margin-top:4px}body.wkin .fxdots i,body.wkin .fxdots i.on{flex:1;width:auto;height:3px;border-radius:2px}'+
   'body.wkin #progBox .fxhead .fxlinks{position:absolute;top:0;inset-inline-end:0;gap:14px}body.wkin #progBox .fxhead .fxlinks .linkbtn{padding:8px 0;font-size:13px}'+
-  'body.wkin #progBox .card.ex{padding:14px 14px 12px;gap:8px;border-radius:20px}'+
+  'body.wkin #progBox .card.ex{padding:14px 14px 12px;gap:8px}'+
   'body.wkin #progBox .card.ex .spec{gap:0}'+
   'body.wkin #progBox .card.ex .spec>span{background:none;padding:0;border-radius:0;font-size:13px}'+
   'body.wkin #progBox .card.ex .spec>span+span{margin-inline-start:12px;padding-inline-start:12px;border-inline-start:1px solid var(--line)}'+
@@ -3965,6 +3966,7 @@ restMin=function(r){ var t=String(r||'').replace(',','.'), m=t.match(/(\d+):(\d+
   'body.wkin #progBox .card.ex .tgt.open small{white-space:normal}';
   document.head.appendChild(st);
   document.addEventListener('click',function(e){ var t=e.target.closest&&e.target.closest('#progBox .card.ex .tgt'); if(t) t.classList.toggle('open'); }); })();
+(function(){ var st=document.createElement('style'); st.textContent='body.wkin #progBox .card.ex .tgt.first b{font-size:20px;color:var(--text)}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
