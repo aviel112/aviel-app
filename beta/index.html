@@ -1523,6 +1523,7 @@ function renderTrain(){
       var Rh=/כשל/.test(e.r)?null:rng(e.r), nsh=parseInt(e.s,10)||0, tdTop=today.length?Math.max.apply(null,today.map(function(x){ return x.kg; })):0, tdAt=today.filter(function(x){ return x.kg===tdTop; });
       if(!repsArr(e.r)&&Rh&&nsh&&tdAt.length>=nsh&&tdAt.every(function(x){ return x.reps>=Rh[1]; })) h+='<div class="hit">'+IC_UP+'<span>יעד הושג היום! בפעם הבאה <b dir="ltr">'+(Math.round((tdTop+incFor(e,tdTop))*100)/100)+' ק״ג</b></span></div>';
       else if(sg&&sg.up&&!today.length) h+='<div class="lvl">'+IC_UP+'<span>עולים במשקל היום</span><b>מ-'+sg.from+' ל-'+sg.kg+' ק״ג</b></div>';
+      if(sg&&!(isFinite(+sg.kg)&&isFinite(+sg.reps)&&+sg.reps>0)) sg=null; /* 5.11.26: מתח במשקל גוף עם רישום חלקי נתן "0×NaN" */
       if(sg) h+='<div class="tgt'+(sg.stall?' st':'')+'"><span>היום</span><b dir="ltr">'+sg.kg+'×'+sg.reps+'</b><small>'+esc(sg.why)+'</small></div>'; /* 3.11.26: יעד אחד ברור במקום שורה ירוקה ארוכה; 1RM עבר להתקדמות */
       var wk=sg?sg.kg:(ps.length?Math.max.apply(null,ps.map(function(x){ return x.kg; })):0);
       var WU=warmOf(e)&&!today.length&&wk>0;
@@ -1536,10 +1537,10 @@ function renderTrain(){
       for(var k=0;k<Math.max(n,today.length);k++){
         var dn=today[k], pv=ps[k]||ps[ps.length-1], li=LASTIN[e.ex]||{};
         var kg=dn?dn.kg:(li.kg!=null?li.kg:(sg?sg.kg:(pv?pv.kg:''))), PA0=repsArr(e.r), rp=dn?dn.reps:(PA0?(PA0[k]||PA0[PA0.length-1]):(sg&&sg.reps?sg.reps:(li.reps!=null?li.reps:(R?R[0]:(pv?pv.reps:''))))); /* 1.11.26 (אביאל): החזרות הממולאות = היעד של היום, לא הקצה העליון של הטווח ולא הסט הקודם */
-        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal"'+(sg&&sg.up&&!dn?' class="upk"':'')+' value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select data-rk="'+k+'" aria-label="כמה קשה היה סט '+(k+1)+'">'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):(RIRD[e.ex+'|'+k]!=null?String(RIRD[e.ex+'|'+k]):''); return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+({'':'בחר','0':'0 · כשל','1':'עוד 1','2':'עוד 2','3':'עוד 3','4':'4 ומעלה'})[o]+'</option>'; }).join('')+'</select>'+(dn?'<button type="button" class="sundo" aria-label="ביטול סט '+(k+1)+' שסומן">'+IC_CHECK+'</button>':'<button type="submit" aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button>')+'</form>';
+        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal"'+(sg&&sg.up&&!dn?' class="upk"':'')+' value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select data-rk="'+k+'" aria-label="כמה קשה היה סט '+(k+1)+'">'+['','0','1','2','3','4'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):(RIRD[e.ex+'|'+k]!=null?String(RIRD[e.ex+'|'+k]):''); return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+({'':'בחירה','0':'0 · כשל','1':'עוד 1','2':'עוד 2','3':'עוד 3','4':'4 ומעלה'})[o]+'</option>'; }).join('')+'</select>'+(dn?'<button type="button" class="sundo" aria-label="ביטול סט '+(k+1)+' שסומן">'+IC_CHECK+'</button>':'<button type="submit" aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button>')+'</form>';
       }
       h+='</div>';
-      if(!ls('aviel_rir_seen',0)&&!rirHelp&&(rirHelp=1)) h+='<div class="rirhelp">"עוד כמה יכולת?" = כמה חזרות עוד היית מצליח לעשות בסוף הסט. 0 = לא הייתה עוד חזרה. לא חובה, אבל ככה ההמלצה לפעם הבאה מדויקת יותר</div>';
+      if(!ls('aviel_rir_seen',0)&&!rirHelp&&(rirHelp=1)) h+='<div class="rirhelp">"עוד כמה יכולת?" = כמה חזרות עוד נשארו בכוח בסוף הסט. 0 = לא הייתה עוד חזרה. לא חובה, אבל ככה ההמלצה לפעם הבאה מדויקת יותר</div>';
     }
     h+='</div>';
   });
@@ -1740,7 +1741,7 @@ var BA_IDX=-1;
 renderPhotos=function(L){ PHOTOS_L=L||[]; try{ var te=document.getElementById('todayCard'); if(te) renderExtras(te); }catch(e){} var box=$('#phBox'); if(!box) return;
   if(!L||!L.length){ box.innerHTML='<div class="sub" style="padding-top:8px">עוד אין תמונות. התמונה הראשונה היא נקודת ההתחלה, ואחרי חודש תראו כאן לפני ואחרי.</div>'; return; }
   var d=function(x){ return x.d.slice(8,10)+'/'+x.d.slice(5,7); }, h='';
-  if(L.length>1){ var ai=(BA_IDX>0&&BA_IDX<L.length)?BA_IDX:L.length-1, f=L[0], a=L[ai];
+  if(L.length>1&&L[L.length-1].d!==L[0].d){ var ai=(BA_IDX>0&&BA_IDX<L.length)?BA_IDX:L.length-1, f=L[0], a=L[ai]; if(a.d===f.d){ ai=L.length-1; a=L[ai]; }
     var days=Math.round((new Date(a.d+'T12:00:00')-new Date(f.d+'T12:00:00'))/864e5);
     h+='<div class="ba" style="--p:50%"><img class="ba-a" src="'+a.data+'" alt="עכשיו, '+d(a)+'"><img class="ba-b" src="'+f.data+'" alt="התחלה, '+d(f)+'"><i class="ba-l" aria-hidden="true"><b></b></i>'+
       '<span class="ba-t ba-tr">לפני · '+d(f)+'</span><span class="ba-t ba-tl">'+(ai===L.length-1?'עכשיו':'אחרי')+' · '+d(a)+'</span>'+
@@ -1783,7 +1784,7 @@ function openSwap(i,e){ var box=document.getElementById('swb'+i); if(!box) retur
   if(!LIB){ box.hidden=false; box.innerHTML='<div class="exnote">טוען חלופות…</div>'; loadLib(function(){ box.hidden=true; if(LIB) openSwap(i,e); else box.hidden=false, box.innerHTML='<div class="exnote">אין חיבור כרגע. נסו שוב בעוד רגע</div>'; }); return; }
   var L=altsFor(e); if(!L.length){ box.hidden=false; box.innerHTML='<div class="exnote">אין חלופות במאגר לתרגיל הזה.</div>'; return; }
   var k=0, draw=function(){ var a=L[k]; /* 2.11.26: גלריה כמו בתפריט — מחליקים, לוחצים על החלופה, ואז "להיום" או "קבוע" */
-    box.innerHTML='<div class="mgal swgal">'+L.map(function(x,i){ var im=typeof exImgFor==='function'?exImgFor(x.n):''; return '<button type="button" class="mgc'+(i===k?' on':'')+'" data-k="'+i+'">'+(im?'<img src="'+esc(im)+'" alt="" loading="lazy" style="width:44px;height:44px;border-radius:10px;object-fit:cover;background:#fff">':'')+'<span class="mgk" aria-hidden="true">✓</span><span class="mgt">'+esc(x.n)+'</span><small>'+(x.s&&x.r?esc(x.s)+'×'+esc(x.r):'')+(x.pop?(x.s&&x.r?' · ':'')+'נבחר '+x.pop+' פעמים':'')+'</small></button>'; }).join('')+'</div><div class="swact"><button type="button" data-pick="day">להיום: '+esc(a.n)+'</button><button type="button" class="ghost" data-pick="perm">קבוע</button></div>';
+    box.innerHTML='<div class="mgal swgal">'+L.map(function(x,i){ var im=typeof exImgFor==='function'?exImgFor(x.n):''; if(im&&!/^(https?:|data:)/.test(im)) im=(EXIMG&&EXIMG.base?EXIMG.base:'')+im+'/0.jpg'; return '<button type="button" class="mgc'+(i===k?' on':'')+'" data-k="'+i+'">'+(im?'<img src="'+esc(im)+'" alt="" loading="lazy" style="width:44px;height:44px;border-radius:10px;object-fit:cover;background:#fff">':'')+'<span class="mgk" aria-hidden="true">✓</span><span class="mgt">'+esc(x.n)+'</span><small>'+(x.s&&x.r?esc(x.s)+'×'+esc(x.r):'')+(x.pop?(x.s&&x.r?' · ':'')+'נבחר '+x.pop+' פעמים':'')+'</small></button>'; }).join('')+'</div><div class="swact"><button type="button" data-pick="day">להיום: '+esc(a.n)+'</button><button type="button" class="ghost" data-pick="perm">קבוע</button></div>';
     box.querySelectorAll('.swgal .mgc').forEach(function(b){ b.onclick=function(){ k=+b.dataset.k; var sl=box.querySelector('.swgal').scrollLeft; draw(); box.querySelector('.swgal').scrollLeft=sl; }; });
     box.querySelectorAll('[data-pick]').forEach(function(b){ b.onclick=function(){ var orig=e._orig||e.ex, st=swapStore(); if(b.dataset.pick==='perm'){ st.perm[orig]=a.n; delete st.day[orig]; } else st.day[orig]=a.n; swapSave(st.day,st.perm);
       var lr=ls('aviel_swap_learn',{}); lr[orig]=lr[orig]||{}; lr[orig][a.n]=(lr[orig][a.n]||0)+1; lsSet('aviel_swap_learn',lr);
@@ -3752,7 +3753,7 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
    'body.wkin #train h1,body.wkin h1:has(+#progName),body.wkin #progName,body.wkin #wkCard,body.wkin #progBox .wk1,body.wkin #progBox .wkcs{display:none!important}'+
    'body.wkin #progBox{padding-bottom:96px}'+
    'body.wkin #progBox .wback{align-self:flex-start;background:none;border:0;padding:4px 0;color:var(--mute);font-size:13px;font-weight:600}'+
-   'body.wkin #progBox .wback+.sub,body.wkin #progBox > .sub{font-size:17px;font-weight:800;color:var(--fg,#fff);line-height:1.35;margin:2px 0 4px}'+
+   'body.wkin #progBox .wback+.sub,body.wkin #progBox > .sub{font-size:17px;font-weight:800;color:var(--text);line-height:1.35;margin:2px 0 4px}'+
    '#progBox .fxlinks{white-space:nowrap;text-align:center}'+
    '#progBox .card.ex .tgt{display:grid;grid-template-columns:auto 1fr;align-items:baseline;column-gap:10px;row-gap:2px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--gold) 9%,transparent);margin:6px 0 2px}'+
    '#progBox .card.ex .tgt span{font-size:12px;color:var(--mute)}#progBox .card.ex .tgt b{font-size:20px;font-weight:800;color:var(--gold);justify-self:start}'+
@@ -3893,6 +3894,14 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
 
 /* 5.11.26 (אביאל: "עשיתי עדכון וזה הוציא אותי מהאימון"): אחרי רענון/עדכון באמצע אימון — חוזרים ישר לאימון שהיה פתוח */
 (function(){ var n=0, t=setInterval(function(){ n++; if(n>40){ clearInterval(t); return; } var tb=document.getElementById('tabs'); if(!tb||tb.hidden||typeof P==='undefined'||!P) return; clearInterval(t); try{ if(woGet()){ PICK_ON=false; woResume(); } }catch(e){} },250); })();
+
+/* 5.11.26 (בדיקת מסכים): מצב בהיר בבית — כרטיסי הזכוכית הכהים הופכים לבהירים וקריאים */
+(function(){ var st=document.createElement('style'); st.textContent=
+  ':root[data-theme="light"] #hx .gl{background:rgba(255,255,255,.9);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}'+
+  ':root[data-theme="light"] #hx .gl small,:root[data-theme="light"] #hx .wk{color:var(--mute)!important}'+
+  ':root[data-theme="light"] #hx .wk b{color:var(--text)}:root[data-theme="light"] #hx .wk:not(.on){box-shadow:inset 0 0 0 1px var(--line)}'+
+  ':root[data-theme="light"] #hx .bar{background:rgba(0,0,0,.08)}';
+  document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
@@ -3909,7 +3918,7 @@ var HELP={
  intro:{t:'ככה זה עובד',l:['כל בוקר נשקלים פעם אחת. זה לוקח 10 שניות.','באימון רושמים משקל וחזרות בכל סט, והאפליקציה אומרת מתי לעלות במשקל.','באוכל מסמנים מה אכלת מהתפריט, או רושמים ביומן.','פעם בשבועיים, בסוף השבוע, ממלאים צ׳ק-אין קצר ואני מכוון אותך הלאה.','משהו לא ברור? לוחצים על סימן השאלה למעלה, או כותבים לי.']},
  home:{t:'המסך הראשי',l:['כאן רואים את היום והשבוע שלך במבט אחד.','נשקלים בבוקר, אחרי שירותים ולפני אוכל ושתייה.','מסמנים את ההרגלים היומיים ושומרים על הרצף.','הודעות ממני מופיעות כאן למעלה, כולל הודעות קוליות.','פעם בשבועיים ממלאים צ׳ק-אין, ואני מקבל אותו ישר.']},
  menu:{t:'התפריט',l:['בכל ארוחה בוחרים אפשרות אחת מהרשימה.','עוברים בין האפשרויות עם החצים, ומה שבחרת עולה ראשון בפעם הבאה.','לחיצה על אפשרות מסמנת אותה, ו״אכלתי״ סוגר את הארוחה.','הסדר גמיש. העיקר שהכל נאכל עד סוף היום.']},
- train:{t:'האימון',l:['בוחרים את האימון של היום למעלה.','בכל סט רושמים משקל וחזרות ולוחצים על הסימון.','"עוד כמה יכולת?": כמה חזרות עוד היית מצליח לעשות בסוף הסט (0 = לא הייתה עוד חזרה). ככה האפליקציה יודעת מתי להעלות משקל.','הגעת לחזרות המקסימליות בכל הסטים? בפעם הבאה עולים במשקל.','"חלופה" מחליפה תרגיל כשהמכשיר תפוס, ו"טכניקה" שולחת לי סרטון קצר ואני עונה בקולית.','מתחת לכל תרגיל יש סרטון שמראה איך עושים אותו.']},
+ train:{t:'האימון',l:['בוחרים את האימון של היום למעלה.','בכל סט רושמים משקל וחזרות ולוחצים על הסימון.','"עוד כמה יכולת?": כמה חזרות עוד נשארו בכוח בסוף הסט (0 = לא הייתה עוד חזרה). ככה האפליקציה יודעת מתי להעלות משקל.','הגעת לחזרות המקסימליות בכל הסטים? בפעם הבאה עולים במשקל.','"חלופה" מחליפה תרגיל כשהמכשיר תפוס, ו"טכניקה" שולחת לי סרטון קצר ואני עונה בקולית.','מתחת לכל תרגיל יש סרטון שמראה איך עושים אותו.']},
  food:{t:'יומן האוכל',l:['מחפשים מאכל או סורקים ברקוד, בוחרים כמות ולאיזו ארוחה.','הטבעת מראה כמה נשאר להיום מול היעד שלך.','"אחרונים" מוסיף בלחיצה אחת, ו"העתקת אתמול" חוסכת יום שלם של הקלדה.','מוצר שלא נמצא? מצלמים את התווית ואני מוסיף אותו למאגר.']},
  prog:{t:'ההתקדמות',l:['הגרף מחליק את התנודות היומיות ומראה את הכיוון האמיתי.','תמונות והיקפים מעדכנים פעם בחודש, באותו מקום ובאותה תאורה.','הכוח שלך מתעדכן לבד מכל אימון שרשמת.']}
 };
