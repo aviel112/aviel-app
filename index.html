@@ -4136,6 +4136,11 @@ function coordOpen(k){ var ev=k==='ev', opts=ev?['חתונה או אירוע','�
   'body.wkin #progBox .card.ex .tgt:not(.first):not(.st) span{display:none}body.wkin #progBox .card.ex .tgt:not(.first):not(.st) small{display:none}'+
   'body.wkin #progBox .card.ex .tgt.open:not(.first):not(.st) small{display:block;white-space:normal}body.wkin #progBox .card.ex .tgt{cursor:pointer}';
   document.head.appendChild(st); })();
+/* 7.11.26 (v310, אביאל אישר): "בחירה" בעמודת "עוד כמה יכולת?" רק בסט הנוכחי; בסטים שעוד לא בתור קו קטן. בפתיחת הרשימה המילה חוזרת */
+(function(){ function dash(){ try{ if(!document.body.classList.contains('wkin')) return; document.querySelectorAll('#progBox form.setrow select').forEach(function(s){ var o=s.options[0]; if(!o||o.value!=='') return; var f=s.closest('form.setrow'), t=(f.classList.contains('cur')||document.activeElement===s)?'בחירה':'–'; if(o.textContent!==t) o.textContent=t; }); }catch(e){} }
+  var box=document.getElementById('progBox'); if(box&&window.MutationObserver) new MutationObserver(dash).observe(box,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+  document.addEventListener('focusin',dash); document.addEventListener('focusout',function(){ setTimeout(dash,0); });
+  var _rtD=renderTrain; renderTrain=function(){ var r=_rtD.apply(this,arguments); dash(); return r; }; })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
