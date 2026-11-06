@@ -338,6 +338,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--gold)}
 .sheet-in li{display:grid;grid-template-columns:26px 1fr;gap:10px;font-size:15.5px;line-height:1.45;counter-increment:s}
 .sheet-in li::before{content:counter(s);width:26px;height:26px;border-radius:50%;background:var(--soft);color:var(--gold);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
 .sheet-in button{width:100%;margin-top:18px}
+.onb .onbn{font-size:13px;color:var(--mute);font-weight:600;margin-bottom:6px}.onb p{font-size:15.5px;line-height:1.5;margin:0 0 12px}.onb .sheet-in .onbskip{margin-top:10px;min-height:40px;font-size:14px;text-decoration:none;color:var(--mute)}
 .today{padding:18px 18px 8px}
 .tdh{font-family:var(--f-display);font-weight:700;font-size:22px;margin:0}
 .tdn{font-weight:800;color:var(--gold);font-size:15px}
@@ -3967,6 +3968,56 @@ restMin=function(r){ var t=String(r||'').replace(',','.'), m=t.match(/(\d+):(\d+
   document.head.appendChild(st);
   document.addEventListener('click',function(e){ var t=e.target.closest&&e.target.closest('#progBox .card.ex .tgt'); if(t) t.classList.toggle('open'); }); })();
 (function(){ var st=document.createElement('style'); st.textContent='body.wkin #progBox .card.ex .tgt.first b{font-size:20px;color:var(--text)}'; document.head.appendChild(st); })();
+
+/* ===== 6.11.26 (אביאל: "להוסיף טכניקות אימון כמו סופר סט"): "אופן ביצוע" מהבונה הגיע עד היום למתאמן כהערה רגילה.
+   עכשיו: שורת טכניקה בכרטיס (נגיעה פותחת הסבר), וסופרסט אמיתי — בלי מנוחה בין התרגילים, מעבר אוטומטי ביניהם, והמנוחה רק בסוף הסבב ===== */
+var TQ=[
+  {k:'ss',re:/סופר.?סט/,t:'סופרסט',how:'סט אחד בכל תרגיל ברצף, בלי מנוחה ביניהם. נחים רק בסוף הסבב, והאפליקציה מעבירה בין התרגילים לבד.'},
+  {k:'drop',re:/דרופ.?סט/,t:'דרופ סט',s:'בסט האחרון',how:'בסט האחרון מגיעים לכשל, מורידים משקל וממשיכים מיד עד כשל נוסף. רושמים את החזרות במשקל המלא.'},
+  {k:'rp',re:/רסט.?פאוז/,t:'רסט פאוז',s:'בסט האחרון',how:'בסט האחרון מגיעים לכשל, נחים כמה נשימות וממשיכים באותו משקל עוד כמה חזרות. רושמים את החזרות שלפני ההפסקה.'},
+  {k:'fail',re:/עד כשל/,t:'עד כשל',s:'בסט האחרון',how:'בסט האחרון ממשיכים עד שאין עוד חזרה בטכניקה נקייה. בשאר הסטים משאירים חזרה או שתיים בכוח.'},
+  {k:'tempo',re:/קצב איטי/,t:'ירידה איטית',s:'3 שניות',how:'בכל חזרה מורידים את המשקל לאט ועולים בקצב רגיל.'}
+], TQ_MODES=['סופרסט עם התרגיל הבא','דרופ סט בסט האחרון','רסט פאוז בסט האחרון','סט אחרון עד כשל','קצב איטי בירידה (3 שניות)'], SS={skip:0,force:0,go:null};
+function tqSS(e){ var n=String(e&&e.note||''); return /סופר.?סט/.test(n)&&!/הקודם/.test(n); }
+function tqOf(e){ var n=String(e&&e.note||''); for(var q=1;q<TQ.length;q++) if(TQ[q].re.test(n)) return TQ[q]; return null; }
+function tqGroups(){ var d=fxDays()[DAY], g={}; if(!d) return g; var ex=d.ex||[];
+  for(var i=0;i<ex.length;i++){ if(g[i]||!tqSS(ex[i])) continue; var m=[i], j=i; while(j<ex.length-1&&tqSS(ex[j])){ j++; m.push(j); } if(m.length>1) m.forEach(function(x){ g[x]=m; }); } return g; }
+function tqIdx(c,pos){ var f=c&&c.querySelector('form.setrow'); return f?+f.dataset.i:pos; }
+function tqPos(i){ var cs=fxCards(); for(var q=0;q<cs.length;q++) if(tqIdx(cs[q],q)===i) return q; return -1; }
+function tqOpen(i){ var p=tqPos(i); return p>=0&&fxOpen(fxCards()[p]); }
+function tqDecor(){ var d=fxDays()[DAY]; if(!d) return; var G=tqGroups(), sw=applySwaps(d);
+  fxCards().forEach(function(c,pos){ if(c.querySelector('.tq')) return; var i=tqIdx(c,pos), e=d.ex[i]; if(!e) return; var grp=G[i], t=grp?TQ[0]:tqOf(e); if(!t) return;
+    var sub=t.s||''; if(grp) sub='עם '+grp.filter(function(x){ return x!==i; }).map(function(x){ return sw.ex[x]?sw.ex[x].ex:''; }).join(' ועם ');
+    if(t.k==='tempo'){ var sm=String(e.note||'').match(/(\d+)\s*שניות/); if(sm) sub=sm[1]+' שניות'; }
+    var el=document.createElement('div'); el.className='tq'; el.setAttribute('role','button'); el.tabIndex=0; el.setAttribute('aria-expanded','false');
+    el.innerHTML='<b>'+esc(t.t)+'</b><span>'+esc(sub)+'</span><small>'+esc(t.how)+'</small>';
+    var an=c.querySelector('.tgt')||c.querySelector('.swapbox')||c.querySelector('.nmrow'); if(an) an.parentNode.insertBefore(el,an.nextSibling); else c.insertBefore(el,c.firstChild);
+    /* ההערה: בלי הטקסט של אופן הביצוע, שכבר מופיע בשורת הטכניקה */
+    c.querySelectorAll('.exnote').forEach(function(n){ if(n.textContent!==String(e.note||'')) return; var tx=n.textContent; TQ_MODES.forEach(function(m){ tx=tx.split(m).join(''); }); tx=tx.replace(/^[\s.]+/,'').trim(); if(tx) n.textContent=tx; else n.remove(); }); }); }
+var _renderTrainTq=renderTrain; renderTrain=function(){ var r=_renderTrainTq.apply(this,arguments); try{ tqDecor(); }catch(e){} return r; };
+(function(){ var st=document.createElement('style'); st.textContent=
+  '#progBox .card.ex .tq{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;font-size:13px;line-height:1.4;cursor:pointer;-webkit-tap-highlight-color:transparent}'+
+  '#progBox .card.ex .tq b{color:var(--gold);font-weight:700}#progBox .card.ex .tq span{color:var(--mute);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+  '#progBox .card.ex .tq small{display:none;flex-basis:100%;font-size:13px;color:var(--mute);margin-top:2px}#progBox .card.ex .tq.open small{display:block}#progBox .card.ex .tq.open span{white-space:normal}'+
+  '#progBox .card.ex .tq:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:6px}body.wkin #progBox .card.ex>.tq{order:1}';
+  document.head.appendChild(st);
+  function tog(el){ el.classList.toggle('open'); el.setAttribute('aria-expanded',el.classList.contains('open')?'true':'false'); }
+  document.addEventListener('click',function(e){ var t=e.target.closest&&e.target.closest('#progBox .card.ex .tq'); if(t) tog(t); });
+  document.addEventListener('keydown',function(e){ if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('tq')){ e.preventDefault(); tog(e.target); } });
+  /* סופרסט: אחרי סט בתרגיל שיש אחריו עוד תרגיל פתוח בסבב אין מנוחה; אחרי האחרון בסבב נחים וחוזרים לראשון */
+  var _rs=window.restStart; window.restStart=function(min){ if(SS.skip){ SS.skip=0; return; } if(SS.force&&!(min>0)) min=SS.force; return _rs.call(this,min); };
+  var _fa=fxAfterSet; fxAfterSet=function(){ if(SS.go!=null){ var j=SS.go; SS.go=null; if(!FXOFF){ fxGo(j); return; } } return _fa.apply(this,arguments); };
+  document.addEventListener('submit',function(ev){ var f=ev.target; if(!f||!f.classList||!f.classList.contains('setrow')||f.classList.contains('ok')) return;
+    var i=+f.dataset.i, grp=tqGroups()[i]; if(!grp) return; var d=fxDays()[DAY], later=grp.slice(grp.indexOf(i)+1).filter(tqOpen);
+    SS.skip=later.length?1:0; SS.force=0; SS.go=null;
+    if(!later.length&&!(restMin(d.ex[i].rest)>0)) for(var q=0;q<grp.length;q++){ var m=restMin(d.ex[grp[q]].rest); if(m>0){ SS.force=m; break; } }
+    setTimeout(function(){ SS.skip=0; SS.force=0; if(!f.classList.contains('ok')) return; /* הסט לא נרשם (שדה חסר, לחיצה כפולה) */
+      var tgt=-1, back=false;
+      if(later.length){ tgt=tqPos(later[0]); var rx=document.getElementById('restX'), rb=document.getElementById('rest'); if(rx&&rb&&!rb.hidden) rx.click(); } /* מנוחה שעוד רצה מהסבב הקודם נעצרת */
+      else { var open=grp.filter(tqOpen); if(open.length&&open[0]!==i){ tgt=tqPos(open[0]); back=true; } else if(!open.length&&i!==grp[grp.length-1]){ var lp=tqPos(grp[grp.length-1]); if(lp>=0&&lp+1<fxCards().length) tgt=lp+1; } }
+      if(tgt<0) return; var cs=fxCards(), nm=cs[tgt]&&cs[tgt].querySelector('.nm')?cs[tgt].querySelector('.nm').textContent.trim():'';
+      if(back){ var rn=document.getElementById('restN'); if(rn&&nm) rn.textContent='הבא: חוזרים ל'+nm; }
+      if(document.getElementById('fxSet')) SS.go=tgt; else if(cs[tgt]) cs[tgt].scrollIntoView({block:'center',behavior:'smooth'}); },0); },true); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
@@ -3994,6 +4045,23 @@ function openHelp(k,done){ var H=HELP[k]||HELP.home, s=document.createElement('d
   s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelectorAll('button').forEach(function(b){ b.onclick=close; }); document.addEventListener('keydown',onk);
   document.body.appendChild(s); s.querySelector('.sheet-in>button:last-child').focus(); }
 (function(){ var hb=document.getElementById('helpBtn'); if(hb) hb.onclick=function(){ openHelp(curTab()); }; })();
-var _renderIntro=render; render=function(){ _renderIntro.apply(this,arguments); var seen=0; try{ seen=localStorage.getItem('aviel_intro_v1'); }catch(e){} if(!seen&&!document.querySelector('.sheet')) openHelp('intro',function(){ try{ localStorage.setItem('aviel_intro_v1','1'); }catch(e){} }); };
+/* 6.11.26 (אביאל אישר): פתיחה ב-3 שלבים במקום רשימה אחת — ככה זה עובד, תזכורות (כפתור אמיתי), שקילה ראשונה.
+   מי שכבר ראה את הפתיחה ואין לו תזכורות רואה פעם אחת רק את שלב התזכורות */
+function onbPush(){ var can='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window, sa=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true, ios=/iphone|ipad|ipod/i.test(navigator.userAgent), on=0; try{ on=localStorage.getItem('aviel_push')==='1'; }catch(e){}
+  if(ios&&!sa) return 'install'; if(!can||Notification.permission==='denied') return ''; return on&&Notification.permission==='granted'?'':'ask'; }
+function onbPushStep(){ var st=onbPush(); if(!st) return null;
+  if(st==='install') return {t:'תזכורות ממני',h:'<p>באייפון התזכורות עובדות רק כשהאפליקציה על מסך הבית. דקה אחת וזה מאחוריך:</p><ol><li><span>לוחצים על כפתור השיתוף בספארי (ריבוע עם חץ).</span></li><li><span>בוחרים "הוספה למסך הבית".</span></li><li><span>פותחים את האפליקציה מהאייקון ומפעילים תזכורות.</span></li></ol>',b:'הבנתי'};
+  return {t:'תזכורות ממני',h:'<p>שקילה בבוקר, סוף מנוחה באימון, צ׳ק-אין והודעות ממני. בלי זה שום תזכורת לא מגיעה אליך.</p>',b:'הפעלת תזכורות',skip:'לא עכשיו',go:function(){ var pb=document.getElementById('pushBtn'); if(pb) pb.click(); }}; }
+function onbRun(steps,done){ var i=0, s=document.createElement('div'); s.className='sheet onb'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true'); s.setAttribute('aria-labelledby','shT');
+  function next(){ i++; if(i>=steps.length){ s.remove(); if(done) done(); } else draw(); }
+  function draw(){ var st=steps[i]; s.innerHTML='<div class="sheet-in">'+(steps.length>1?'<div class="onbn"><span class="num">'+(i+1)+'</span> מתוך <span class="num">'+steps.length+'</span></div>':'')+'<h2 id="shT">'+esc(st.t)+'</h2>'+st.h+'<button type="button" class="onbgo">'+esc(st.b)+'</button>'+(st.skip?'<button type="button" class="linkbtn onbskip">'+esc(st.skip)+'</button>':'')+'</div>';
+    s.querySelector('.onbgo').onclick=function(){ if(st.go) st.go(); next(); }; var sk=s.querySelector('.onbskip'); if(sk) sk.onclick=next; s.querySelector('.onbgo').focus(); }
+  document.body.appendChild(s); draw(); }
+var _renderIntro=render; render=function(){ _renderIntro.apply(this,arguments); if(document.querySelector('.sheet')) return; var seen=0, pseen=0; try{ seen=localStorage.getItem('aviel_intro_v1'); pseen=localStorage.getItem('aviel_onb_push'); }catch(e){}
+  var ps=onbPushStep(), mark=function(k){ try{ localStorage.setItem(k,'1'); }catch(e){} };
+  if(!seen){ var steps=[{t:HELP.intro.t,h:'<ol>'+HELP.intro.l.map(function(x){ return '<li><span>'+esc(x)+'</span></li>'; }).join('')+'</ol>',b:'הבא'}]; if(ps) steps.push(ps);
+    steps.push({t:'הצעד הראשון: שקילה',h:'<p>נשקלים עכשיו ורושמים את המספר. ממנו מתחילים למדוד כל שינוי, ומחר בבוקר ממשיכים מאותו מקום.</p>',b:'לשקילה',skip:'אחר כך',go:function(){ try{ show('home'); var w=document.getElementById('wIn'); if(w){ w.scrollIntoView({block:'center'}); w.focus(); } }catch(e){} }});
+    mark('aviel_onb_push'); onbRun(steps,function(){ mark('aviel_intro_v1'); }); }
+  else if(!pseen&&ps){ mark('aviel_onb_push'); onbRun([ps]); } };
 </script>
 </body></html>
