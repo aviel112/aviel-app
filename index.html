@@ -4075,10 +4075,10 @@ function coordRow(){ try{ var a=document.getElementById('hWo')||document.getElem
 function coordOpen(k){ var ev=k==='ev', opts=ev?['חתונה או אירוע','ארוחה במסעדה','ארוחה משפחתית','חופשה']:['בבית','במלון','בחוץ'], eq=['משקל גוף בלבד','משקולות','גומיות'], sel=-1, eqs={}, s=document.createElement('div');
   s.className='sheet'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true'); s.setAttribute('aria-labelledby','cdT');
   var tm=new Date(); tm.setDate(tm.getDate()+60); var mx=tm.getFullYear()+'-'+('0'+(tm.getMonth()+1)).slice(-2)+'-'+('0'+tm.getDate()).slice(-2);
-  s.innerHTML='<div class="sheet-in cds"><h2 id="cdT">'+(ev?'אירוע קרוב':'יום בלי מכון')+'</h2><p class="sub">'+(ev?'כותבים לי מה ומתי, ואני מתאים לך את האכילה סביב האירוע. עד שאני עונה ממשיכים רגיל.':'כותבים לי איפה את/ה ומה יש שם, ואני שולח אימון חלופי. האימון משתנה רק אחרי שאישרתי.')+'</p>'+
+  s.innerHTML='<div class="sheet-in cds"><h2 id="cdT">'+(ev?'אירוע קרוב':'יום בלי מכון')+'</h2><p class="sub">'+(ev?'כותבים לי מה ומתי, ואני מחזיר לך בדיוק מה לאכול במקום מה באותו יום. עד שאני עונה ממשיכים רגיל.':'כותבים לי איפה את/ה ומה יש שם, ואני שולח אימון חלופי. האימון משתנה רק אחרי שאישרתי.')+'</p>'+
     '<div class="wfeel" id="cdK"><span>'+(ev?'מה האירוע?':'איפה מתאמנים היום?')+'</span>'+opts.map(function(o,i){ return '<button type="button" class="chip" data-i="'+i+'" aria-pressed="false">'+o+'</button>'; }).join('')+'</div>'+
     (ev?'<label class="cdf"><span>מתי?</span><input type="date" id="cdD" min="'+TODAY+'" max="'+mx+'"></label>':'<div class="wfeel" id="cdE"><span>מה יש שם?</span>'+eq.map(function(o,i){ return '<button type="button" class="chip" data-i="'+i+'" aria-pressed="false">'+o+'</button>'; }).join('')+'</div>')+
-    '<textarea id="cdN" rows="2" maxlength="300" placeholder="'+(ev?'למשל: ארוחת ערב, יהיה בופה':'למשל: יש לי 40 דקות')+'" aria-label="הערה לאביאל"></textarea>'+
+    '<textarea id="cdN" rows="2" maxlength="300" placeholder="'+(ev?'יודעים מה מוגש? כותבים כאן, ואני בוחר מה במקום מה':'למשל: יש לי 40 דקות')+'" aria-label="הערה לאביאל"></textarea>'+
     '<button type="button" class="installbtn" id="cdGo">שליחה לאביאל</button><button type="button" class="ghost" id="cdX">ביטול</button></div>';
   var close=function(){ s.remove(); };
   s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('#cdX').onclick=close;
