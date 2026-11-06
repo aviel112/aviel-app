@@ -4141,6 +4141,27 @@ function coordOpen(k){ var ev=k==='ev', opts=ev?['חתונה או אירוע','�
   var box=document.getElementById('progBox'); if(box&&window.MutationObserver) new MutationObserver(dash).observe(box,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   document.addEventListener('focusin',dash); document.addEventListener('focusout',function(){ setTimeout(dash,0); });
   var _rtD=renderTrain; renderTrain=function(){ var r=_rtD.apply(this,arguments); dash(); return r; }; })();
+/* 7.11.26 (v311, אביאל: "על הבוקר נשאר הכול, שייפתח רק מ-19, ותחשבו איך לייעל"): "מה לאכול עם מה שנשאר" מופיע רק מ-19:00 (או כשכבר נאכלו 70% מהיום).
+   ההצעות: קודם מה שהמתאמן/ת באמת אוכל/ת (אחרונים), הכמות מותאמת לפער (חצאי מנות), ושורה אחת שאומרת מה חסר */
+eatHelpDraw=function(){ var tot=document.getElementById('fTot'); if(!tot||FVIEW) return; var old=document.getElementById('eatHelp'); if(old) old.remove();
+  var T=targets(), tk=+T['קלוריות']||0, tp=+T['חלבון']||0; if(!tk) return; var it=(FDAY&&FDAY.items||[]), k=it.reduce(function(a,x){ return a+(+x.k||0); },0), p=it.reduce(function(a,x){ return a+(+x.p||0); },0), lk=Math.round(tk-k), lp=Math.max(0,Math.round(tp-p));
+  if(lk<80||!it.length) return; if(new Date().getHours()<19&&k<tk*0.7) return;
+  var w=document.createElement('div'); w.id='eatHelp'; w.className='eathelp'; w.innerHTML='<button type="button" class="linkbtn">איך לסגור את היום?</button>'; tot.appendChild(w);
+  w.querySelector('button').onclick=function(){ var needP=tp&&lp>=15, k100=function(x){ return +x.k100||(4*x.p+4*x.c+9*x.fat); };
+    var rec=(ls('aviel_food_recent',[])||[]).map(function(x){ return {name:x.name,p:+x.p||0,c:+x.c||0,fat:+x.fat||0,g:+x.g||100,kk:k100({p:+x.p||0,c:+x.c||0,fat:+x.fat||0,k100:x.k100}),rc:1,units:x.units}; });
+    var db=FOODS.map(function(f){ return {name:f[0],p:+f[2]||0,c:+f[3]||0,fat:+f[4]||0,g:+f[5]||100,kk:4*f[2]+4*f[3]+9*f[4]}; })
+      .concat((typeof EXTRA!=='undefined'?EXTRA:[]).filter(function(f){ return +f.k100>0; }).map(function(f){ return {name:f.name+(f.brand?' '+f.brand:''),p:+f.p||0,c:+f.c||0,fat:+f.fat||0,g:+f.g||100,kk:+f.k100,ex:f}; }));
+    var pool=rec.concat(db).filter(function(x){ return x.kk>0&&x.g>0; }).map(function(x){
+      /* כמות: מה שסוגר את החלבון (או עד 350 קק״ל כשהחלבון סגור), בלי לעבור את הקלוריות, בחצאי מנות בין חצי לכפול */
+      var want=needP&&x.p>0?Math.min(Math.min(lp,50)/x.p*100,lk/x.kk*100):Math.min(lk,350)/x.kk*100, n=Math.max(0.5,Math.min(2,Math.round(want/x.g*2)/2)), g=Math.round(x.g*n);
+      x.n=n; x.gg=g; x.k=x.kk*g/100; x.pp=x.p*g/100; return x; }).filter(function(x){ return x.k>=60&&x.k<=lk+30&&(needP?(x.rc?x.pp>=8:x.pp*4/x.k>=0.4):!!x.rc); });
+    pool.forEach(function(x){ x.sc=needP?(Math.min(x.pp,lp)/Math.max(lp,1))*0.6+(x.pp*4/x.k)*0.4:1-Math.abs(x.k-Math.min(lk,350))/Math.max(lk,350); if(x.rc) x.sc*=1.35; });
+    pool.sort(function(a,b){ return b.sc-a.sc; });
+    var GRP=[/בקר|שייטל|פילה|כתף|אנטריקוט|סינטה|אסאדו|בשר/,/עוף|הודו|פרגי|פסטרמה|שניצל/,/טונה|סלמון|דג|אמנון|לברק|דניס|בורי/,/קוטג|גבינ|יוגורט|לבנה|חלב|סקייר|מעדן/,/ביצ|חביתה/,/אבקת|חטיף|שייק|גיינר/], seen={}, top=pool.filter(function(x){ var key=x.name.split(' ')[0]; for(var gi=0;gi<GRP.length;gi++){ if(GRP[gi].test(x.name)){ key='g'+gi; break; } } if(seen[key]) return false; seen[key]=1; return true; }).slice(0,3);
+    if(!top.length){ w.innerHTML='<div class="sub">'+(needP?'לא מצאתי משהו שמתאים בדיוק. מחפשים למעלה לפי שם.':'החלבון סגור. נשארו <span class="num">'+lk+'</span> קק״ל, בוחרים מהתפריט מה שבא.')+'</div>'; return; }
+    var tight=needP&&lk<lp*6, head=needP?(tight?'חסרים <span class="num">'+lp+'</span> ג׳ חלבון ונשארו רק <span class="num">'+lk+'</span> קק״ל. הכי קרוב שאפשר:':'חסר בעיקר חלבון: <span class="num">'+lp+'</span> ג׳, בתוך <span class="num">'+lk+'</span> קק״ל.'):'החלבון סגור. נשארו <span class="num">'+lk+'</span> קק״ל:';
+    w.innerHTML='<div class="sub">'+head+'</div>'+top.map(function(x,i){ return '<button type="button" class="ehrow" data-eh="'+i+'"><span><b>'+esc(x.name)+'</b><small><span class="num">'+x.gg+'</span> ג׳, <span class="num">'+Math.round(x.k)+'</span> קק״ל, <span class="num">'+Math.round(x.pp)+'</span> ג׳ חלבון</small></span><em>הוספה</em></button>'; }).join('');
+    w.querySelectorAll('[data-eh]').forEach(function(b){ b.onclick=function(){ var x=top[+b.dataset.eh]; if(x.ex&&x.n===1) pickExtra(x.ex); else pick({name:x.name,p:x.p,c:x.c,fat:x.fat,k100:x.ex?x.kk:0,units:[['מנה',x.gg]],g:x.gg}); var a=document.getElementById('fAdd'); if(a) a.scrollIntoView({block:'center',behavior:'smooth'}); }; }); }; };
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
