@@ -4118,6 +4118,15 @@ function coordOpen(k){ var ev=k==='ev', opts=ev?['חתונה או אירוע','�
   '#progBox .card.ex .exthumb{border:0}'+
   '.wnx{padding:14px 16px;margin-bottom:16px}.wnx small{font-size:12px;margin-bottom:4px}.wnx b{font-size:18px;font-weight:700;line-height:1.25}.wnx span{font-size:13px;margin-top:4px}.wnx i{margin-top:12px;padding:11px;font-size:15px}';
   document.head.appendChild(st); })();
+/* 7.11.26 (v307, אביאל: "מסך האימון יותר מינימליסטי"): בתוך האימון — בלי כרטיס סביב התרגיל, בלי תווית שריר, הסטים שעוד לא בתור מעומעמים */
+(function(){ var st=document.createElement('style'); st.textContent=
+  'body.wkin #progBox .card.ex{background:none;box-shadow:none;padding:4px 2px 8px}body.wkin #progBox .card.ex>.mu{display:none}'+
+  'body.wkin #progBox>.sub{font-size:13px;font-weight:500;color:var(--mute)}'+
+  'body.wkin #progBox .card.ex .spec,body.wkin #progBox .card.ex .spec b,body.wkin #progBox .card.ex .spec span{font-size:13px;color:var(--mute);font-weight:500}'+
+  'body.wkin #progBox .card.ex .swapbtn{background:none}'+
+  'body.wkin #progBox .setrow:not(.cur):not(.ok){opacity:.38}body.wkin #progBox .setrow:focus-within{opacity:1}'+
+  'body.wkin #progBox .fxnext{background:none;box-shadow:none;border-radius:0;border-top:1px solid var(--line);padding-inline:2px}';
+  document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
