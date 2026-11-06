@@ -4018,6 +4018,85 @@ var _renderTrainTq=renderTrain; renderTrain=function(){ var r=_renderTrainTq.app
       if(tgt<0) return; var cs=fxCards(), nm=cs[tgt]&&cs[tgt].querySelector('.nm')?cs[tgt].querySelector('.nm').textContent.trim():'';
       if(back){ var rn=document.getElementById('restN'); if(rn&&nm) rn.textContent='הבא: חוזרים ל'+nm; }
       if(document.getElementById('fxSet')) SS.go=tgt; else if(cs[tgt]) cs[tgt].scrollIntoView({block:'center',behavior:'smooth'}); },0); },true); })();
+
+/* ===== 6.11.26 (אביאל אישר): משך האימון — נמדד מהסט הראשון עד "סיימתי", מופיע בסיכום, ומהמדידות משערים כמה ייקח האימון הבא.
+   נשמר בטלפון (aviel_wodur) לפי שם האימון: ממוצע 3 האחרונים; לאימון שעוד לא נמדד — התוכנית כפול היחס האישי (בפועל / מתוכנן) ===== */
+var WDUR_LAST=0, _woMinPlan=woMinutes;
+function wdurKey(i){ var d=fxDays()[i]; return d?String(d.title||('אימון '+(i+1))):''; }
+function wdurSave(t,end){ try{ if(!t||!t.start||!t.key) return 0; var m=Math.round((end-t.start)/60000); if(!(m>=5&&m<=240)) return 0; var H=ls('aviel_wodur',{})||{}, a=H[t.key]||[]; if(a.some(function(x){ return x.d===t.d; })) return m; a.push({d:t.d,m:m,p:t.plan||0}); H[t.key]=a.slice(-6); lsSet('aviel_wodur',H); return m; }catch(e){ return 0; } }
+woMinutes=function(day){ var plan=_woMinPlan.apply(this,arguments); try{ var H=ls('aviel_wodur',{})||{}, a=H[String(day&&day.title||'')]||[], r5=function(x){ return Math.max(10,Math.round(x/5)*5); };
+  if(a.length){ var l=a.slice(-3); return r5(l.reduce(function(s,x){ return s+x.m; },0)/l.length); }
+  var rs=[]; Object.keys(H).forEach(function(k){ H[k].forEach(function(x){ if(x.p>0) rs.push(x.m/x.p); }); }); if(rs.length){ var r=rs.slice(-6).reduce(function(s,x){ return s+x; },0)/Math.min(6,rs.length); return r5(plan*Math.min(1.6,Math.max(0.6,r))); } }catch(e){} return plan; };
+(function(){ var _apiD=api; api=function(a,p){ var r=_apiD.apply(this,arguments); if(a==='lift'){ try{ var t=ls('aviel_wot',null), k=wdurKey(DAY), now=Date.now(); if(!t||t.d!==TODAY||t.key!==k){ var d=fxDays()[DAY]; t={d:TODAY,key:k,start:now,plan:d?_woMinPlan(applySwaps(d)):0}; } t.last=now; lsSet('aviel_wot',t); }catch(e){} } return r; };
+  /* אימון שנסגר לבד (בלי "סיימתי"): המשך נמדד עד הסט האחרון */
+  try{ var t0=ls('aviel_wot',null); if(t0&&(t0.d!==TODAY||Date.now()-(+t0.last||0)>90*6e4)){ wdurSave(t0,+t0.last||0); localStorage.removeItem('aviel_wot'); } }catch(e){}
+  document.addEventListener('click',function(e){ if(!(e.target.closest&&e.target.closest('#finish'))) return; try{ var t=ls('aviel_wot',null); WDUR_LAST=0; if(t&&t.d===TODAY&&t.key===wdurKey(DAY)){ WDUR_LAST=wdurSave(t,Date.now()); localStorage.removeItem('aviel_wot'); } }catch(er){} },true);
+  var _sf=showFinish; showFinish=function(){ var r=_sf.apply(this,arguments); try{ var st=document.querySelector('.sheet-in.fin .fstats'); if(st&&WDUR_LAST){ var el=document.createElement('div'); el.className='fdur'; el.innerHTML='משך האימון <b class="num">'+WDUR_LAST+'</b> דק׳'; st.parentNode.insertBefore(el,st.nextSibling); } }catch(e){} return r; };
+  var st=document.createElement('style'); st.textContent='.fin .fdur{text-align:center;font-size:14px;color:var(--mute);margin-top:10px}.fin .fdur b{color:var(--text);font-size:16px;font-weight:800}'; document.head.appendChild(st); })();
+
+/* ===== 6.11.26 (אביאל אישר): לוח חודשי בהתקדמות — יום אימון מלא בזהב, נקודה ביום שקילה. הנתונים: הסטים שנרשמו (P.lifts) והשקילות (trkRows) ===== */
+var MCAL=0; /* 0 = החודש הנוכחי, -1 = הקודם… */
+function mcalDraw(){ try{ var ch=document.getElementById('chart'); if(!ch) return; var card=ch.closest('.card'), el=document.getElementById('mcal'); if(!card) return;
+  if(!el){ el=document.createElement('div'); el.id='mcal'; el.className='card mcal'; card.parentNode.insertBefore(el,card.nextSibling); }
+  var tr={}, wg={}, L=P&&P.lifts||{}; Object.keys(L).forEach(function(k){ (L[k].hist||[]).forEach(function(x){ if(x.d) tr[x.d]=1; }); });
+  try{ trkRows().forEach(function(r){ if(r.kg!=null) wg[r.k]=1; }); }catch(e){}
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth()+MCAL,1), y=b.getFullYear(), m=b.getMonth(), n=new Date(y,m+1,0).getDate(), off=b.getDay(), nt=0, nw=0, h='';
+  var MN=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  for(var q=0;q<off;q++) h+='<i></i>';
+  for(var d=1;d<=n;d++){ var k=y+'-'+('0'+(m+1)).slice(-2)+'-'+('0'+d).slice(-2), t=tr[k], w=wg[k]; if(t) nt++; if(w) nw++;
+    h+='<i class="'+(t?'t':'')+(w?' w':'')+(k===TODAY?' now':'')+(k>TODAY?' fut':'')+'" aria-label="'+d+' ב'+MN[m]+(t?', אימון':'')+(w?', שקילה':'')+'"><span class="num">'+d+'</span></i>'; }
+  el.innerHTML='<div class="row"><button type="button" class="mcn" data-mc="-1" aria-label="לחודש הקודם">'+IC_GO+'</button><b>'+MN[m]+' '+y+'</b><button type="button" class="mcn nx" data-mc="1" aria-label="לחודש הבא"'+(MCAL>=0?' disabled':'')+'>'+IC_GO+'</button></div>'+
+    '<div class="mcw">'+['א','ב','ג','ד','ה','ו','ש'].map(function(x){ return '<span>'+x+'</span>'; }).join('')+'</div><div class="mcg">'+h+'</div>'+
+    '<div class="mcs"><span><i class="t"></i><b class="num">'+nt+'</b> אימונים</span><span><i class="w"></i><b class="num">'+nw+'</b> שקילות</span></div>';
+  el.querySelectorAll('[data-mc]').forEach(function(bt){ bt.onclick=function(){ MCAL=Math.min(0,MCAL+(+bt.dataset.mc)); mcalDraw(); }; }); }catch(e){} }
+(function(){ var _ds=drawStrength; drawStrength=function(){ var r=_ds.apply(this,arguments); mcalDraw(); return r; };
+  var _rn=render; render=function(){ var r=_rn.apply(this,arguments); mcalDraw(); return r; };
+  var tb=document.querySelector('[data-tab=prog]'); if(tb) tb.addEventListener('click',function(){ setTimeout(mcalDraw,0); });
+  var st=document.createElement('style'); st.textContent=
+  '.mcal .row b{font-size:16px}.mcal .mcn{width:36px;height:36px;min-height:0;padding:0;background:none;border:0;box-shadow:none;color:var(--mute);display:flex;align-items:center;justify-content:center}.mcal .mcn svg{width:18px;height:18px}.mcal .mcn:not(.nx) svg{transform:scaleX(-1)}.mcal .mcn:disabled{opacity:.3}'+
+  '.mcal .mcw,.mcal .mcg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px 4px;justify-items:center}.mcal .mcw{margin:10px 0 6px;font-size:12px;color:var(--mute)}'+
+  '.mcal .mcg i{position:relative;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:13.5px;color:var(--text)}'+
+  '.mcal .mcg i.fut{color:var(--mute);opacity:.5}.mcal .mcg i.t{background:var(--gold);color:#16130c;font-weight:800}.mcal .mcg i.now:not(.t){box-shadow:inset 0 0 0 1.5px var(--gold)}'+
+  '.mcal .mcg i.w::after{content:"";position:absolute;bottom:-5px;width:4px;height:4px;border-radius:50%;background:var(--mute)}'+
+  '.mcal .mcs{display:flex;gap:18px;justify-content:center;margin-top:16px;font-size:13.5px;color:var(--mute)}.mcal .mcs span{display:flex;align-items:center;gap:6px}.mcal .mcs b{color:var(--text)}'+
+  '.mcal .mcs i{display:inline-block;border-radius:50%}.mcal .mcs i.t{width:10px;height:10px;background:var(--gold)}.mcal .mcs i.w{width:5px;height:5px;background:var(--mute)}';
+  document.head.appendChild(st); })();
+
+/* ===== 6.11.26 (אביאל: "עם תיאום איתי", "רק אם אישרתי"): תיאום עם אביאל מהבית — אירוע קרוב, או יום בלי מכון.
+   הבקשה נשלחת אליו (api question) ושום דבר באפליקציה לא משתנה עד שהוא עונה. מה שנשלח נשאר בשורה עד שהתאריך עובר ===== */
+function coordList(){ var a=ls('aviel_coord',[])||[]; return a.filter(function(x){ return x&&x.d>=TODAY; }); }
+function coordFmt(d){ var p=String(d).split('-'); return (+p[2])+'/'+(+p[1]); }
+function coordRow(){ try{ var a=document.getElementById('hWo')||document.getElementById('todayCard'); if(!a||!D) return; var el=document.getElementById('coordRow');
+  if(!el){ el=document.createElement('div'); el.id='coordRow'; el.className='coord'; } if(el.previousElementSibling!==a) a.parentNode.insertBefore(el,a.nextSibling);
+  var L=coordList(), gymSent=L.some(function(x){ return x.k==='gym'&&x.d===TODAY; }), noProg=P&&P.noProg;
+  el.innerHTML=L.map(function(x){ return '<div class="cdp">נשלח לאביאל: '+esc(x.t)+(x.k==='ev'?', '+coordFmt(x.d):'')+'. מחכים לתשובה שלו.</div>'; }).join('')+
+    '<div class="cdl"><button type="button" class="linkbtn" data-cd="ev">יש לי אירוע קרוב</button>'+(noProg||gymSent?'':'<button type="button" class="linkbtn" data-cd="gym">אני לא במכון היום</button>')+'</div>';
+  el.querySelectorAll('[data-cd]').forEach(function(b){ b.onclick=function(){ coordOpen(b.dataset.cd); }; }); }catch(e){} }
+function coordOpen(k){ var ev=k==='ev', opts=ev?['חתונה או אירוע','ארוחה במסעדה','ארוחה משפחתית','חופשה']:['בבית','במלון','בחוץ'], eq=['משקל גוף בלבד','משקולות','גומיות'], sel=-1, eqs={}, s=document.createElement('div');
+  s.className='sheet'; s.setAttribute('role','dialog'); s.setAttribute('aria-modal','true'); s.setAttribute('aria-labelledby','cdT');
+  var tm=new Date(); tm.setDate(tm.getDate()+60); var mx=tm.getFullYear()+'-'+('0'+(tm.getMonth()+1)).slice(-2)+'-'+('0'+tm.getDate()).slice(-2);
+  s.innerHTML='<div class="sheet-in cds"><h2 id="cdT">'+(ev?'אירוע קרוב':'יום בלי מכון')+'</h2><p class="sub">'+(ev?'כותבים לי מה ומתי, ואני מתאים לך את האכילה סביב האירוע. עד שאני עונה ממשיכים רגיל.':'כותבים לי איפה את/ה ומה יש שם, ואני שולח אימון חלופי. האימון משתנה רק אחרי שאישרתי.')+'</p>'+
+    '<div class="wfeel" id="cdK"><span>'+(ev?'מה האירוע?':'איפה מתאמנים היום?')+'</span>'+opts.map(function(o,i){ return '<button type="button" class="chip" data-i="'+i+'" aria-pressed="false">'+o+'</button>'; }).join('')+'</div>'+
+    (ev?'<label class="cdf"><span>מתי?</span><input type="date" id="cdD" min="'+TODAY+'" max="'+mx+'"></label>':'<div class="wfeel" id="cdE"><span>מה יש שם?</span>'+eq.map(function(o,i){ return '<button type="button" class="chip" data-i="'+i+'" aria-pressed="false">'+o+'</button>'; }).join('')+'</div>')+
+    '<textarea id="cdN" rows="2" maxlength="300" placeholder="'+(ev?'למשל: ארוחת ערב, יהיה בופה':'למשל: יש לי 40 דקות')+'" aria-label="הערה לאביאל"></textarea>'+
+    '<button type="button" class="installbtn" id="cdGo">שליחה לאביאל</button><button type="button" class="ghost" id="cdX">ביטול</button></div>';
+  var close=function(){ s.remove(); };
+  s.addEventListener('click',function(e){ if(e.target===s) close(); }); s.querySelector('#cdX').onclick=close;
+  s.querySelectorAll('#cdK .chip').forEach(function(b){ b.onclick=function(){ sel=+b.dataset.i; s.querySelectorAll('#cdK .chip').forEach(function(x){ x.setAttribute('aria-pressed',x===b?'true':'false'); }); }; });
+  s.querySelectorAll('#cdE .chip').forEach(function(b){ b.onclick=function(){ var i=+b.dataset.i; eqs[i]=!eqs[i]; b.setAttribute('aria-pressed',eqs[i]?'true':'false'); }; });
+  s.querySelector('#cdGo').onclick=function(){ var bt=this, note=s.querySelector('#cdN').value.trim(), d=ev?s.querySelector('#cdD').value:TODAY;
+    if(sel<0){ toast(ev?'בוחרים מה האירוע':'בוחרים איפה מתאמנים',1); return; } if(ev&&!(d>=TODAY)){ toast('בוחרים תאריך',1); return; }
+    var has=eq.filter(function(o,i){ return eqs[i]; }), q=ev?'תיאום אירוע: '+opts[sel]+' בתאריך '+coordFmt(d)+'.'+(note?' '+note:''):'לא במכון היום: '+opts[sel]+(has.length?', יש '+has.join(' ו'):'')+'. צריך אימון חלופי להיום.'+(note?' '+note:'');
+    bt.disabled=true; bt.textContent='שולח…';
+    api('question',{q:q}).then(function(){ var a=coordList(); a.push({k:k,d:d,t:opts[sel],at:Date.now()}); lsSet('aviel_coord',a); close(); coordRow(); toast(ev?'נשלח לאביאל. התשובה תגיע לכאן ותקפוץ לך בטלפון':'נשלח לאביאל. האימון משתנה רק אחרי שהוא מאשר'); })
+      .catch(function(e){ bt.disabled=false; bt.textContent='שליחה לאביאל'; toast((e&&e.message)||'לא נשלח, נסו שוב',1); }); };
+  document.body.appendChild(s); }
+(function(){ var _rc=render; render=function(){ var r=_rc.apply(this,arguments); coordRow(); return r; };
+  var _hw=homeWorkout; homeWorkout=function(){ var r=_hw.apply(this,arguments); coordRow(); return r; };
+  var st=document.createElement('style'); st.textContent=
+  '.coord{display:flex;flex-direction:column;gap:6px;padding:2px 6px}.coord .cdl{display:flex;gap:18px;flex-wrap:wrap}.coord .cdl .linkbtn{font-size:13.5px;min-height:36px;text-decoration:none}.coord .cdp{font-size:13.5px;color:var(--mute);line-height:1.45}'+
+  '.cds .sub{margin:0 0 4px;font-size:14.5px;line-height:1.5}.cds .cdf{display:flex;flex-direction:column;gap:6px;margin:12px 0 4px;font-size:14px;color:var(--mute)}.cds .cdf input{width:100%}.cds textarea{width:100%;margin-top:12px}.sheet-in.cds .ghost{margin-top:8px}.sheet-in.cds .chip[aria-pressed=true]{background:var(--gold);color:#16130c}';
+  document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
