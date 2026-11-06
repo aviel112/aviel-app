@@ -4127,6 +4127,15 @@ function coordOpen(k){ var ev=k==='ev', opts=ev?['חתונה או אירוע','�
   'body.wkin #progBox .setrow:not(.cur):not(.ok){opacity:.38}body.wkin #progBox .setrow:focus-within{opacity:1}'+
   'body.wkin #progBox .fxnext{background:none;box-shadow:none;border-radius:0;border-top:1px solid var(--line);padding-inline:2px}';
   document.head.appendChild(st); })();
+/* 7.11.26 (v308, אביאל: "יותר מדי מלל, ולמעלה ישר תרגיל 1 מתוך 11"): המסך נפתח במונה התרגילים; כותרת האימון ירדה, הניווט עבר לתחתית, ההסבר על היעד נפתח בלחיצה על המספר */
+(function(){ var st=document.createElement('style'); st.textContent=
+  'body.wkin #progBox>.sub,body.wkin #progBox .wback+.sub{display:none!important}body.wkin #progBox{padding-bottom:150px}body.wkin #progBox .fxhead{margin-top:0}'+
+  'body.wkin #progBox .wback{position:absolute;bottom:98px;inset-inline-start:0;margin:0}'+
+  'body.wkin #progBox .fxhead .fxlinks{top:auto;bottom:98px}body.wkin #progBox .fxhead .fxlinks .linkbtn{color:var(--mute);font-weight:600}'+
+  'body.wkin #progBox .card.ex .spec{display:none}'+
+  'body.wkin #progBox .card.ex .tgt:not(.first):not(.st) span{display:none}body.wkin #progBox .card.ex .tgt:not(.first):not(.st) small{display:none}'+
+  'body.wkin #progBox .card.ex .tgt.open:not(.first):not(.st) small{display:block;white-space:normal}body.wkin #progBox .card.ex .tgt{cursor:pointer}';
+  document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
