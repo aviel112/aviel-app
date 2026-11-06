@@ -1510,7 +1510,7 @@ function renderTrain(){
   h+=(vis.length>1?'<div class="chips" role="group" aria-label="בחירת אימון">'+vis.map(function(i){ return '<button type="button" class="chip'+(done[i]?' done':'')+'" data-day="'+i+'" aria-pressed="'+(i===DAY)+'">אימון '+(i+1)+'</button>'; }).join('')+'</div>':'');
   var S0=deloadState(); if(S0.on) h+='<div class="card" style="border-color:var(--gold);margin-top:8px"><b>השבוע: שבוע הורדה (דילואד)</b><div class="exnote" style="margin-top:4px">אחרי 7 שבועות של עבודה הגוף צריך שבוע קל כדי להתאושש ולהתחזק. השבוע עובדים על 85% מהמשקל, סט אחד פחות בכל תרגיל, ולא מגיעים לכשל. בשבוע הבא חוזרים חזקים יותר.</div></div>';
   /* 28.10.26: בלי "שבוע X מתוך 6" — ההסבר מופיע רק בשבוע ההורדה עצמו */
-  h+='<div class="sub" style="margin-top:4px">'+esc(d.title)+'</div>';
+  h+='<div class="sub" style="margin-top:4px">'+esc(String(d.title||'').replace(/^(אימון\s*\d+\s*[–-]\s*)(יום\s+)?(ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)\s*[·:,–-]\s*/,'$1'))+'</div>';
   var heavyN=0, rirHelp=0;
   d.ex.forEach(function(e,i){
     var warm=/חימום/.test(e.mu), L=P.lifts&&P.lifts[e.ex];
@@ -3019,7 +3019,7 @@ function homeWorkout(){ var old=document.getElementById('hWo'), tc=document.getE
   var p=P&&P.program, days=p?(p.blocks||[]).filter(function(b){ return b.ex&&b.ex.length; }):[]; if(!tc||!days.length||p.file){ if(old) old.remove(); return; }
   var dm=doneMap(), w=woGet(), i=w?w.day:-1; if(i<0){ for(var q=0;q<days.length;q++){ if(!dm[q]){ i=q; break; } } }
   if(i<0){ if(old) old.remove(); return; } var d=applySwaps(days[i]), n=d.ex.filter(function(e){ return !/חימום/.test(e.mu||''); }).length, mins=woMinutes(d);
-  var title=String(d.title||'').replace(/^אימון\s*\d+\s*[–-]\s*/,'').replace(/\s*·\s*/g,', ');
+  var title=String(d.title||'').replace(/^אימון\s*\d+\s*[–-]\s*/,'').replace(/^(יום\s+)?(ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)\s*[·:,–-]\s*/,'').replace(/\s*·\s*/g,', ');
   var h='<div class="hwo-t"><b>'+(w?'באמצע אימון '+(i+1):'האימון הבא: אימון '+(i+1))+'</b><span>'+n+' תרגילים, כ-'+mins+' דק׳</span></div>'+(title?'<div class="sub">'+esc(title)+'</div>':'')+'<button type="button" class="installbtn" id="hWoGo">'+(w?'חזרה לאימון':'להתחלה')+'</button>';
   if(!old){ old=document.createElement('div'); old.id='hWo'; old.className='card hwo'; tc.parentNode.insertBefore(old,tc.nextSibling); } old.innerHTML=h;
   document.getElementById('hWoGo').onclick=function(){ if(!w){ DAY=i; ONEDAY=i; SHOWALL=false; } show('train'); renderTrain(); window.scrollTo(0,0); }; }catch(e){ if(old) old.remove(); } }
@@ -3688,11 +3688,11 @@ var PICK_ON=true, PICK_FORCE=false, WK_IMG={}, WK_HAVE_LIST=['wk-push.jpg','wk-l
   function imgFor(t,b){ var e=(b&&b.ex&&b.ex[0])||{}, mu=String(e.mu||'')+' '+String(e.ex||''); for(var i=0;i<WK_BY.length;i++){ if(WK_BY[i][0].test(mu)&&WK_HAVE.indexOf(WK_BY[i][1])>=0) return WK_BY[i][1]; } return WK_HAVE.indexOf('wk-full.jpg')>=0?'wk-full.jpg':''; }
   function picker(){ var p=P&&P.program, box=$('#progBox'); if(!p||!box) return false; var days=(p.blocks||[]).filter(function(b){ return b.ex&&b.ex.length; }); if(days.length<2) return false;
     var done=doneMap(), next=-1; for(var q=0;q<days.length;q++){ if(!done[q]){ next=q; break; } }
-    var h='<div class="wpk"><h2>השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים. בוחרים אימון</h2><div class="wpl">'+days.map(function(b,i){ var t=String(b.title||('אימון '+(i+1))), nm=t.replace(/^אימון\s*\d+\s*[–-]\s*/,''), ex=b.ex||[], mins=Math.round(ex.reduce(function(a,e){ var s=parseInt(e.s,10)||3, r=parseFloat(e.rest)||1.5; return a+s*(r+0.8); },0)/5)*5, mus=[]; ex.forEach(function(e){ var m=String(e.mu||'').trim(); if(m&&mus.indexOf(m)<0) mus.push(m); });
+    var h='<div class="wpk"><h2>השבוע: '+Object.keys(done).length+' מתוך '+days.length+' אימונים. בוחרים אימון</h2><div class="wpl">'+days.map(function(b,i){ var t=String(b.title||('אימון '+(i+1))), nm=t.replace(/^אימון\s*\d+\s*[–-]\s*/,'').replace(/^(יום\s+)?(ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)\s*[·:,–-]\s*/,''), ex=b.ex||[], mins=Math.round(ex.reduce(function(a,e){ var s=parseInt(e.s,10)||3, r=parseFloat(e.rest)||1.5; return a+s*(r+0.8); },0)/5)*5, mus=[]; ex.forEach(function(e){ var m=String(e.mu||'').trim(); if(m&&mus.indexOf(m)<0) mus.push(m); });
         var letter=String(i+1), im=imgFor(t,b);
         return '<button type="button" class="wpc'+(done[i]?' done':'')+(i===next?' next':'')+'" data-wp="'+i+'"><div class="wim">'+(im?'<img src="'+esc(im)+'" alt="">':'')+'<span class="wl">'+esc(letter)+'</span></div><div class="wbd"><b>'+esc(nm)+'</b><span>'+ex.length+' תרגילים · בערך '+mins+' דק׳'+(mus.length?' · '+esc(mus.slice(0,3).join(', ')):'')+'</span></div></button>'; }).join('')+'</div></div>';
     /* 5.11.26 (אביאל אהב אצל חבר): כרטיס "הבא בתור" גדול מעל הרשימה — האימון הבא, כמה תרגילים וזמן, וכפתור התחלה. הרשימה נשארת מתחת לבחירה חופשית */
-    if(next>=0){ var nb=days[next], nt=String(nb.title||('אימון '+(next+1))).replace(/^אימון\s*\d+\s*[–-]\s*/,''), nx=nb.ex||[], nmin=Math.round(nx.reduce(function(a,e){ var s2=parseInt(e.s,10)||3, r2=parseFloat(e.rest)||1.5; return a+s2*(r2+0.8); },0)/5)*5;
+    if(next>=0){ var nb=days[next], nt=String(nb.title||('אימון '+(next+1))).replace(/^אימון\s*\d+\s*[–-]\s*/,'').replace(/^(יום\s+)?(ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)\s*[·:,–-]\s*/,''), nx=nb.ex||[], nmin=Math.round(nx.reduce(function(a,e){ var s2=parseInt(e.s,10)||3, r2=parseFloat(e.rest)||1.5; return a+s2*(r2+0.8); },0)/5)*5;
       var card='<button type="button" class="wnx" data-wp="'+next+'"><small>הבא בתור, אימון '+(next+1)+'</small><b>'+esc(nt)+'</b><span>'+nx.length+' תרגילים, בערך '+nmin+' דק׳</span><em>'+esc(nx.slice(0,4).map(function(e){ return e.ex; }).join(' · '))+(nx.length>4?' ועוד '+(nx.length-4):'')+'</em><i>להתחיל אימון</i></button>';
       h=h.replace('<div class="wpl">',card+'<h2 class="wall">כל האימונים</h2><div class="wpl">'); }
     box.innerHTML=h; box.querySelectorAll('[data-wp]').forEach(function(b){ b.onclick=function(){ DAY=+b.dataset.wp; DAYSET=true; SHOWALL=true; PICK_ON=false; PICK_FORCE=false; window.PICK_AT=Date.now(); try{ var w=woGet(); if(w&&w.day!==DAY) localStorage.removeItem('aviel_wo'); }catch(e){} renderTrain(); woPill(); window.scrollTo(0,0); }; }); return true; }
@@ -4107,6 +4107,16 @@ function coordOpen(k){ var ev=k==='ev', opts=ev?['חתונה או אירוע','�
   var st=document.createElement('style'); st.textContent=
   '.coord{display:flex;flex-direction:column;gap:8px;padding:0 4px}.coord .cdl{display:flex;gap:8px;flex-wrap:wrap}#coordRow .cdl .linkbtn{font-size:13px;font-weight:500;min-height:34px;padding:0 14px;border:1px solid var(--line);border-radius:999px;color:var(--mute);text-decoration:none}.coord .cdp{order:2;font-size:12.5px;color:var(--mute);line-height:1.45;padding:0 2px}'+
   '.cds .sub{margin:0 0 4px;font-size:14.5px;line-height:1.5}.cds .cdf{display:flex;flex-direction:column;gap:6px;margin:12px 0 4px;font-size:14px;color:var(--mute)}.cds .cdf input{width:100%}.cds textarea{width:100%;margin-top:12px}.sheet-in.cds .ghost{margin-top:8px}.sheet-in.cds a.cdw{display:flex;align-items:center;justify-content:center;text-decoration:none;min-height:46px;margin-top:10px;border-radius:999px}.cds .cdm{margin-top:10px;font-size:14px;line-height:1.5;display:flex;flex-direction:column;gap:2px}.cds .cdm small{color:var(--mute);margin-top:4px}.sheet-in.cds .chip[aria-pressed=true]{background:var(--gold);color:#16130c}';
+  document.head.appendChild(st); })();
+/* 6.11.26 (v305): מסך האימון נקי — הזהב רק בכפתור הסט ובפס ההתקדמות; כרטיס "הבא בתור" קטן יותר */
+(function(){ var st=document.createElement('style'); st.textContent=
+  '#progBox .card.ex .tgt,body.wkin #progBox .card.ex .tgt{background:none;padding:2px 0 6px;margin:8px 0 4px;border-radius:0}'+
+  '#progBox .card.ex .tgt b,body.wkin #progBox .card.ex .tgt b{color:var(--text)}body.wkin #progBox .card.ex .tgt b{font-size:26px}'+
+  '#progBox .setrow.cur,body.wkin #progBox .setrow.cur{background:none;box-shadow:none}'+
+  'body.wkin #progBox .setrow:not(.cur) .pvv{display:none}'+
+  '#progBox .card.ex .mu{color:var(--mute);font-weight:600}#progBox .setrow .num{color:var(--mute)}#progBox .setrow.cur .num{color:var(--text)}#progBox .setrow.ok .num{color:var(--good)}'+
+  '#progBox .card.ex .exthumb{border:0}'+
+  '.wnx{padding:14px 16px;margin-bottom:16px}.wnx small{font-size:12px;margin-bottom:4px}.wnx b{font-size:18px;font-weight:700;line-height:1.25}.wnx span{font-size:13px;margin-top:4px}.wnx i{margin-top:12px;padding:11px;font-size:15px}';
   document.head.appendChild(st); })();
 </script>
 <script>
