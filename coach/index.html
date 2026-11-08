@@ -1650,5 +1650,30 @@ details.tgrp>summary{list-style:none;cursor:pointer;display:flex;justify-content
   (function wait(){ if(++n>60) return; if(typeof L==='undefined'||!L||!L.clients||typeof openCard!=='function') return setTimeout(wait,500);
     var c=L.clients.filter(function(x){ return x.name===nm||x.name.indexOf(nm)===0; })[0]; if(!c){ toast('לא מצאתי את '+nm); return; } openCard(c.name); if(!rn) return; var k=0;
     (function find(){ var b=document.querySelector('[data-renew]'); if(!b){ if(++k<40) setTimeout(find,500); return; } var d=b.closest('details'); if(d) d.open=true; b.scrollIntoView({block:'center'}); })(); })(); })();
+
+/* 8.11.26 (אביאל, לפי הפרסומת של AutoFit): "לוח הבוקר" — רק 3 המשימות הכי חשובות למעלה, עם עיגול סימון. המשימה המלאה נשארת למטה */
+(function(){ var st=document.createElement('style');
+  st.textContent='#mTop{margin-bottom:12px}#mTop .mth{font-size:13px;color:var(--mute);margin:2px 4px 10px;display:flex;justify-content:space-between;align-items:baseline}#mTop .mth b{font-size:20px;color:var(--ink);font-weight:800}#mTop .mtw{flex:none;font:inherit;font-size:13px;font-weight:600;color:var(--green);background:var(--green-l);border:0;border-radius:999px;padding:8px 12px;cursor:pointer}#mTop .mtr{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:18px;padding:14px 14px 13px;margin-bottom:8px}#mTop .mtc{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--blue);background:none;padding:0;cursor:pointer}#mTop .mtc:focus-visible{outline:2px solid var(--blue);outline-offset:2px}#mTop .mtc.ok{background:var(--blue)}#mTop .mtt{flex:1;min-width:0;text-align:right;background:none;border:0;padding:0;color:var(--ink);font:inherit;cursor:pointer}#mTop .mtt b{display:block;font-size:16px;font-weight:700;line-height:1.35}#mTop .mtt span{display:block;font-size:12.5px;color:var(--mute);margin-top:3px}#mTop .mtm{font-size:13px;color:var(--blue);background:none;border:0;padding:4px;cursor:pointer}';
+  document.head.appendChild(st);
+  var RANK={q:1,ci:1,checkin:1,pain:2,inact:2,renew5:3,end:3,pay:4,meet:5,brief:5,app:6,weigh:7,train:7,lead:8,photos:9,meal:9,pr:10};
+  function pick(){ var op=((typeof TK!=='undefined'&&TK&&TK.open)||[]).filter(function(t){ return !/בדיקה/.test(t.name||'')&&t.name!=='אביאל עמירה'; });
+    return op.slice().sort(function(a,b){ return ((b.hot?1:0)-(a.hot?1:0))||((RANK[a.rule]||8)-(RANK[b.rule]||8))||String(b.at||'').localeCompare(String(a.at||'')); }); }
+  /* ניסוח כפעולה, כמו בפרסומת: "לדבר עם לאון, 4 ימים בלי אימון" במקום "לאון — 4 ימים בלי אימון" */
+  var VERB={inact:'לדבר עם',app:'לדבר עם',weigh:'לדבר עם',train:'לדבר עם',checkin:'להזכיר ל',photos:'להזכיר ל',q:'לענות ל',ci:'לענות ל',pain:'לבדוק מה עם',renew5:'שיחת חידוש עם',end:'שיחת חידוש עם',pay:'לגבות מ',meet:'פגישה עם',brief:'להתכונן לפגישה עם',pr:'לפרגן ל',lead:'לחזור ל',meal:'להגיב לארוחה של'};
+  function act(t){ var f=String(t.name||'').replace(/^ליד: /,'').split(' ')[0], v=VERB[t.rule]; if(!v||!f) return t.title;
+    var why=String(t.title).indexOf(' — ')>0?t.title.split(' — ').slice(1).join(' — '):(/^(meet|lead|renew5|brief)$/.test(t.rule)?String(t.detail||'').split(' · ').pop():String(t.title).replace(f,'').replace(/^[\s:,–-]+/,''));
+    why=String(why||'').replace(/^שיא חדש:?\s*/,'').trim(); return v+(/ל$|מ$/.test(v)?'':' ')+f+(why?', '+why:''); }
+  function draw(){ var box=document.querySelector('section[data-v="today"]'); if(!box||typeof TK==='undefined'||!TK) return; var old=box.querySelector('#mTop'); if(old) old.remove();
+    var all=pick(), top=all.slice(0,3); if(!top.length) return;
+    var td=new Date().toISOString().slice(0,10), dn=((TK.done)||[]).filter(function(t){ return String(t.closed||'').slice(0,10)===td; }).length;
+    var h='<div id="mTop"><div class="mth"><b>3 הדברים של היום</b><span>'+(dn?'בוצעו היום '+dn+(all.length>3?', ':''):'')+(all.length>3?'עוד '+(all.length-3)+' למטה':'')+'</span></div>'+top.map(function(t){
+      var who=t.name&&t.name.indexOf('ליד:')!==0?t.name:'', ttl=act(t), wa=t.wa&&who?'<button class="mtw" data-mtw="'+esc(t.id)+'">וואטסאפ</button>':'';
+      return '<div class="mtr"><button class="mtc" data-mtd="'+esc(t.id)+'" aria-label="סימון כבוצע"></button><button class="mtt" data-mto="'+esc(who)+'"><b>'+esc(ttl)+'</b><span>'+(t.rule?'נפתחה אוטומטית':'הוספת בעצמך')+(t.at?', '+esc(ago2(t.at)):'')+'</span></button>'+wa+'</div>'; }).join('')+'</div>';
+    box.insertAdjacentHTML('afterbegin',h); setTimeout(function(){ var m=box.querySelector('#mTop'); if(m&&box.firstElementChild!==m) box.prepend(m); },0); /* שכבות אחרות מכניסות את התדריך מעליו */
+    box.querySelectorAll('[data-mtd]').forEach(function(x){ x.onclick=function(){ var real=box.querySelector('.card.task [data-done="'+x.dataset.mtd+'"]'); x.classList.add('ok'); x.disabled=true; if(real) real.click(); else setT(x.dataset.mtd,'בוצעה',x,'סומן כבוצע'); }; });
+    box.querySelectorAll('[data-mtw]').forEach(function(x){ x.onclick=function(){ var real=box.querySelector('.card.task [data-done="'+x.dataset.mtw+'"]'), c=real&&real.closest('.card.task'), w=c&&c.querySelector('[data-wa]'); if(w) w.click(); }; });
+    box.querySelectorAll('[data-mto]').forEach(function(x){ x.onclick=function(){ if(x.dataset.mto) openCard(x.dataset.mto); }; }); }
+  var go=function(){ if(typeof renderToday!=='function') return setTimeout(go,500); var _r=renderToday; renderToday=function(){ var r=_r.apply(this,arguments); try{ draw(); }catch(e){} return r; }; try{ draw(); }catch(e){}
+    var box=document.querySelector('section[data-v="today"]'); if(box) new MutationObserver(function(){ var m=box.querySelector(':scope > #mTop'); if(m&&box.firstElementChild!==m) box.prepend(m); }).observe(box,{childList:true}); }; setTimeout(go,1500); })();
 </script>
 </body></html>
