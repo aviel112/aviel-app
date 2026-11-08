@@ -1446,6 +1446,8 @@ function deloadState(){ if(DL) return DL; var ws=(P&&P.wk)||[];
 /* חזרות שונות לכל סט (1.11.26, אביאל): "12/10/8" = 12 בסט הראשון, 10 בשני, 8 בשלישי */
 function repsArr(r){ var t=String(r||''); if(t.indexOf('/')<0) return null; var a=t.split('/').map(function(x){ return parseInt(x,10); }).filter(function(x){ return x>0; }); return a.length>1?a:null; }
 function warmOf(e){ return /סטי?\s*חימום/.test(String(e.note||'')+' '+String(e.s||'')); } /* "כולל סטי חימום" מהבונה. לא "חימום מפרקי" בהערה */
+/* 9.11.26 (אביאל: 50×17 בפשיטת ברך ולא עלה): סט ראשון קל יותר (חימום/גישוש) לא חוסם עלייה — מספיק כל הסטים פחות אחד במשקל העליון, ולפחות 2 */
+function NTOP(ns){ return Math.min(ns,Math.max(2,ns-1)); }
 sugg=function(e,L){
   if(!L||!L.hist||!L.hist.length) return null;
   var S=deloadState(), prev=L.hist.filter(function(x){ return x.d && x.d<TODAY && !S.dw[wkKey(x.d)]; }); if(!prev.length) return null;
@@ -1458,7 +1460,7 @@ sugg=function(e,L){
     if(!left) return {up:true,from:top,kg:Math.round((top+inc)*100)/100,reps:PA[0],why:'בפעם הקודמת השלמת '+PA.join('/')+' בכל הסטים. זה הסימן שהגוף מוכן, אז עולים '+inc+' ק״ג ומתחילים שוב מהחזרות של התוכנית'};
     return {kg:top,reps:PA[0],why:left===1?'כמעט: חסר סט אחד כדי להשלים '+PA.join('/')+'. נשארים על '+top+' ק״ג וסוגרים אותו היום':'נשארים על '+top+' ק״ג עד שכל הסטים מגיעים ל-'+PA.join('/')+'. ככה העלייה הבאה תהיה יציבה'}; }
   var rr=atTop.map(function(x){ return x.rir; }).filter(function(x){ return x!=null&&x!==''; }).map(Number), rirAll=rr.length&&rr.length===atTop.length, rirMin=rirAll?Math.min.apply(null,rr):null;
-  if(R&&minR>=R[1]&&(!ns||atTop.length>=ns)){ var big=rirMin!=null&&rirMin>=3, up=big?inc*2:inc; return {up:true,from:top,kg:Math.round((top+up)*100)/100,reps:R[0],why:big?'הגעת ל-'+R[1]+' חזרות והיה לך כוח לעוד 3 חזרות לפחות, אז קפיצה כפולה: +'+up+' ק״ג':'בפעם הקודמת הגעת ל-'+R[1]+' חזרות בכל הסטים, אז עולים '+inc+' ק״ג וחוזרים ל-'+R[0]}; }
+  if(R&&minR>=R[1]&&(!ns||atTop.length>=NTOP(ns))){ var big=rirMin!=null&&rirMin>=3, up=big?inc*2:inc; return {up:true,from:top,kg:Math.round((top+up)*100)/100,reps:R[0],why:big?'הגעת ל-'+R[1]+' חזרות והיה לך כוח לעוד 3 חזרות לפחות, אז קפיצה כפולה: +'+up+' ק״ג':'בפעם הקודמת הגעת ל-'+R[1]+' חזרות בכל הסטים, אז עולים '+inc+' ק״ג וחוזרים ל-'+R[0]}; }
   // RIR 0 בכל הסטים ועדיין מתחת לטווח — המשקל כבד מדי
   if(R&&rirMin===0&&minR<R[0]&&top>inc){ var st2=Math.max(inc,top>10?2.5:inc), dn2=Math.round((top-st2)*100)/100; /* 3.11.26 אביאל: "שידחפו, לא ילכו אחורה" — מקסימום מדרגה אחת למטה */ /* 30.10.26: לפי הערכת 1RM ובקפיצות של 2.5 לפחות (לא 29 במכונה) */ return {kg:dn2,reps:R[0],why:'בפעם הקודמת הגעת לכשל לפני '+R[0]+' חזרות. יורדים ל-'+dn2+' ק״ג ונכנסים לטווח',stall:true}; }
   // תקיעות: 3 אימונים אחרונים באותו משקל עליון בלי שיפור בחזרות — יורדים 10% ובונים מחדש
@@ -1467,13 +1469,13 @@ sugg=function(e,L){
     if(st.every(function(z){ return z.t===top; })&&st[3].r<=st[0].r){ var stp=Math.max(inc||2.5,top>10?2.5:1), dl=Math.round((top-stp)*100)/100; return {kg:dl,reps:R?R[1]:minR,why:'ארבעה אימונים באותו משקל בלי שיפור. מדרגה אחת למטה ל-'+dl+' ק״ג, כל החזרות עד הסוף, ושבוע הבא חוזרים ל-'+top+' ושוברים אותו',stall:true}; } }
   /* 3.11.26 (אביאל: "שהאפליקציה תדחוף קדימה לפי RIR"): כוח משוער לפי אפליי כולל החזרות שנשארו בטנק, e1=ק״ג×(1+(חזרות+RIR)/30).
      היעד: לעבוד עם חזרה אחת בטנק. אם במשקל הנוכחי אפשר יותר מהקצה העליון — עולים במשקל (עד 10% באימון); אחרת יעד החזרות לפי הכוח, ותמיד לפחות +1 */
-  if(R&&rirAll&&(!ns||atTop.length>=ns)){ var TR=1, e1=atTop.reduce(function(a,x){ return a+x.kg*(1+(x.reps+(+x.rir))/30); },0)/atTop.length, can=Math.floor(30*(e1/top-1)+1e-9)-TR;
+  if(R&&rirAll&&(!ns||atTop.length>=NTOP(ns))){ var TR=1, e1=atTop.reduce(function(a,x){ return a+x.kg*(1+(x.reps+(+x.rir))/30); },0)/atTop.length, can=Math.floor(30*(e1/top-1)+1e-9)-TR;
     if(can>R[1]&&inc>0){ var kT=e1/(1+(R[0]+TR)/30), nk=top+inc; while(nk+inc<=kT&&nk+inc<=top*1.1) nk+=inc; nk=Math.round(nk*100)/100;
       return {up:true,from:top,kg:nk,reps:R[0],why:'לפי מה שנשאר לך בטנק, אתה חזק יותר מ-'+top+' ק״ג. עולים ל-'+nk+' ומתחילים מ-'+R[0]+' חזרות'}; }
     var tr3=Math.max(minR+1,Math.min(R[1],can));
     return {kg:top,reps:tr3,why:'אותו משקל, הפעם '+tr3+' חזרות'+(tr3-minR>1?' כי נשאר לך כוח בפעם הקודמת':'')+' (כשמגיעים ל-'+R[1]+' בכל הסטים עולים '+inc+' ק״ג)'}; }
   /* 28.10.26: RIR 4+ בכל הסטים בתוך הטווח = המשקל קל מדי — עולים כבר עכשיו, לא מחכים לחזרות העליונות */
-  if(R&&rirMin!=null&&rirMin>=4&&minR>=R[0]&&(!ns||atTop.length>=ns)) return {up:true,from:top,kg:Math.round((top+inc)*100)/100,reps:R[0],why:'בפעם הקודמת נשארו לך 4+ חזרות בטנק בכל הסטים. המשקל קל מדי, אז עולים '+inc+' ק״ג כבר עכשיו'};
+  if(R&&rirMin!=null&&rirMin>=4&&minR>=R[0]&&(!ns||atTop.length>=NTOP(ns))) return {up:true,from:top,kg:Math.round((top+inc)*100)/100,reps:R[0],why:'בפעם הקודמת נשארו לך 4+ חזרות בטנק בכל הסטים. המשקל קל מדי, אז עולים '+inc+' ק״ג כבר עכשיו'};
   var add=rirMin!=null&&rirMin>=2?2:1, tr=R?Math.min(R[1],minR+add):minR+add;
   return {kg:top,reps:tr,why:'אותו משקל, הפעם '+tr+' חזרות'+(add>1?' כי נשאר לך כוח בפעם הקודמת':'')+(R?' (כשמגיעים ל-'+R[1]+' בכל הסטים עולים '+inc+' ק״ג)':'')};
 };
