@@ -1655,9 +1655,10 @@ details.tgrp>summary{list-style:none;cursor:pointer;display:flex;justify-content
 (function(){ var st=document.createElement('style');
   st.textContent='#mTop{margin-bottom:12px}#mTop .mth{font-size:13px;color:var(--mute);margin:2px 4px 10px;display:flex;justify-content:space-between;align-items:baseline}#mTop .mth b{font-size:20px;color:var(--ink);font-weight:800}#mTop .mtw{flex:none;font:inherit;font-size:13px;font-weight:600;color:var(--green);background:var(--green-l);border:0;border-radius:999px;padding:8px 12px;cursor:pointer}#mTop .mtr{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:18px;padding:14px 14px 13px;margin-bottom:8px}#mTop .mtc{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--blue);background:none;padding:0;cursor:pointer}#mTop .mtc:focus-visible{outline:2px solid var(--blue);outline-offset:2px}#mTop .mtc.ok{background:var(--blue)}#mTop .mtt{flex:1;min-width:0;text-align:right;background:none;border:0;padding:0;color:var(--ink);font:inherit;cursor:pointer}#mTop .mtt b{display:block;font-size:16px;font-weight:700;line-height:1.35}#mTop .mtt span{display:block;font-size:12.5px;color:var(--mute);margin-top:3px}#mTop .mtm{font-size:13px;color:var(--blue);background:none;border:0;padding:4px;cursor:pointer}';
   document.head.appendChild(st);
+  /* מה שאביאל הוסיף בעצמו (בלי כלל) — תמיד ראשון */
   var RANK={q:1,ci:1,checkin:1,pain:2,inact:2,renew5:3,end:3,pay:4,meet:5,brief:5,app:6,weigh:7,train:7,lead:8,photos:9,meal:9,pr:10};
   function pick(){ var op=((typeof TK!=='undefined'&&TK&&TK.open)||[]).filter(function(t){ return !/בדיקה/.test(t.name||'')&&t.name!=='אביאל עמירה'; });
-    return op.slice().sort(function(a,b){ return ((b.hot?1:0)-(a.hot?1:0))||((RANK[a.rule]||8)-(RANK[b.rule]||8))||String(b.at||'').localeCompare(String(a.at||'')); }); }
+    return op.slice().sort(function(a,b){ return ((b.hot?1:0)-(a.hot?1:0))||((a.rule?(RANK[a.rule]||8):0)-(b.rule?(RANK[b.rule]||8):0))||String(b.at||'').localeCompare(String(a.at||'')); }); }
   /* ניסוח כפעולה, כמו בפרסומת: פועל + שם פרטי + הסיבה בקצרה. בלי מקפים ארוכים, בלי "/תה" */
   function act(t){ var f=String(t.name||'').replace(/^ליד: /,'').split(' ')[0], T=String(t.title||''), D=String(t.detail||''), after=T.indexOf(' — ')>0?T.split(' — ').slice(1).join(', '):'', last=D.split(' · ').pop();
     var R={
