@@ -1658,17 +1658,36 @@ details.tgrp>summary{list-style:none;cursor:pointer;display:flex;justify-content
   var RANK={q:1,ci:1,checkin:1,pain:2,inact:2,renew5:3,end:3,pay:4,meet:5,brief:5,app:6,weigh:7,train:7,lead:8,photos:9,meal:9,pr:10};
   function pick(){ var op=((typeof TK!=='undefined'&&TK&&TK.open)||[]).filter(function(t){ return !/בדיקה/.test(t.name||'')&&t.name!=='אביאל עמירה'; });
     return op.slice().sort(function(a,b){ return ((b.hot?1:0)-(a.hot?1:0))||((RANK[a.rule]||8)-(RANK[b.rule]||8))||String(b.at||'').localeCompare(String(a.at||'')); }); }
-  /* ניסוח כפעולה, כמו בפרסומת: "לדבר עם לאון, 4 ימים בלי אימון" במקום "לאון — 4 ימים בלי אימון" */
-  var VERB={inact:'לדבר עם',app:'לדבר עם',weigh:'לדבר עם',train:'לדבר עם',checkin:'להזכיר ל',photos:'להזכיר ל',q:'לענות ל',ci:'לענות ל',pain:'לבדוק מה עם',renew5:'שיחת חידוש עם',end:'שיחת חידוש עם',pay:'לגבות מ',meet:'פגישה עם',brief:'להתכונן לפגישה עם',pr:'לפרגן ל',lead:'לחזור ל',meal:'להגיב לארוחה של'};
-  function act(t){ var f=String(t.name||'').replace(/^ליד: /,'').split(' ')[0], v=VERB[t.rule]; if(!v||!f) return t.title;
-    var why=String(t.title).indexOf(' — ')>0?t.title.split(' — ').slice(1).join(' — '):(/^(meet|lead|renew5|brief)$/.test(t.rule)?String(t.detail||'').split(' · ').pop():String(t.title).replace(f,'').replace(/^[\s:,–-]+/,''));
-    why=String(why||'').replace(/^שיא חדש:?\s*/,'').trim(); return v+(/ל$|מ$/.test(v)?'':' ')+f+(why?', '+why:''); }
+  /* ניסוח כפעולה, כמו בפרסומת: פועל + שם פרטי + הסיבה בקצרה. בלי מקפים ארוכים, בלי "/תה" */
+  function act(t){ var f=String(t.name||'').replace(/^ליד: /,'').split(' ')[0], T=String(t.title||''), D=String(t.detail||''), after=T.indexOf(' — ')>0?T.split(' — ').slice(1).join(', '):'', last=D.split(' · ').pop();
+    var R={
+      inact:function(){ return 'לדבר עם '+f+', '+(after||'כמה ימים בלי אימון'); },
+      train:function(){ var m=D.match(/(\d+) ימים בלי אימון/); return 'לדבר עם '+f+', '+(m?m[1]+' ימים בלי אימון':'לא נרשם אימון'); },
+      app:function(){ var m=(T+' '+D).match(/(\d+) ימים/); return 'לדבר עם '+f+', '+(m?'לא נכנס לאפליקציה '+m[1]+' ימים':'לא נכנס לאפליקציה'); },
+      weigh:function(){ var m=(T+' '+D).match(/(\d+) ימים/); return 'להזכיר ל'+f+' להישקל'+(m?', '+m[1]+' ימים בלי שקילה':''); },
+      pr:function(){ return 'לפרגן ל'+f+' על שיא, '+(after||T.replace(/^שיא חדש:?\s*/,'')); },
+      meet:function(){ var w=/מחר|היום/.test(last)?' '+last:''; return 'פגישה עם '+f+w; },
+      brief:function(){ var m=T.match(/(היום|מחר)(.*)$/); return 'להתכונן לפגישה עם '+f+(m?' '+m[1]+m[2]:''); },
+      photos:function(){ return 'להזכיר ל'+f+' להעלות תמונות התחלה'; },
+      renew5:function(){ return 'שיחת חידוש עם '+f+(after?', '+after.replace('לסוף הליווי','לסוף'):''); },
+      end:function(){ var m=D.match(/עוד (\d+) ימים/); return 'שיחת חידוש עם '+f+(m?', עוד '+m[1]+' ימים לסוף':''); },
+      lead:function(){ var m=D.match(/לפני (\d+) ימים/); return 'לחזור לליד '+f+(m?', מחכה '+m[1]+(m[1]==='1'?' יום':' ימים'):''); },
+      meal:function(){ var m=T.match(/:\s*(.+)$/); return 'להגיב לארוחה של '+f+(m?' ('+m[1]+')':''); },
+      blood:function(){ return 'לעבור על בדיקות הדם של '+f+(D&&D.length<40?', '+D:''); },
+      ci:function(){ return 'לענות ל'+f+' על הצ׳ק-אין'; }, checkin:function(){ return 'להזכיר ל'+f+' למלא צ׳ק-אין'; },
+      q:function(){ return 'לענות ל'+f+' על שאלה'; }, pain:function(){ return 'לבדוק מה עם '+f+', כתב על כאב'; },
+      pay:function(){ return 'לגבות מ'+f+(D?', '+D:''); }
+    }[t.rule];
+    var out=R&&f?R():T; return out.replace(/\s+—\s+/g,', ').replace(/\/(ה|תה)\b/g,''); }
   function draw(){ var box=document.querySelector('section[data-v="today"]'); if(!box||typeof TK==='undefined'||!TK) return; var old=box.querySelector('#mTop'); if(old) old.remove();
     var all=pick(), top=all.slice(0,3); if(!top.length) return;
     var td=new Date().toISOString().slice(0,10), dn=((TK.done)||[]).filter(function(t){ return String(t.closed||'').slice(0,10)===td; }).length;
     var h='<div id="mTop"><div class="mth"><b>3 הדברים של היום</b><span>'+(dn?'בוצעו היום '+dn+(all.length>3?', ':''):'')+(all.length>3?'עוד '+(all.length-3)+' למטה':'')+'</span></div>'+top.map(function(t){
       var who=t.name&&t.name.indexOf('ליד:')!==0?t.name:'', ttl=act(t), wa=t.wa&&who?'<button class="mtw" data-mtw="'+esc(t.id)+'">וואטסאפ</button>':'';
       return '<div class="mtr"><button class="mtc" data-mtd="'+esc(t.id)+'" aria-label="סימון כבוצע"></button><button class="mtt" data-mto="'+esc(who)+'"><b>'+esc(ttl)+'</b><span>'+(t.rule?'נפתחה אוטומטית':'הוספת בעצמך')+(t.at?', '+esc(ago2(t.at)):'')+'</span></button>'+wa+'</div>'; }).join('')+'</div>';
+    /* אותם שמות גם ברשימה המלאה למטה */
+    var byId={}; ((TK&&TK.open)||[]).forEach(function(t){ byId[t.id]=t; });
+    box.querySelectorAll('.card.task').forEach(function(c){ var d=c.querySelector('[data-done]'), t=d&&byId[d.dataset.done], ti=c.querySelector('.ti'); if(t&&ti&&t.rule) ti.textContent=act(t); });
     box.insertAdjacentHTML('afterbegin',h); setTimeout(function(){ var m=box.querySelector('#mTop'); if(m&&box.firstElementChild!==m) box.prepend(m); },0); /* שכבות אחרות מכניסות את התדריך מעליו */
     box.querySelectorAll('[data-mtd]').forEach(function(x){ x.onclick=function(){ var real=box.querySelector('.card.task [data-done="'+x.dataset.mtd+'"]'); x.classList.add('ok'); x.disabled=true; if(real) real.click(); else setT(x.dataset.mtd,'בוצעה',x,'סומן כבוצע'); }; });
     box.querySelectorAll('[data-mtw]').forEach(function(x){ x.onclick=function(){ var real=box.querySelector('.card.task [data-done="'+x.dataset.mtw+'"]'), c=real&&real.closest('.card.task'), w=c&&c.querySelector('[data-wa]'); if(w) w.click(); }; });
