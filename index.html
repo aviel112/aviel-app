@@ -1461,6 +1461,9 @@ sugg=function(e,L){
     return {kg:top,reps:PA[0],why:left===1?'כמעט: חסר סט אחד כדי להשלים '+PA.join('/')+'. נשארים על '+top+' ק״ג וסוגרים אותו היום':'נשארים על '+top+' ק״ג עד שכל הסטים מגיעים ל-'+PA.join('/')+'. ככה העלייה הבאה תהיה יציבה'}; }
   var rr=atTop.map(function(x){ return x.rir; }).filter(function(x){ return x!=null&&x!==''; }).map(Number), rirAll=rr.length&&rr.length===atTop.length, rirMin=rirAll?Math.min.apply(null,rr):null;
   if(R&&minR>=R[1]&&(!ns||atTop.length>=NTOP(ns))){ var big=rirMin!=null&&rirMin>=3, up=big?inc*2:inc; return {up:true,from:top,kg:Math.round((top+up)*100)/100,reps:R[0],why:big?'הגעת ל-'+R[1]+' חזרות והיה לך כוח לעוד 3 חזרות לפחות, אז קפיצה כפולה: +'+up+' ק״ג':'בפעם הקודמת הגעת ל-'+R[1]+' חזרות בכל הסטים, אז עולים '+inc+' ק״ג וחוזרים ל-'+R[0]}; }
+  /* 9.11.26 (אביאל: "לא רוצה להגיע לגבול גבוה מדי של חזרות"): בטווח רחב (3+) — באמצע הטווח עם 2+ בטנק בכל הסטים עולים במשקל, לא מחכים לקצה העליון */
+  var MID=R?Math.floor((R[0]+R[1])/2):0;
+  if(R&&R[1]-R[0]>=3&&rirMin!=null&&rirMin>=2&&minR>=MID&&(!ns||atTop.length>=NTOP(ns))) return {up:true,from:top,kg:Math.round((top+inc)*100)/100,reps:R[0],why:'עשית '+minR+' חזרות ועוד נשארו לך '+rirMin+' בטנק. לא מחכים ל-'+R[1]+': עולים '+inc+' ק״ג וחוזרים ל-'+R[0]};
   // RIR 0 בכל הסטים ועדיין מתחת לטווח — המשקל כבד מדי
   if(R&&rirMin===0&&minR<R[0]&&top>inc){ var st2=Math.max(inc,top>10?2.5:inc), dn2=Math.round((top-st2)*100)/100; /* 3.11.26 אביאל: "שידחפו, לא ילכו אחורה" — מקסימום מדרגה אחת למטה */ /* 30.10.26: לפי הערכת 1RM ובקפיצות של 2.5 לפחות (לא 29 במכונה) */ return {kg:dn2,reps:R[0],why:'בפעם הקודמת הגעת לכשל לפני '+R[0]+' חזרות. יורדים ל-'+dn2+' ק״ג ונכנסים לטווח',stall:true}; }
   // תקיעות: 3 אימונים אחרונים באותו משקל עליון בלי שיפור בחזרות — יורדים 10% ובונים מחדש
