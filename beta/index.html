@@ -4210,6 +4210,20 @@ eatHelpDraw=function(){ var tot=document.getElementById('fTot'); if(!tot||FVIEW)
   var t=0; function soon(){ if(t) return; t=setTimeout(function(){ t=0; place(); },30); }
   var go=function(){ var box=document.getElementById('progBox'); if(!box) return setTimeout(go,700); new MutationObserver(function(ms){ if(ms.every(function(m){ return m.target.closest&&m.target.closest('.rirp'); })) return; soon(); }).observe(box,{childList:true,subtree:true,attributes:true,attributeFilter:['class']}); place(); };
   go(); })();
+
+/* 9.11.26 (אביאל: 99 → 103.2 → 101.6 בשלושה ימים): שקילה שקופצת ביותר מק״ג מהממוצע של השבוע — הסבר מיד אחרי השמירה, שלא ייבהלו ולא יתחילו להרעיב/לפצות. אביאל מקבל במקביל התראה מהעוזרת עם הודעה מוכנה */
+(function(){ var st=document.createElement('style'); st.textContent='.wjn{position:fixed;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:140;margin:0 max(12px,env(safe-area-inset-left,0px));padding:16px 16px 12px;border-radius:20px;background:var(--panel2,#202026);box-shadow:inset 0 0 0 1px var(--line,rgba(255,255,255,.12));color:var(--text,#f3ede2);font-size:14.5px;line-height:1.55}.wjn b{display:block;font-size:16px;margin-bottom:4px}.wjn .num{color:var(--gold,#d6b066);font-weight:700}.wjn button{margin-top:10px;width:100%;min-height:44px;border-radius:999px;border:0;background:var(--gold,#d6b066);color:var(--ink,#111);font:inherit;font-weight:700}.wjn button:focus-visible{outline:2px solid var(--text,#fff);outline-offset:2px}';
+  document.head.appendChild(st);
+  function avg7(){ var day=function(n){ var t=new Date(); t.setHours(12,0,0,0); t.setDate(t.getDate()-n); return t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2); };
+    var v=((D&&D.hist)||[]).filter(function(r){ return r&&+r[1]>0&&String(r[0])>day(8)&&String(r[0])<TODAY; }).map(function(r){ return +r[1]; }); if(v.length<3) return null;
+    var m=v.slice().sort(function(a,b){ return a-b; })[Math.floor(v.length/2)], ok=v.filter(function(x){ return Math.abs(x-m)<=1.5; }); return ok.reduce(function(a,b){ return a+b; },0)/ok.length; }
+  function note(kg){ var a=avg7(); if(a==null||!(kg>0)) return; var d=Math.round((kg-a)*10)/10; if(Math.abs(d)<=1) return; var A=Math.round(a*10)/10;
+    var old=document.querySelector('.wjn'); if(old) old.remove(); var w=document.createElement('div'); w.className='wjn'; w.setAttribute('role','status');
+    w.innerHTML=d>0?'<b>המספר של היום קפץ, וזה בסדר</b>היום <span class="num">'+kg+'</span> מול ממוצע של <span class="num">'+A+'</span> בשבוע האחרון. קפיצה של יום זה מים, מלח ופחמימות, לא שומן. ממשיכים כרגיל לפי התפריט, בלי להוריד אוכל ובלי לפצות. מה שקובע זה הממוצע השבועי.<button type="button">הבנתי</button>'
+      :'<b>ירידה חדה של יום</b>היום <span class="num">'+kg+'</span> מול ממוצע של <span class="num">'+A+'</span> בשבוע האחרון. ירידה כזו ביום אחד היא בעיקר מים, אז לא משנים כלום וממשיכים לפי התפריט. מה שקובע זה הממוצע השבועי.<button type="button">הבנתי</button>';
+    document.body.appendChild(w); w.querySelector('button').onclick=function(){ w.remove(); }; }
+  var _wj=api; api=function(a,p){ var r=_wj.apply(this,arguments); if(a==='weigh'&&p&&r&&r.then) r.then(function(){ try{ note(+p.kg); }catch(e){} },function(){}); return r; };
+})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
