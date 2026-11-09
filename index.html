@@ -4255,6 +4255,22 @@ eatHelpDraw=function(){ var tot=document.getElementById('fTot'); if(!tot||FVIEW)
       if(r.prs&&r.prs.length){ var h=(r.prs.length>1?'שיאים של השבוע: ':'שיא של השבוע: ')+r.prs.map(function(p){ return '<b>'+esc(p.ex)+'</b> '+p.kg+' ק״ג'; }).join(' · '); if(note) note.innerHTML=h; else { note=document.createElement('p'); note.className='msnote'; note.innerHTML=h; box.querySelector('.wrl').after(note); } } else if(note) note.remove();
       var b=box.querySelector('#wrShare'); if(b){ b.textContent='שיתוף לסטורי'; b.onclick=function(){ shareStory(b,{canvas:function(){ return weekCanvas(r); }}); }; } }catch(e){} };
 })();
+
+/* 9.11.26 (אביאל: "אי אפשר למלא ימים אחורה את המשקל אם מישהו שכח"): לוחצים על יום קודם בשורת 7 הימים → השקילה הבאה נרשמת לאותו יום (השרת מקבל עד שבוע אחורה). לחיצה נוספת / על היום → חוזרים להיום */
+(function(){ var WD=null; var st=document.createElement('style'); st.textContent='#week .day{cursor:pointer}#week .day.wpick .dot{box-shadow:0 0 0 2px var(--gold,#d6b066)}#wBack{font-size:13px;color:var(--gold,#d6b066);margin-top:8px}'; document.head.appendChild(st);
+  function lab(d){ var p=String(d).split('-'); return p[2]+'/'+p[1]; }
+  function mark(){ var wk=(D&&D.week)||[], el=document.getElementById('week'); if(!el) return; [].forEach.call(el.children,function(c,i){ c.classList.toggle('wpick',!!WD&&wk[i]&&wk[i].d===WD); });
+    var inp=document.getElementById('wIn'), n=document.getElementById('wBack'); if(inp) inp.placeholder=WD?'משקל ל-'+lab(WD):(inp.dataset.ph0||inp.placeholder);
+    if(WD){ if(!n){ n=document.createElement('div'); n.id='wBack'; var f=document.getElementById('wForm'); if(f) f.after(n); } n.textContent='משלימים שקילה ל-'+lab(WD)+'. לחיצה על היום מחזירה להיום'; } else if(n) n.remove(); }
+  document.addEventListener('click',function(e){ var c=e.target.closest&&e.target.closest('#week .day'); if(!c) return; var el=document.getElementById('week'), i=[].indexOf.call(el.children,c), wk=(D&&D.week)||[], x=wk[i]; if(!x) return;
+    var inp=document.getElementById('wIn'); if(inp&&!inp.dataset.ph0) inp.dataset.ph0=inp.placeholder;
+    WD=(x.d===TODAY||WD===x.d)?null:x.d; mark(); if(WD&&inp) inp.focus(); });
+  document.addEventListener('submit',function(e){ if(!WD||!e.target||e.target.id!=='wForm') return; e.preventDefault(); e.stopImmediatePropagation();
+    var inp=document.getElementById('wIn'), v=parseFloat(String(inp.value).replace(',','.')); if(!(v>30&&v<250)){ toast('מקלידים משקל בק״ג, למשל 68.4',1); return; }
+    var d=WD, b=document.getElementById('wBtn'); b.disabled=true;
+    api('weigh',{kg:v,d:d}).then(function(r){ D=r; WD=null; inp.value=''; render(); mark(); toast('נשמר ל-'+lab(d)+' · '+v+' ק״ג'); }).catch(function(er){ toast(er.message||'לא נשמר, נסו שוב',1); }).then(function(){ b.disabled=false; }); },true);
+  var _r=render; render=function(){ var o=_r.apply(this,arguments); try{ mark(); }catch(e){} return o; };
+})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
