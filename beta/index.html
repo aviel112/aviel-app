@@ -4224,6 +4224,18 @@ eatHelpDraw=function(){ var tot=document.getElementById('fTot'); if(!tot||FVIEW)
     document.body.appendChild(w); w.querySelector('button').onclick=function(){ w.remove(); }; }
   var _wj=api; api=function(a,p){ var r=_wj.apply(this,arguments); if(a==='weigh'&&p&&r&&r.then) r.then(function(){ try{ note(+p.kg); }catch(e){} },function(){}); return r; };
 })();
+
+/* 9.11.26 (אביאל אישר): − / + ליד ק״ג וחזרות בסט הנוכחי באימון — בלי לפתוח מקלדת במכון. חזרות ±1, ק״ג ±2.5 (עד 10 ק״ג: ±1). ההקלדה עדיין עובדת */
+(function(){ var st=document.createElement('style'); st.textContent='body.wkin #progBox .setrow .stp{display:grid;grid-template-columns:30px minmax(0,1fr) 30px;align-items:center;gap:2px;min-width:0}body.wkin #progBox .setrow .stp input{min-width:0;width:100%}body.wkin #progBox .setrow .stp>button{all:unset;box-sizing:border-box;height:40px;width:30px;display:grid;place-items:center;border-radius:12px;color:var(--text,#f3ede2);font-size:20px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}body.wkin #progBox .setrow .stp>button:active{background:var(--panel2,rgba(255,255,255,.08))}body.wkin #progBox .setrow .stp>button:focus-visible{outline:2px solid var(--gold,#d6b066)}body.wkin #progBox .setrow:not(.cur) .stp>button,body.wkin #progBox .setrow.ok .stp>button{visibility:hidden}';
+  document.head.appendChild(st);
+  function step(inp,kgCol,dir){ var v=parseFloat(String(inp.value).replace(',','.'))||0, c=inp.closest('.card.ex'), nm=c&&c.querySelector('.nm')?c.querySelector('.nm').textContent.trim():'', pi=(typeof P!=='undefined'&&P&&P.inc&&+P.inc[nm])||0, s=kgCol?(pi||(v>10?2.5:1)):1, /* הקפיצה של התרגיל מהתוכנית (כבל 1, מוט 2.5, רגליים 5) */ n=Math.max(0,Math.round((v+dir*s)*100)/100); if(!kgCol&&n<1) n=1; inp.value=n; inp.dispatchEvent(new Event('input',{bubbles:true})); inp.dispatchEvent(new Event('change',{bubbles:true})); }
+  function wrap(){ try{ if(!document.body.classList.contains('wkin')) return; var f=document.querySelector('#progBox form.setrow.cur'); if(!f) return; var ins=f.querySelectorAll('input');
+      [].forEach.call(ins,function(inp,j){ if(j>1||inp.parentNode.classList.contains('stp')||inp.disabled) return; var w=document.createElement('span'); w.className='stp';
+        var mk=function(t,d,lab){ var b=document.createElement('button'); b.type='button'; b.textContent=t; b.setAttribute('aria-label',lab); b.onclick=function(ev){ ev.preventDefault(); step(inp,j===0,d); }; return b; };
+        inp.parentNode.insertBefore(w,inp); w.appendChild(mk('+',1,j?'עוד חזרה':'להוסיף משקל')); w.appendChild(inp); w.appendChild(mk('−',-1,j?'חזרה פחות':'להוריד משקל')); }); }catch(e){} }
+  var t=0; function soon(){ if(t) return; t=setTimeout(function(){ t=0; wrap(); },40); }
+  var go=function(){ var box=document.getElementById('progBox'); if(!box) return setTimeout(go,700); new MutationObserver(function(ms){ if(ms.every(function(m){ return m.target.closest&&(m.target.closest('.stp')||m.target.closest('.rirp')); })) return; soon(); }).observe(box,{childList:true,subtree:true,attributes:true,attributeFilter:['class']}); wrap(); };
+  go(); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
