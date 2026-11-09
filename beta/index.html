@@ -4271,6 +4271,22 @@ eatHelpDraw=function(){ var tot=document.getElementById('fTot'); if(!tot||FVIEW)
     api('weigh',{kg:v,d:d}).then(function(r){ D=r; WD=null; inp.value=''; render(); mark(); toast('נשמר ל-'+lab(d)+' · '+v+' ק״ג'); }).catch(function(er){ toast(er.message||'לא נשמר, נסו שוב',1); }).then(function(){ b.disabled=false; }); },true);
   var _r=render; render=function(){ var o=_r.apply(this,arguments); try{ mark(); }catch(e){} return o; };
 })();
+
+/* ===== 9.11.26 (אביאל): סריקה מהתפריט שנסגרה בלי מוצר — חוזרים לתפריט, לא נשארים ביומן. ומחיקה של חופשיות מתוך התפריט ===== */
+(function(){ var FROM_MENU=0;
+  var _fg=freeGo; freeGo=function(scan){ FROM_MENU=scan?Date.now():0; return _fg.apply(this,arguments); };
+  function back(){ if(!FROM_MENU||!FREE_LOG) return; FROM_MENU=0; FREE_LOG=0; show('menu'); try{ renderMenu(); }catch(e){} }
+  var x=document.getElementById('scanX'); if(x) x.addEventListener('click',back);
+  document.addEventListener('click',function(e){ if(e.target.closest('#scanMore .x')) back(); });
+  var _rfb=renderFreeBox; renderFreeBox=function(){ var o=_rfb.apply(this,arguments);
+    document.querySelectorAll('#menuBox .freebox').forEach(function(box){ var xs=freeUsed(); if(!xs.length) return; var line=box.querySelector('.sub[style*="margin-bottom"]'); if(!line) return;
+      line.innerHTML=xs.map(function(it,i){ return '<span class="cchip">'+esc(it.f)+' · <span class="num">'+esc(it.k)+'</span> <b data-fxd="'+i+'" role="button" tabindex="0" aria-label="מחיקה">×</b></span>'; }).join(' ');
+      line.querySelectorAll('[data-fxd]').forEach(function(b){ b.style.cssText='cursor:pointer;padding:0 6px;color:var(--mute,#aaa)';
+        b.onclick=function(){ if(b.dataset.arm!=='1'){ b.dataset.arm='1'; b.textContent='למחוק?'; setTimeout(function(){ if(b.isConnected){ b.dataset.arm=''; b.textContent='×'; } },3000); return; }
+          var it=xs[+b.dataset.fxd]; if(!it) return; b.closest('.cchip').remove();
+          api('fooddel',{row:it.row,f:it.f,d:FDAY.d}).then(function(r){ FDAY=r; renderMenu(); toast('נמחק'); }).catch(function(er){ toast(er.message||'לא נמחק',1); renderMenu(); }); }; }); });
+    return o; };
+})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
