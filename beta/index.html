@@ -4236,6 +4236,25 @@ eatHelpDraw=function(){ var tot=document.getElementById('fTot'); if(!tot||FVIEW)
   var t=0; function soon(){ if(t) return; t=setTimeout(function(){ t=0; wrap(); },40); }
   var go=function(){ var box=document.getElementById('progBox'); if(!box) return setTimeout(go,700); new MutationObserver(function(ms){ if(ms.every(function(m){ return m.target.closest&&(m.target.closest('.stp')||m.target.closest('.rirp')); })) return; soon(); }).observe(box,{childList:true,subtree:true,attributes:true,attributeFilter:['class']}); wrap(); };
   go(); })();
+
+/* 9.11.26 (אביאל: "גם וגם"): "השבוע שלך במסך אחד" — משקל לפי ממוצע 7 ימים בלי שקילה חריגה (כמו בכרטיס בבית), עד 3 שיאים של השבוע, ושיתוף כתמונת סטורי ולא רק טקסט */
+(function(){ var _wr=weekReport;
+  function wavg(a,b){ var day=function(n){ var t=new Date(); t.setHours(12,0,0,0); t.setDate(t.getDate()-n); return t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2); };
+    var v=((D&&D.hist)||[]).filter(function(r){ return r&&+r[1]>0&&String(r[0])>day(a)&&String(r[0])<=day(b); }).map(function(r){ return +r[1]; }); if(!v.length) return null; var m=v.slice().sort(function(x,y){ return x-y; })[Math.floor(v.length/2)], ok=v.filter(function(x){ return Math.abs(x-m)<=1.5; }); return ok.reduce(function(x,y){ return x+y; },0)/ok.length; }
+  weekReport=function(){ var r=_wr(); try{ var n=wavg(7,0), p=wavg(14,7); if(n!=null&&p!=null){ var d=Math.round((n-p)*10)/10; r.rows[0]=['משקל (ממוצע שבועי)',(d>0?'+':'')+d+' ק״ג',1]; r.avg=Math.round(n*10)/10; r.wd=d; }
+      var keys=weekKeys(), prs=[]; Object.keys((P&&P.lifts)||{}).forEach(function(ex){ var h=P.lifts[ex].hist||[], before=h.filter(function(x){ return x.d&&x.d<keys[0]; }); if(!before.length) return; var old=Math.max.apply(null,before.map(function(x){ return +x.kg; })), wk=h.filter(function(x){ return x.d>=keys[0]; }); if(!wk.length) return; var top=Math.max.apply(null,wk.map(function(x){ return +x.kg; })); if(top>old) prs.push({ex:ex,kg:top,up:Math.round((top-old)*100)/100}); });
+      prs.sort(function(a,b){ return b.up-a.up; }); r.prs=prs.slice(0,3); }catch(e){} return r; };
+  function weekCanvas(r){ var c=document.createElement('canvas'); c.width=1080; c.height=1920; var x=c.getContext('2d'), W=1080, G='#d6b066', IV='#f3ede2', MU='#a59c8d', serif="'Frank Ruhl Libre', Georgia, serif", sans="'Assistant', Arial, sans-serif";
+    x.fillStyle='#0e0d0b'; x.fillRect(0,0,W,1920); x.strokeStyle='rgba(214,176,102,.55)'; x.lineWidth=3; x.strokeRect(54,54,W-108,1920-108); x.direction='rtl'; x.textAlign='center';
+    x.fillStyle=G; x.font='800 46px '+sans; x.save(); x.direction='ltr'; x.fillText('A V I E L   A M I R A',W/2,200); x.restore();
+    x.fillStyle=IV; x.font='700 92px '+serif; x.fillText('השבוע שלי',W/2,400); x.fillStyle=G; x.fillRect(W/2-60,450,120,3);
+    var y=600; r.rows.forEach(function(row){ x.textAlign='right'; x.fillStyle=MU; x.font='600 46px '+sans; x.fillText(row[2]?'משקל, ממוצע שבועי (ק״ג)':row[0],W-150,y); x.fillStyle=IV; x.font='700 56px '+sans; x.save(); x.direction='ltr'; x.textAlign='left'; x.fillText(String(row[1]).replace(' ק״ג','').replace(' מתוך ','/'),150,y); x.restore(); y+=105; });
+    if(r.prs&&r.prs.length){ y+=40; x.textAlign='center'; x.fillStyle=G; x.font='700 64px '+serif; x.fillText(r.prs.length>1?'שיאים חדשים':'שיא חדש',W/2,y); y+=90; r.prs.forEach(function(p){ x.fillStyle=IV; x.font='600 46px '+sans; x.fillText(p.ex.length>26?p.ex.slice(0,25)+'…':p.ex,W/2,y); x.fillStyle=G; x.font='700 52px '+sans; x.fillText(p.kg+' ק״ג, עלייה של '+p.up,W/2,y+64); y+=140; }); }
+    x.textAlign='center'; x.fillStyle=G; x.font='800 48px '+sans; x.save(); x.direction='ltr'; x.fillText('@avielife1',W/2,1760); x.restore(); return c; }
+  var _show=weekReportShow; weekReportShow=function(){ _show(); try{ var r=weekReport(), box=document.querySelector('.msbox.wrep'); if(!box) return; var note=box.querySelector('.msnote');
+      if(r.prs&&r.prs.length){ var h=(r.prs.length>1?'שיאים של השבוע: ':'שיא של השבוע: ')+r.prs.map(function(p){ return '<b>'+esc(p.ex)+'</b> '+p.kg+' ק״ג'; }).join(' · '); if(note) note.innerHTML=h; else { note=document.createElement('p'); note.className='msnote'; note.innerHTML=h; box.querySelector('.wrl').after(note); } } else if(note) note.remove();
+      var b=box.querySelector('#wrShare'); if(b){ b.textContent='שיתוף לסטורי'; b.onclick=function(){ shareStory(b,{canvas:function(){ return weekCanvas(r); }}); }; } }catch(e){} };
+})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
