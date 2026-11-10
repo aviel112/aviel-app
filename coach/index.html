@@ -1696,4 +1696,14 @@ details.tgrp>summary{list-style:none;cursor:pointer;display:flex;justify-content
   var go=function(){ if(typeof renderToday!=='function') return setTimeout(go,500); var _r=renderToday; renderToday=function(){ var r=_r.apply(this,arguments); try{ draw(); }catch(e){} return r; }; try{ draw(); }catch(e){}
     var box=document.querySelector('section[data-v="today"]'); if(box) new MutationObserver(function(){ var m=box.querySelector(':scope > #mTop'); if(m&&box.firstElementChild!==m) box.prepend(m); }).observe(box,{childList:true}); }; setTimeout(go,1500); })();
 </script>
+<script>
+/* 10.11.26 (אביאל: "הגלילה לא עובדת טוב" + "שזה יהיה כמו צ'ק ליסט"):
+   1. בלי עיגון גלילה — תוכן שנטען למעלה לא מושך את המסך אחורה
+   2. עיגול סימון בכל משימה: לחיצה = "בוצע", והמשימה יורדת מהרשימה */
+(function(){ var st=document.createElement('style'); st.textContent='html,body,main,section{overflow-anchor:none}.card.task .tt{display:flex;align-items:center;gap:10px}.card.task .tck{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--blue);background:none;padding:0;cursor:pointer}.card.task .tck:hover{background:var(--soft,rgba(212,172,91,.15))}.card.task .tck:focus-visible{outline:2px solid var(--blue);outline-offset:2px}.card.task .tck.ok{background:var(--blue)}.card.task.gone{opacity:0;transform:translateY(-4px);transition:opacity .25s,transform .25s}'; document.head.appendChild(st);
+  function wire(){ document.querySelectorAll('.card.task').forEach(function(c){ if(c.querySelector('.tck')) return; var d=c.querySelector('[data-done]'), tt=c.querySelector('.tt'); if(!d||!tt) return;
+    var b=document.createElement('button'); b.type='button'; b.className='tck'; b.setAttribute('aria-label','סימון כבוצע'); tt.insertBefore(b,tt.firstChild);
+    b.onclick=function(e){ e.stopPropagation(); b.classList.add('ok'); c.classList.add('gone'); setTimeout(function(){ d.click(); },250); }; }); }
+  new MutationObserver(function(){ wire(); }).observe(document.body,{childList:true,subtree:true}); wire(); })();
+</script>
 </body></html>
