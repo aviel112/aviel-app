@@ -1613,7 +1613,8 @@ details.tgrp>summary{list-style:none;cursor:pointer;display:flex;justify-content
   document.addEventListener('click',function(ev){ var x=ev.target.closest&&ev.target.closest('[data-done],[data-snz],[data-skip]'); if(!x) return; var c=x.closest('.card.task'); if(!c) return; setTimeout(function(){ c.style.display='none'; var g=c.closest('details.tgrp'); if(g){ var n=[].slice.call(g.querySelectorAll('.card.task')).filter(function(y){ return y.style.display!=='none'; }).length, sp=g.querySelector('summary span'); if(sp) sp.textContent=sp.textContent.replace(/· \d+$/,'· '+n); if(!n) g.remove(); } },0); },true);
   /* 4.11.26 (אביאל: "עמוד המשימות לא נוח"): הבריף תמיד ראשון, וטבלת "סיכום היום" (נטענת אחרי) מתקפלת כמו השאר */
   function order(){ var b=box(); if(!b) return; var br=b.querySelector(':scope > #brief'), fr=b.querySelector(':scope > #foodRev');
-    if(br&&b.firstElementChild!==br) b.insertBefore(br,b.firstElementChild); if(fr&&br&&br.nextElementSibling!==fr) b.insertBefore(fr,br.nextElementSibling);
+    var tp=b.querySelector(':scope > #mTop'), f0=tp?tp.nextElementSibling:b.firstElementChild; /* 11.11.26: "3 הדברים של היום" נשאר ראשון והתדריך אחריו — קודם שני הקודים החליפו מקומות בלי סוף, וזה תקע גלילה ולחיצות */
+    if(br&&f0!==br) b.insertBefore(br,f0); if(fr&&br&&br.nextElementSibling!==fr) b.insertBefore(fr,br.nextElementSibling);
     var st=czGet(); [].slice.call(b.querySelectorAll(':scope > .card[id]')).forEach(function(td){ var k=td.id; if(td._cz||td.classList.contains('czc')||k==='brief'||k==='foodRev'||td.classList.contains('task')) return; var h=td.firstElementChild; if(!h||getComputedStyle(td).display==='flex') return;
       td._cz=1; td.dataset.czk=k; td.classList.add('czc'); if(st[k]!==0) td.classList.add('cz');
       h.addEventListener('click',function(ev){ if(ev.target.closest('button,a,input,select,textarea,label')&&ev.target!==h) return; var on=td.classList.toggle('cz'), o=czGet(); o[k]=on?1:0; czSet(o); }); }); }
