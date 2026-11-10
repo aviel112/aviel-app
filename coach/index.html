@@ -14,7 +14,7 @@
   var K=ls('coach_k'), W=ls('coach_w'); window.__MODE=W&&!K?'w':''; window.__AUTH=!!(K||W); window.__CK=K||''; /* 10.11.26: הבונה נפתח מיד, בלי לחכות לשרת */ window.__API=API;
   function call(fn,args,ok,bad){ var body=K?{api:'coach',k:K,fn:fn,args:args}:{api:'staff',k:W,fn:fn,args:args};
     fetch(API,{method:'POST',body:JSON.stringify(body)}).then(function(r){ return r.json(); })
-      .then(function(j){ if(j&&j.ok){ if(ok) ok(j.r); } else { var m=(j&&j.error)||'שגיאה'; if(/מפתח לא תקין|לא בתוקף/.test(m)){ ls('coach_k',null); ls('coach_w',null); setTimeout(function(){ location.reload(); },1800); } if(bad) bad(new Error(m)); } })
+      .then(function(j){ if(j&&j.ok){ if(ok) ok(j.r); } else { var m=(j&&j.error)||'שגיאה'; if(/מפתח לא תקין|לא בתוקף/.test(m)&&fn==='dashboardList'){ /* 11.11.26: רק כשהרשימה עצמה נדחית — לא כל שגיאה מוחקת את הכניסה */ ls('coach_k',null); ls('coach_w',null); setTimeout(function(){ location.reload(); },1800); } if(bad) bad(new Error(m)); } })
       .catch(function(){ if(bad) bad(new Error('אין חיבור לשרת. נסו שוב בעוד רגע')); }); }
   function runner(s,f){ return new Proxy({}, {get:function(_,p){ if(p==='withSuccessHandler') return function(h){ return runner(h,f); }; if(p==='withFailureHandler') return function(h){ return runner(s,h); }; if(p==='withUserObject') return function(){ return runner(s,f); };
     return function(){ call(p,[].slice.call(arguments),s,f); }; }}); }
@@ -677,8 +677,11 @@ function baCollage(d){ var W=1080, H=1350, cv=document.createElement('canvas'); 
 function cardSlim(d){ return JSON.stringify({at:Date.now(),d:d},function(k,v){ return typeof v==='string'&&v.length>20000?'':v; }); }
 function cardSave(name,d){ var js=cardSlim(d); try{ localStorage.setItem('mc_card_'+name,js); }catch(e){ try{ Object.keys(localStorage).filter(function(k){ return k.indexOf('mc_card_')===0&&k!=='mc_card_'+name; }).forEach(function(k){ localStorage.removeItem(k); }); localStorage.setItem('mc_card_'+name,js); }catch(e2){} } }
 var CARDPRE=false; function cardPrefetch(){ if(CARDPRE) return; CARDPRE=true; var rc=[]; try{ rc=JSON.parse(localStorage.getItem('m_recent')||'[]'); }catch(e){} rc=rc.slice(0,5);
-  (function next(i){ if(i>=rc.length) return; var n=rc[i]; if(CARD[n]) return next(i+1); google.script.run.withSuccessHandler(function(d){ CARD[n]=d; cardSave(n,d); setTimeout(function(){ next(i+1); },400); }).withFailureHandler(function(){ next(i+1); }).dashboardClientCard(n); })(0); }
-setTimeout(cardPrefetch,4000);
+  /* 11.11.26 (אביאל: "שיהיה מהיר יותר"): כרטיס לוקח לשרת 5-10 שניות. טוענים מראש את כל המתאמנים הפעילים, 3 במקביל, כך שפתיחה מראה מיד את השמור */
+  try{ ((L&&L.clients)||[]).forEach(function(c){ if(c.status==='פעיל'&&rc.indexOf(c.name)<0) rc.push(c.name); }); }catch(e){}
+  var q=rc.slice(), run=function(){ var n=q.shift(); if(!n) return; if(CARD[n]) return run(); google.script.run.withSuccessHandler(function(d){ CARD[n]=d; cardSave(n,d); setTimeout(run,300); }).withFailureHandler(function(){ setTimeout(run,300); }).dashboardClientCard(n); };
+  run(); run(); run(); }
+setTimeout(function w(){ if(!(typeof L!=='undefined'&&L&&L.clients)) return setTimeout(w,1000); cardPrefetch(); },4000);
 function openCard(name){ try{ var rc=JSON.parse(localStorage.getItem('m_recent')||'[]').filter(function(x){ return x!==name; }); rc.unshift(name); localStorage.setItem('m_recent',JSON.stringify(rc.slice(0,5))); }catch(e){} var ov=document.createElement('div'); ov.className='ov'; ov.id='ov'; ov.innerHTML='<div class="sheet"><div class="sh"><h2>'+esc(name)+'</h2><button class="x" aria-label="סגירה">×</button></div><div id="cardBody"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div></div>';
   document.body.appendChild(ov); document.body.style.overflow='hidden';
   var close=function(){ ov.remove(); document.body.style.overflow=''; }; ov.querySelector('.x').onclick=close; ov.onclick=function(e){ if(e.target===ov) close(); };
