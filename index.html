@@ -3219,10 +3219,18 @@ function autoReg(f){ try{ if(!f||!f.classList.contains('ok')) return; var days=f
   var one=kg*(1+reps/30), tgt=dir<0?Math.min(R[1],R[0]+2):R[1], inc=Math.max(incFor(e,kg)||2.5,kg>10?2.5:0), nk=Math.floor(one/(1+tgt/30)/inc)*inc; nk=Math.round(nk*100)/100;
   if(dir<0&&nk>=kg) nk=Math.max(0,Math.round((kg-inc)*100)/100); if(easy) nk=Math.round((kg+inc)*100)/100; if(heavy){ dir=-1; nk=Math.round((kg-inc)*100)/100; } if(dir>0&&nk<=kg) return; if(nk<=0) return;
   var card=f.closest('.card.ex'), rows=card?card.querySelectorAll('form.setrow:not(.ok)'):[]; if(!rows.length) return;
-  rows.forEach(function(r){ var i0=r.querySelector('input'); if(i0){ i0.value=nk; i0.classList.add('arg'); } }); LASTIN[e.ex]={kg:nk,reps:R[0]};
+  var nr=(dir<0&&!heavy)?tgt:null; rows.forEach(function(r){ var i0=r.querySelectorAll('input'); if(i0[0]){ i0[0].value=nk; i0[0].classList.add('arg'); } if(nr&&i0[1]) i0[1].value=nr; }); LASTIN[e.ex]={kg:nk,reps:nr||R[0]};
   var note=card.querySelector('.autoreg'); if(!note){ note=document.createElement('div'); note.className='autoreg'; var s=card.querySelector('.sets'); s.parentNode.insertBefore(note,s.nextSibling); }
   note.innerHTML=heavy?'הגעת לכשל כבר בסט הראשון, אז הורדנו ל-<b class="num">'+nk+'</b> ק״ג לסטים הבאים. ככה כל הסטים נשארים בטווח של '+R[0]+'–'+R[1]+'.':dir<0?'עשית <b class="num">'+reps+'</b> חזרות במקום '+R[0]+'–'+R[1]+', אז הורדנו ל-<b class="num">'+nk+'</b> ק״ג לסטים הבאים. ככה נכנסים לטווח ומקבלים את העבודה הנכונה.':(easy?'סימנת שנשארו לך עוד <b class="num">'+(rir>=5?'5 ומעלה':rir)+'</b> חזרות, אז העלינו ל-<b class="num">'+nk+'</b> ק״ג לסטים הבאים. אם זה כבד מדי, משנים את המשקל בשורה.':'<b class="num">'+reps+'</b> חזרות, הרבה מעל הטווח. העלינו ל-<b class="num">'+nk+'</b> ק״ג לסטים הבאים.');
+  AREG[e.ex]={d:TODAY,kg:nk,reps:nr,note:note.innerHTML}; var tb0=card.querySelector('.tgt b'); if(tb0) tb0.textContent=nk+'×'+(nr||(tb0.textContent.split('×')[1]||''));
   var rn=document.getElementById('restN'); if(rn&&/עוד סט/.test(rn.textContent)) rn.textContent='הבא: עוד סט, '+nk+' ק״ג'; }catch(er){} }
+/* 10.11.26 (אביאל: "6 עם כשל וזה לא מסנכרן את הסט הבא"): אחרי שהשרת מאשר את הסט המסך נבנה מחדש ודרס את ההורדה. שומרים אותה ומחילים שוב אחרי כל בנייה */
+var AREG={};
+(function(){ var _rt=renderTrain; renderTrain=function(){ var o=_rt.apply(this,arguments); try{ var days=fxDays(), d=days[DAY]?applySwaps(days[DAY]):null; if(!d) return o;
+  document.querySelectorAll('#progBox .card.ex').forEach(function(card){ var f0=card.querySelector('form.setrow'); if(!f0) return; var e=d.ex[+f0.dataset.i], a=e&&AREG[e.ex]; if(!a||a.d!==TODAY) return;
+    card.querySelectorAll('form.setrow:not(.ok)').forEach(function(r){ var i0=r.querySelectorAll('input'); if(i0[0]){ i0[0].value=a.kg; i0[0].classList.add('arg'); } if(a.reps&&i0[1]) i0[1].value=a.reps; });
+    var tb=card.querySelector('.tgt b'); if(tb) tb.textContent=a.kg+'×'+(a.reps||(tb.textContent.split('×')[1]||''));
+    if(!card.querySelector('.autoreg')){ var n=document.createElement('div'); n.className='autoreg'; n.innerHTML=a.note; var s=card.querySelector('.sets'); if(s) s.parentNode.insertBefore(n,s.nextSibling); } }); }catch(er){} return o; }; })();
 document.addEventListener('submit',function(ev){ var f=ev.target; if(f&&f.classList&&f.classList.contains('setrow')) setTimeout(function(){ autoReg(f); },60); },true);
 (function(){ var st=document.createElement('style'); st.textContent='.autoreg{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--soft,rgba(217,180,110,.12));color:var(--text,#fff);font-size:13.5px;line-height:1.45}.autoreg b{color:var(--gold,#d9b46e)}#progBox .setrow input.arg{color:var(--gold,#d9b46e)}'; document.head.appendChild(st); })();
 
