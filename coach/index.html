@@ -17,12 +17,17 @@
       .then(function(j){ if(j&&j.ok){ if(ok) ok(j.r); } else { var m=(j&&j.error)||'שגיאה'; if(/מפתח לא תקין|לא בתוקף/.test(m)&&fn==='dashboardList'){ /* 11.11.26: רק כשהרשימה עצמה נדחית — לא כל שגיאה מוחקת את הכניסה */ ls('coach_k',null); ls('coach_w',null); setTimeout(function(){ location.reload(); },1800); } if(bad) bad(new Error(m)); } })
       .catch(function(){ if(bad) bad(new Error('אין חיבור לשרת. נסו שוב בעוד רגע')); }); }
   function runner(s,f){ return new Proxy({}, {get:function(_,p){ if(p==='withSuccessHandler') return function(h){ return runner(h,f); }; if(p==='withFailureHandler') return function(h){ return runner(s,h); }; if(p==='withUserObject') return function(){ return runner(s,f); };
-    return function(){ call(p,[].slice.call(arguments),s,f); }; }}); }
+    return function(){ var args=[].slice.call(arguments); if(!SWR[p]||!s||SEEN[p]||args.some(Boolean)) return call(p,args,s,f); SEEN[p]=1; /* רק בקריאה הראשונה בכניסה */
+      /* 11.11.26: קופסאות שנטענות מאוחר (מאכלים לבדיקה, ניצחונות, פגישות...) מצוירות מיד מהשמור בטלפון, ומתעדכנות רק אם משהו השתנה — בלי קפיצות בכניסה */
+      var key='mc_x_'+p+(args.length?JSON.stringify(args):''), old=ls(key), had=false; if(old){ try{ var v=JSON.parse(old); had=true; Promise.resolve().then(function(){ s(v); }); }catch(e){ old=''; } }
+      call(p,args,function(r){ var j=''; try{ j=JSON.stringify(r); }catch(e){} if(had&&j===old) return; try{ if(j&&j.length<400000) localStorage.setItem(key,j); }catch(e){} s(r); },had?function(){}:f); }; }}); }
+  var SWR={dashboardFoodReview:1,dashboardWins:1,dashboardActivity:1,dashboardBookings:1,dashboardSystemStatus:1,dashboardPhotoStatus:1,dashboardCoachKey:1}, SEEN={};
   window.google={script:{run:runner(null,null)}};
 })();
 </script><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script>document.documentElement.classList.add('booting');</script><style>html.booting main{visibility:hidden}</style>
 <style>
 :root{--blue:#0b63b6;--blue-l:#e8f1fb;--bg:#f4f6fa;--card:#fff;--ink:#16202c;--mute:#667085;--line:#e6e9f0;--green:#12805c;--green-l:#e6f6ee;--orange:#c4320a;--orange-l:#fff1e8;--red:#b42318;--red-l:#fdecec;--wa:#128c4a;--surface:#fff;--chip:#f2f4f7;--chip-t:#475467;--sk1:#eceff4;--sk2:#f6f7fa;--dot:#e4e7ec;--toast:#16202c;--blue-b:#cfe0f5;--blue-t:#2b4a6b;--green-b:#bfe8cd;--red-b:#f3c2c2}
 /* מצב כהה (27.10.26): לפי הגדרת הטלפון. אותם טוקנים, ערכים כהים; טקסט לבן נשאר על כפתורים צבעוניים */
@@ -419,7 +424,7 @@ function drawMeetings(){ var box=$('section[data-v="today"]'); if(!box||!L) retu
   el.querySelectorAll('[data-mrem]').forEach(function(b){ b.onclick=function(){ composeWa(b.dataset.u,b.dataset.mrem); }; });
   el.querySelectorAll('[data-card]').forEach(function(b){ b.onclick=function(){ openCard(b.dataset.card); }; }); }
 function loadBookings(fresh){ try{ google.script.run.withSuccessHandler(function(r){ BKS=r||{list:[]}; try{ drawMeetings(); }catch(e){} }).withFailureHandler(function(){ BKS={err:'מערכת הזימון לא זמינה כרגע',list:[]}; try{ drawMeetings(); }catch(e){} }).dashboardBookings(!!fresh); }catch(e){} }
-setTimeout(function(){ loadBookings(false); },1200); setInterval(function(){ loadBookings(false); },600000);
+setTimeout(function(){ loadBookings(false); },0); setInterval(function(){ loadBookings(false); },600000);
 /* סדר מסך המשימות: קודם מה שדורש פעולה (מצב בוקר, אדומים, משימות), אחר כך תמונת מצב ופעילות, וכל הכלים בקופסה אחת למטה */
 var TOOLS_OPEN=false;
 function tidyToday(){ var box=$('section[data-v="today"]'); if(!box) return; var kids=[].slice.call(box.children); if(kids.length<3) return;
@@ -1262,7 +1267,7 @@ document.addEventListener('visibilitychange',function(){ if(document.visibilityS
   google.script.run.withSuccessHandler(function(d){ swrSave('leads',d||[]); LEADS=(d||[]).slice().reverse(); renderLeads(); }).withFailureHandler(nof).dashboardLeads();
   google.script.run.withSuccessHandler(function(d){ PU=d||{}; swrSave('pulse',PU); renderAll(); }).withFailureHandler(nof).dashboardPulseC();
   try{ loadActivity(); loadBookings(false); loadOnb(); }catch(e){} });
-loadOnb(); reloadWap(); loadSys(); setInterval(loadSys,5*60000); setTimeout(loadActivity,1500); setInterval(loadActivity,3*60000); (function(){ var _rtA=renderToday; renderToday=function(){ var r=_rtA.apply(this,arguments); try{ drawActivity(); }catch(e){} try{ drawMeetings(); }catch(e){} try{ tidyToday(); }catch(e){} return r; }; })(); swr('hebn',function(d){ HEBN=d||{}; }); setTimeout(loadHeb,3000);
+loadOnb(); reloadWap(); loadSys(); setInterval(loadSys,5*60000); setTimeout(loadActivity,0); setInterval(loadActivity,3*60000); (function(){ var _rtA=renderToday; renderToday=function(){ var r=_rtA.apply(this,arguments); try{ drawActivity(); }catch(e){} try{ drawMeetings(); }catch(e){} try{ tidyToday(); }catch(e){} return r; }; })(); swr('hebn',function(d){ HEBN=d||{}; }); setTimeout(loadHeb,3000);
 /* קופסה פתוחה במסך המשימות לא נסגרת כשהנתונים מתעדכנים ברקע */
 /* רינדור מחדש של לשונית המשימות: נשמר רק מה שהיה פתוח (התוכן נבנה טרי והכפתורים מחוברים), ובזמן הקלדה בלשונית מחכים שהמקלדת תיסגר */
 (function(){ var _rt=renderToday, RT_WAIT=false, key=function(d){ var sm=d.querySelector('summary'); return d.id||(sm?sm.textContent.replace(/[\d()·]/g,'').trim().slice(0,40):''); }, typing=function(){ var a=document.activeElement; return !!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.closest&&a.closest('section[data-v="today"]')); };
@@ -1470,9 +1475,9 @@ google.script.run.withSuccessHandler(function(d){ swrSave('leads',d||[]); LEADS=
     el.innerHTML='<div class="sec" style="margin:0 0 6px"><span>ניצחונות השבוע'+(open?' ('+open+' מחכים ל"כל הכבוד")':'')+'</span></div><div class="wl">'+WINS.slice(0,8).map(function(w,i){ return '<div class="wr"><div><b>'+esc(w.name.split(' ')[0])+': '+esc(w.t)+'</b><small>'+KIND[w.kind]+', '+dd(w.d)+'</small></div><button type="button" data-win="'+i+'" class="'+(w.sent?'done':'')+'"'+(w.sent?' disabled':'')+'>'+(w.sent?'נשלח':'כל הכבוד')+'</button></div>'; }).join('')+'</div>';
     el.querySelectorAll('[data-win]').forEach(function(b){ b.onclick=function(){ var w=WINS[+b.dataset.win]; if(!w||w.sent) return; b.disabled=true; b.textContent='שולח…';
       gsr('dashboardApplaud',w.name,w.t,w.msg).then(function(){ w.sent=true; toast('נשלח ל'+w.name.split(' ')[0]+': '+w.msg); draw(); }).catch(function(e){ b.disabled=false; b.textContent='כל הכבוד'; toast(e.message||String(e)); }); }; }); }
-  function load(){ gsr('dashboardWins').then(function(L){ WINS=L||[]; draw(); }).catch(function(){}); }
+  function load(){ google.script.run.withSuccessHandler(function(L){ WINS=L||[]; draw(); }).withFailureHandler(function(){}).dashboardWins(); }
   var _rt=renderToday; renderToday=function(){ var r=_rt.apply(this,arguments); try{ draw(); }catch(e){} return r; };
-  setTimeout(load,2500);
+  setTimeout(load,0);
 })();
 </script>
 
@@ -1520,7 +1525,7 @@ function tdyDraw(){ var sec=document.querySelector('section[data-v="today"]'); i
     '<div class="s" style="font-size:11.5px;color:var(--mute);margin-top:6px">ירוק = בוצע, אדום = עוד לא היום. הנתונים מתרעננים כל 10 דקות</div>';
   el.querySelectorAll('[data-card]').forEach(function(b){ b.onclick=function(){ openCard(b.dataset.card); }; }); var re=document.getElementById('tdyRe'); if(re) re.onclick=function(){ re.disabled=true; re.textContent='טוען…'; tdyLoad(true); }; }
 (function(){ var st=document.createElement('style'); st.textContent='#tdyCard .tdts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:8px 0}#tdyCard .tdt{text-align:center;padding:10px 2px 8px;border-radius:12px;background:var(--surface,var(--card))}#tdyCard .tdt b{display:block;font-size:22px;font-weight:800;line-height:1.1}#tdyCard .tdt b small{font-size:12px;color:var(--mute);font-weight:600}#tdyCard .tdt span{display:block;font-size:11px;color:var(--mute);margin-top:3px}#tdyCard .tdt.g b{color:var(--green,#1e7a4f)}#tdyCard .tdt.y b{color:var(--amber,#a5620d)}#tdyCard .tdt.r b{color:var(--red,#b42318)}#tdyCard .tdneed{font-size:13px;margin:2px 0 10px}#tdyCard .tdneed.ok{color:var(--mute)}#tdyCard .tdyh,#tdyCard .tdyr{display:grid;grid-template-columns:minmax(0,1.1fr) repeat(4,minmax(0,1fr));gap:6px;align-items:center}#tdyCard .tdyh{font-size:11.5px;color:var(--mute);padding:6px 0;border-bottom:1px solid var(--line)}#tdyCard .tdyr{width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:9px 0;font:inherit;color:inherit;text-align:start;cursor:pointer}#tdyCard .tn{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#tdyCard .tc{font-size:12.5px;text-align:center;border-radius:8px;padding:4px 2px;white-space:nowrap;overflow:hidden}#tdyCard .tc.ok{background:rgba(48,209,88,.14);color:#30d158}#tdyCard .tc.no{background:rgba(255,105,97,.12);color:#ff6961}#tdyCard .tc.mid{background:var(--panel2,rgba(127,127,127,.12));color:var(--mute)}'; document.head.appendChild(st); })();
-(function(){ var go=function(){ if(typeof renderToday!=='function') return setTimeout(go,500); var _rtT=renderToday; renderToday=function(){ var r=_rtT.apply(this,arguments); try{ tdyDraw(); }catch(e){} return r; }; tdyDraw(); tdyLoad(false); setInterval(function(){ tdyLoad(false); },10*60000); }; setTimeout(go,1200); })();
+(function(){ var go=function(){ if(typeof renderToday!=='function') return setTimeout(go,500); var _rtT=renderToday; renderToday=function(){ var r=_rtT.apply(this,arguments); try{ tdyDraw(); }catch(e){} return r; }; tdyDraw(); tdyLoad(false); setInterval(function(){ tdyLoad(false); },10*60000); }; go(); })();
 
 /* 1.11.26 (אביאל): תשלום חודשי. מסמנים "התקבל" כל חודש; בלי אישור עד 3 ימים אחרי מועד התשלום, האפליקציה של המתאמן ננעלת עד שמסמנים */
 function moFmt(y){ var m=String(y||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m?(+m[3])+'.'+(+m[2]):''; }
@@ -1573,7 +1578,7 @@ details.tgrp>summary{list-style:none;cursor:pointer;display:flex;justify-content
     c.querySelectorAll('[data-fdel]').forEach(function(x){ x.onclick=function(){ var r=x.dataset.fdel; frDone(r,'הוסר מהמאגר'); google.script.run.withFailureHandler(function(e){ toast(e.message); loadFood(); }).dashboardFoodSet(+r,{},'נדחה'); }; });
     c.querySelectorAll('[data-fok]').forEach(function(x){ x.onclick=function(){ var r=x.dataset.fok, row=x.closest('.fr'), f=FR.filter(function(y){ return String(y.row)===r; })[0]||{}, v={name:f.name,brand:f.brand,g:f.g}; row.querySelectorAll('[data-fk]').forEach(function(i){ v[i.dataset.fk]=String(i.value).replace(',','.'); }); if(!(+v.k100>0)){ toast('ממלאים קלוריות ל-100 גרם'); return; } frDone(r,'אושר ונכנס למאגר'); google.script.run.withFailureHandler(function(e){ toast(e.message); loadFood(); }).dashboardFoodSet(+r,v,'מאושר'); }; });
     c.querySelectorAll('[data-fph]').forEach(function(x){ x.onclick=function(){ var row=x.closest('.fr'); if(row.querySelector('img')){ row.querySelector('img').remove(); return; } x.disabled=true; google.script.run.withSuccessHandler(function(d){ x.disabled=false; var im=document.createElement('img'); im.src=d; im.alt='תמונת המוצר'; row.insertBefore(im,row.querySelector('.frb')); }).withFailureHandler(function(e){ x.disabled=false; toast(e.message); }).dashboardFoodPhoto(x.dataset.fph); }; }); }
-  var PHS=null, PHOK=[]; function phLoad(){ google.script.run.withSuccessHandler(function(r){ PHS=r||[]; try{ post(); }catch(e){} }).withFailureHandler(function(){}).dashboardPhotoStatus(); } setTimeout(phLoad,2500); setInterval(phLoad,30*60000);
+  var PHS=null, PHOK=[]; function phLoad(){ google.script.run.withSuccessHandler(function(r){ PHS=r||[]; try{ post(); }catch(e){} }).withFailureHandler(function(){}).dashboardPhotoStatus(); } setTimeout(phLoad,0); setInterval(phLoad,30*60000);
   function briefHtml(){ var op=(TK&&TK.open)||[], act=typeof active==='function'?active():[], reds=PU?act.filter(function(c){ var p=PU[c.name]; return p&&p.risk&&p.risk.lvl==='red'; }):[],
       nl=(typeof LEADS!=='undefined'&&LEADS?LEADS:[]).filter(function(l){ return l.status==='חדש'; }).length, hot=op.filter(function(t){ return t.hot; }).length, fr=FR?FR.length:0, w3=0;
     if(PU) act.forEach(function(c){ var p=PU[c.name]; if(p&&!p.err&&(p.never||p.gap>=3)) w3++; });
@@ -1618,7 +1623,7 @@ details.tgrp>summary{list-style:none;cursor:pointer;display:flex;justify-content
     var st=czGet(); [].slice.call(b.querySelectorAll(':scope > .card[id]')).forEach(function(td){ var k=td.id; if(td._cz||td.classList.contains('czc')||k==='brief'||k==='foodRev'||td.classList.contains('task')) return; var h=td.firstElementChild; if(!h||getComputedStyle(td).display==='flex') return;
       td._cz=1; td.dataset.czk=k; td.classList.add('czc'); if(st[k]!==0) td.classList.add('cz');
       h.addEventListener('click',function(ev){ if(ev.target.closest('button,a,input,select,textarea,label')&&ev.target!==h) return; var on=td.classList.toggle('cz'), o=czGet(); o[k]=on?1:0; czSet(o); }); }); }
-  var obT=null; (function watch(){ var b=box(); if(!b){ setTimeout(watch,500); return; } new MutationObserver(function(){ clearTimeout(obT); obT=setTimeout(order,30); }).observe(b,{childList:true}); order(); })();
+  var obT=null; (function watch(){ var b=box(); if(!b){ setTimeout(watch,500); return; } new MutationObserver(function(){ clearTimeout(obT); order() /* 11.11.26: מיד, לפני שהמסך מצויר — בלי הבזק של קופסה פתוחה שנסגרת */; }).observe(b,{childList:true}); order(); })();
   loadFood(); setInterval(loadFood,10*60000);
 })();
 </script>
@@ -1698,7 +1703,7 @@ details.tgrp>summary{list-style:none;cursor:pointer;display:flex;justify-content
     box.querySelectorAll('[data-mtw]').forEach(function(x){ x.onclick=function(){ var real=box.querySelector('.card.task [data-done="'+x.dataset.mtw+'"]'), c=real&&real.closest('.card.task'), w=c&&c.querySelector('[data-wa]'); if(w) w.click(); }; });
     box.querySelectorAll('[data-mto]').forEach(function(x){ x.onclick=function(){ if(x.dataset.mto) openCard(x.dataset.mto); }; }); }
   var go=function(){ if(typeof renderToday!=='function') return setTimeout(go,500); var _r=renderToday; renderToday=function(){ var r=_r.apply(this,arguments); try{ draw(); }catch(e){} return r; }; try{ draw(); }catch(e){}
-    var box=document.querySelector('section[data-v="today"]'); if(box) new MutationObserver(function(){ var m=box.querySelector(':scope > #mTop'); if(m&&box.firstElementChild!==m) box.prepend(m); }).observe(box,{childList:true}); }; setTimeout(go,1500); })();
+    var box=document.querySelector('section[data-v="today"]'); if(box) new MutationObserver(function(){ var m=box.querySelector(':scope > #mTop'); if(m&&box.firstElementChild!==m) box.prepend(m); }).observe(box,{childList:true}); }; go(); })();
 </script>
 <script>
 /* 10.11.26 (אביאל: "הגלילה לא עובדת טוב" + "שזה יהיה כמו צ'ק ליסט"):
@@ -1716,5 +1721,11 @@ details.tgrp>summary{list-style:none;cursor:pointer;display:flex;justify-content
     var r=x.closest('.mtr'); if(r){ r.style.transition='opacity .25s'; r.style.opacity='0'; }
     setTimeout(function(){ hide(); try{ if(typeof renderToday==='function') renderToday(); }catch(e){} },280); },true);
   new MutationObserver(function(){ wire(); hide(); }).observe(document.body,{childList:true,subtree:true}); wire(); })();
+</script>
+<script>
+/* 11.11.26 (אביאל: "האתר עדיין קופץ כשאני נכנס אליו"): בכניסה מציירים פעם אחת, אחרי שכל השכבות נטענו, מהנתונים השמורים בטלפון.
+   עד אז המסך מוסתר (חלקיק שנייה) כדי שלא יראו את הרשימה הגולמית מתחלפת */
+(function(){ var done=false, fin=function(){ if(done) return; done=true; try{ if(typeof renderAll==='function'&&typeof L!=='undefined'&&L) renderAll(); else if(typeof renderToday==='function') renderToday(); }catch(e){} document.documentElement.classList.remove('booting'); };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(fin,0); }); else setTimeout(fin,0); setTimeout(fin,1500); })();
 </script>
 </body></html>
