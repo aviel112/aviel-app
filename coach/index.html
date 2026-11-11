@@ -1119,6 +1119,9 @@ function todoItems(d){ var L=[], f=String(d.name||'').split(' ')[0], now=new Dat
   if(!d.noProg&&ld!=null&&ld>=7) L.push({p:2,t:'לא נרשם אימון '+ld+' ימים',w:'אימון אחרון שנרשם: '+lastLift.slice(8,10)+'/'+lastLift.slice(5,7),m:'היי '+f+', לא ראיתי אימון רשום השבוע. מה קורה? אם יש עומס, אפשר לעשות שני אימונים קצרים במקום שלושה. רק לעדכן אותי'});
   var pr=(d.lifts||[]).filter(function(x){ var a=dd(x.d); return a!=null&&a<=7&&x.last>=x.best&&x.best>x.first; })[0];
   if(pr) L.push({p:4,t:'שיא חדש: '+pr.ex,w:pr.first+' ← '+pr.best+' ק״ג. רגע טוב לפרגן',m:'היי '+f+', ראיתי את השיא שלך ב'+pr.ex+', '+pr.best+' ק״ג. כל הכבוד, ככה בונים'});
+  /* 11.11.26 (קובי יפרח: תקוע על אותו משקל → בקשת סרטון טכניקה): 12 סטים אחרונים באותו משקל = בערך 4 אימונים בלי עלייה */
+  var stuck=(d.lifts||[]).filter(function(x){ var h=x.h||[], a=dd(x.d); return !d.noProg&&h.length>=12&&x.last>0&&a!=null&&a<=14&&h.slice(-12).every(function(v){ return v===x.last; }); });
+  if(stuck.length){ var sx=stuck[0], more=stuck.length>1?' (ועוד '+(stuck.length-1)+')':''; L.push({p:3,t:'תקוע/ה על אותו משקל: '+sx.ex+more,w:sx.last+' ק״ג כבר בערך 4 אימונים. שווה לבקש סרטון טכניקה לפני שמעלים',m:'היי '+f+', שמתי לב שב'+sx.ex+' המשקל נשאר על '+sx.last+' ק״ג כבר כמה אימונים. כדאי לבדוק טכניקה: אפשר לצלם סט אחד מהצד ולשלוח לי כאן? אסתכל ואגיד מה לשפר'}); }
   var mr=(d.measures&&d.measures.rows)||[], md=mr.length?Math.min.apply(null,mr.map(function(r){ var x=dd(r.date); return x==null?999:x; })):null;
   if(md==null||md>=30) L.push({p:3,t:md==null?'אין מדידת היקפים':'מדידה אחרונה לפני '+md+' ימים',w:'היקפים פעם בחודש, ככה רואים התקדמות גם כשהמשקל עומד',m:'',go:'msCard'});
   if(!d.food&&d.track&&d.track.mode==='ערכים') L.push({p:2,t:'יומן האוכל ריק',w:'במעקב לפי ערכים בלי יומן אין על מה לעבוד',m:'היי '+f+', היומן באפליקציה ריק. גם צילום של הארוחה מספיק, האפליקציה מחשבת לבד. נתחיל מהיום'});
