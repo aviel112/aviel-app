@@ -1516,6 +1516,11 @@ function renderTrain(){
   var S0=deloadState(); if(S0.on) h+='<div class="card" style="border-color:var(--gold);margin-top:8px"><b>השבוע: שבוע הורדה (דילואד)</b><div class="exnote" style="margin-top:4px">אחרי 7 שבועות של עבודה הגוף צריך שבוע קל כדי להתאושש ולהתחזק. השבוע עובדים על 85% מהמשקל, סט אחד פחות בכל תרגיל, ולא מגיעים לכשל. בשבוע הבא חוזרים חזקים יותר.</div></div>';
   /* 28.10.26: בלי "שבוע X מתוך 6" — ההסבר מופיע רק בשבוע ההורדה עצמו */
   h+='<div class="sub" style="margin-top:4px">'+esc(String(d.title||'').replace(/^(אימון\s*\d+\s*[–-]\s*)(יום\s+)?(ראשון|שני|שלישי|רביעי|חמישי|שישי|שבת)\s*[·:,–-]\s*/,'$1'))+'</div>';
+  /* 11.11.26 (שני א׳): אימון שהתחילו אתמול ולא סיימו — הסטים שכבר נרשמו נשארים מסומנים, וממשיכים מהמקום שעצרו */
+  var CARRYD='';
+  try{ var yd=new Date(); yd.setDate(yd.getDate()-1); var Y=trkYmd(yd), nms=d.ex.filter(function(e){ return !/חימום/.test(e.mu); }).map(function(e){ return e.ex; }), LL=P.lifts||{},
+      onY=function(n){ return !!(LL[n]&&LL[n].hist&&LL[n].hist.some(function(x){ return x.d===Y; })); }, hitN=nms.filter(onY).length, other=Object.keys(LL).some(function(n){ return nms.indexOf(n)<0&&onY(n); }), dm=ls('aviel_done',{});
+    if(hitN&&!other&&hitN<Math.ceil(nms.length*0.6)&&!Object.keys(dm).some(function(k){ return dm[k]===Y; })){ CARRYD=Y; h+='<div class="exnote" style="color:var(--gold);margin-top:6px">ממשיכים את האימון מאתמול: הסטים שכבר נרשמו נשארו מסומנים</div>'; } }catch(er){}
   var heavyN=0, rirHelp=0;
   d.ex.forEach(function(e,i){
     var warm=/חימום/.test(e.mu), L=P.lifts&&P.lifts[e.ex];
@@ -1524,7 +1529,8 @@ function renderTrain(){
       (e.note?'<div class="exnote">'+esc(e.note)+'</div>':'')+(P.exKg&&P.exKg[e.ex]?'<div class="exnote" style="color:var(--gold)">משקל עבודה שסיכמנו: <b dir="ltr">'+esc(P.exKg[e.ex])+'</b> ק״ג</div>':''); /* נקבע ע״י אביאל בדשבורד */
     if(!warm){
       h+=vidLink(e);
-      var hist=L?L.hist:[], today=hist.filter(function(x){ return x.d===TODAY; }), prev=hist.filter(function(x){ return x.d&&x.d<TODAY; }), n=parseInt(e.s,10)||3, sg=sugg(e,L), R=rng(e.r); if(sg&&sg.deload&&n>1) n--;
+      var hist=L?L.hist:[], today=hist.filter(function(x){ return x.d===TODAY; }), cfN=0, prev=hist.filter(function(x){ return x.d&&x.d<TODAY; }), n=parseInt(e.s,10)||3, sg=sugg(e,L), R=rng(e.r); if(sg&&sg.deload&&n>1) n--;
+      if(CARRYD){ var cs=hist.filter(function(x){ return x.d===CARRYD; }); if(cs.length){ cfN=cs.length; today=cs.concat(today); } }
       var lastD=prev.length?prev[prev.length-1].d:'', ps=prev.filter(function(x){ return x.d===lastD; });
       var Rh=/כשל/.test(e.r)?null:rng(e.r), nsh=parseInt(e.s,10)||0, tdTop=today.length?Math.max.apply(null,today.map(function(x){ return x.kg; })):0, tdAt=today.filter(function(x){ return x.kg===tdTop; });
       if(!repsArr(e.r)&&Rh&&nsh&&tdAt.length>=nsh&&tdAt.every(function(x){ return x.reps>=Rh[1]; })) h+='<div class="hit">'+IC_UP+'<span>יעד הושג היום! בפעם הבאה <b dir="ltr">'+(Math.round((tdTop+incFor(e,tdTop))*100)/100)+' ק״ג</b></span></div>';
@@ -1544,7 +1550,7 @@ function renderTrain(){
       for(var k=0;k<Math.max(n,today.length);k++){
         var dn=today[k], pv=ps[k]||ps[ps.length-1], li=LASTIN[e.ex]||{};
         var kg=dn?dn.kg:(li.kg!=null?li.kg:(sg?sg.kg:(pv?pv.kg:''))), PA0=repsArr(e.r), rp=dn?dn.reps:(PA0?(PA0[k]||PA0[PA0.length-1]):(sg&&sg.reps?sg.reps:(li.reps!=null?li.reps:(R?R[0]:(pv?pv.reps:''))))); /* 1.11.26 (אביאל): החזרות הממולאות = היעד של היום, לא הקצה העליון של הטווח ולא הסט הקודם */
-        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal"'+(sg&&sg.up&&!dn?' class="upk"':'')+' value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select data-rk="'+k+'" aria-label="כמה קשה היה סט '+(k+1)+'">'+['','0','1','2','3','4','5'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):(RIRD[e.ex+'|'+k]!=null?String(RIRD[e.ex+'|'+k]):''); return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+({'':'בחירה','0':'0 · כשל','1':'עוד 1','2':'עוד 2','3':'עוד 3','4':'עוד 4','5':'5 ומעלה'})[o]+'</option>'; }).join('')+'</select>'+(dn?'<button type="button" class="sundo" aria-label="ביטול סט '+(k+1)+' שסומן">'+IC_CHECK+'</button>':'<button type="submit" aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button>')+'</form>';
+        h+='<form class="setrow'+(dn?' ok':'')+'" data-i="'+i+'"><span class="num">'+(k+1)+'</span><input inputmode="decimal"'+(sg&&sg.up&&!dn?' class="upk"':'')+' value="'+kg+'" aria-label="ק״ג סט '+(k+1)+'"'+(dn?' disabled':'')+'><input inputmode="numeric" value="'+rp+'" aria-label="חזרות סט '+(k+1)+'"'+(dn?' disabled':'')+'><select data-rk="'+k+'" aria-label="כמה קשה היה סט '+(k+1)+'"'+(dn&&k<cfN?' disabled':'')+'>'+['','0','1','2','3','4','5'].map(function(o){ var cur=dn&&dn.rir!=null?String(dn.rir):(RIRD[e.ex+'|'+k]!=null?String(RIRD[e.ex+'|'+k]):''); return '<option value="'+o+'"'+(o===cur?' selected':'')+'>'+({'':'בחירה','0':'0 · כשל','1':'עוד 1','2':'עוד 2','3':'עוד 3','4':'עוד 4','5':'5 ומעלה'})[o]+'</option>'; }).join('')+'</select>'+(dn&&k<cfN?'<button type="button" class="cf" disabled aria-label="סט '+(k+1)+' מאתמול">'+IC_CHECK+'</button>':dn?'<button type="button" class="sundo" aria-label="ביטול סט '+(k+1)+' שסומן">'+IC_CHECK+'</button>':'<button type="submit" aria-label="סיום סט '+(k+1)+'">'+IC_CHECK+'</button>')+'</form>';
       }
       h+='</div>';
       if(!ls('aviel_rir_seen',0)&&!rirHelp&&(rirHelp=1)) h+='<div class="rirhelp">"עוד כמה יכולת?" = כמה חזרות עוד נשארו בכוח בסוף הסט. 0 = לא הייתה עוד חזרה. לא חובה, אבל ככה ההמלצה לפעם הבאה מדויקת יותר</div>';
