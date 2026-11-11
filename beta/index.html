@@ -1624,6 +1624,10 @@ renderMenu=function(){
     card.querySelectorAll('.opt').forEach(function(o){
       var lab=(o.querySelector('b')||{}).textContent||'', nth=seen[lab]=(seen[lab]||0)+1, key=meal+'|'+lab+(nth>1?'#'+nth:''), lis=o.querySelectorAll('li'); /* אותה כותרת פעמיים בארוחה = מפתח נפרד */
       if(lis.length<2) return;
+      /* 11.11.26 (שני א׳: "הירקות לא נותן לבחור את שניהם"): שורה של "לבחור 2–3" = בחירה מרובה, לא בחירה אחת */
+      if(/לבחור\s*([2-9]|\d\s*[–-]\s*\d)/.test(lab)){ var PM=ls('aviel_pickm_'+TODAY,{}), cur=PM[key]||[]; if(!o.querySelector('.swaphint')) o.insertAdjacentHTML('beforeend','<div class="swaphint">לוחצים על כל מה שאכלת, אפשר כמה.</div>');
+        lis.forEach(function(li,i){ li.classList.toggle('picked',cur.indexOf(i)>=0); li.onclick=function(){ var m2=ls('aviel_pickm_'+TODAY,{}), c2=(m2[key]||[]).slice(), at=c2.indexOf(i); if(at>=0) c2.splice(at,1); else c2.push(i); if(c2.length) m2[key]=c2; else delete m2[key]; lsSet('aviel_pickm_'+TODAY,m2); var y=window.scrollY; renderMenu(); window.scrollTo(0,y); }; });
+        return; }
       if(!o.querySelector('.swaphint')) o.insertAdjacentHTML('beforeend','<div class="swaphint">מחליפים עם החצים ולוחצים על מה שאכלת. כל האפשרויות שוות בערך.</div>');
       lis.forEach(function(li,i){ li.classList.toggle('picked',pick[key]===i); li.onclick=function(){ var p2=ls('aviel_pick_'+TODAY,{}); if(p2[key]===i) delete p2[key]; else p2[key]=i; lsSet('aviel_pick_'+TODAY,p2); renderMenu(); }; });
       menuCarousel(o,key,lis,pick);
