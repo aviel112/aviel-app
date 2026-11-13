@@ -1794,6 +1794,9 @@ function swapStore(){ var m=ls('aviel_swaps',{}); return {day:(m.day&&m.day.d===
 function swapSave(day,perm){ lsSet('aviel_swaps',{day:{d:TODAY,m:day},perm:perm}); }
 function applySwaps(d){ if(!d||!d.ex) return d; var st=swapStore();
   return {title:d.title, ex:d.ex.map(function(e){ var alt=st.day[e.ex]||st.perm[e.ex]; if(!alt) return e; var c={}; for(var k in e) c[k]=e[k]; c.ex=alt; c._orig=e.ex; c._perm=!!st.perm[e.ex]&&!st.day[e.ex]; c.note=''; return c; })}; }
+/* 13.11.26 (אביאל): אותו תרגיל לא מופיע פעמיים באותו אימון. אם החלפה הייתה יוצרת כפילות (למשל כפיפת ברכיים שהוחלפה ל-RDL כשכבר יש RDL), החלפה כזאת לא חלה */
+var _applySwapsDd=applySwaps; applySwaps=function(d){ var r=_applySwapsDd.apply(this,arguments); try{ if(!r||!r.ex||!d||!d.ex||r===d) return r; var taken={}; r.ex.forEach(function(e){ if(!e._orig) taken[e.ex]=1; });
+  r.ex=r.ex.map(function(e,i){ if(!e._orig) return e; if(taken[e.ex]){ taken[d.ex[i].ex]=1; return d.ex[i]; } taken[e.ex]=1; return e; }); }catch(er){} return r; };
 var GRP=[[/בטן|פלאנק|כפיפות בטן/,'בטן'],[/תאומים|עקבים/,'תאומים'],[/המסטרינג|כפיפת ברך|דדליפט רומני|RDL/,'המסטרינג'],[/ישבן|היפ.?(טראסט|תראסט)|גלוט|קיק.?ב|מרחיק|הרחקת ירך|פתיחת/,'ישבן'],[/ארבע ראשי|סקוואט|לג.?פרס|פשיטת ברך|לאנג|מקרב|קירוב ירך|סגירת רגליים/,'ארבע ראשי'],[/יד אחורית|פשיטת מרפק|טרייספס|דיפס/,'יד אחורית'],[/יד קדמית|כפיפת מרפק|בייספס|פטיש/,'יד קדמית'],[/כתף|הרחקת כתפ|פייס|פרפר הפוך|לחיצת כתפ/,'כתפיים'],[/גב|רחב|חתירה|מתח|פולי|פול/,'גב'],[/חזה|לחיצת חזה|פרפר|מקבילים|שכיבות/,'חזה']];
 function grpOf(e){ var t=(e.mu||'')+' '+e.ex; for(var i=0;i<GRP.length;i++) if(GRP[i][0].test(t)) return GRP[i][1]; return ''; }
 function toks(s){ return String(s).replace(/[()\-–,]/g,' ').split(/\s+/).filter(function(w){ return w.length>=3&&!/^(עם|על|בכבל|במכונה|ביד)$/.test(w); }); }
