@@ -4327,6 +4327,29 @@ eatHelpDraw=function(){ var tot=document.getElementById('fTot'); if(!tot||FVIEW)
           api('fooddel',{row:it.row,f:it.f,d:FDAY.d}).then(function(r){ FDAY=r; renderMenu(); toast('נמחק'); }).catch(function(er){ toast(er.message||'לא נמחק',1); renderMenu(); }); }; }); });
     return o; };
 })();
+
+/* ===== 13.11.26 (אביאל: "בסופר סט אני לא מבין כלום על המשקלים... צד וצד"): סופרסט על מסך אחד.
+   שני התרגילים יחד, מסומנים א׳ ו-ב׳, וכפתור "סיים סט" רושם לסירוגין (א׳ סט 1, ב׳ סט 1, א׳ סט 2…). הלוגיקה של המנוחה והרישום נשארת של הסופרסט הקיים ===== */
+(function(){ var SSM=0, LAB=['א׳','ב׳','ג׳','ד׳'], _fa0=fxApply, _go0=fxGo;
+  function grpPos(pos){ var cs=fxCards(), c=cs[pos]; if(!c) return null; var g=tqGroups()[tqIdx(c,pos)]; if(!g) return null; var ps=g.map(tqPos).filter(function(p){ return p>=0; }).sort(function(a,b){ return a-b; }); return ps.length>1?ps:null; }
+  function nextForm(ps){ var cs=fxCards(), L=ps.map(function(p){ return Array.prototype.slice.call(cs[p].querySelectorAll('form.setrow')); }), mx=Math.max.apply(null,L.map(function(a){ return a.length; }));
+    for(var k=0;k<mx;k++) for(var m=0;m<L.length;m++){ var f=L[m][k]; if(f&&!f.classList.contains('ok')) return f; } return null; }
+  fxApply=function(){ _fa0.apply(this,arguments);
+    try{ var box=document.getElementById('progBox'), cards=fxCards(); cards.forEach(function(c){ c.classList.remove('ssg'); var l=c.querySelector(':scope > .ssl'); if(l) l.remove(); }); var old=document.getElementById('ssIntro'); if(old) old.remove();
+      if(!box||!box.classList.contains('fx-on')) return; var ps=grpPos(FX.i); if(!ps) return;
+      ps.forEach(function(p,n){ var c=cards[p]; c.classList.remove('fxhide'); c.classList.add('ssg'); var l=document.createElement('div'); l.className='ssl'; l.innerHTML='<b>סופרסט · תרגיל '+(LAB[n]||(n+1))+'</b>'; c.insertBefore(l,c.firstChild); });
+      var first=cards[ps[0]], last=cards[ps[ps.length-1]], hd=document.getElementById('fxHead'), nb=document.getElementById('fxNext'), sb=document.getElementById('fxSet'), fin=document.getElementById('finish'), after=cards[ps[ps.length-1]+1];
+      if(hd) first.parentNode.insertBefore(hd,first);
+      var it=document.createElement('div'); it.id='ssIntro'; it.className='ssintro'; it.textContent='סופרסט: עושים סט בתרגיל א׳ ומיד אחריו סט בתרגיל ב׳, בלי מנוחה ביניהם. אחרי ב׳ נחים וחוזרים לא׳. המשקל והחזרות נרשמים לכל תרגיל בנפרד.'; if(hd) hd.after(it); else first.parentNode.insertBefore(it,first);
+      if(nb){ nb.remove(); nb=null; }
+      if(after){ var nm=(after.querySelector('.nm')||{}).textContent||'', mu=(after.querySelector('.mu')||{}).textContent||'', sp=after.querySelector('.spec span'), sets=sp?sp.textContent.replace(/^סטים/,'').trim():'', im=after.querySelector('.exthumb img');
+        nb=document.createElement('button'); nb.type='button'; nb.id='fxNext'; nb.className='card fxnext'; nb.innerHTML=(im?'<img alt="" src="'+im.getAttribute('src')+'">':'')+'<span><small>התרגיל הבא</small><b>'+esc(nm)+'</b><small>'+(sets?esc(sets)+' סטים':'')+(mu?(sets?', ':'')+esc(mu):'')+'</small></span>'+IC_GO; nb.onclick=function(){ _go0(ps[ps.length-1]+1); }; last.after(nb); }
+      if(sb){ var open=nextForm(ps); sb.textContent=open?'סיים סט':(after?'לתרגיל הבא':'סיום האימון'); sb.hidden=!open&&!after&&!fin;
+        sb.onclick=function(){ var f=nextForm(ps); if(f){ if(f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event('submit',{cancelable:true,bubbles:true})); return; } if(after) _go0(ps[ps.length-1]+1); else if(fin) fin.click(); }; } }catch(e){} };
+  /* חצים ו"התרגיל הבא" ביד = יוצאים מהסופרסט. מעבר אוטומטי בין א׳ לב׳ נשאר באותו מסך */
+  fxGo=function(j){ try{ var ps=grpPos(FX.i); if(ps&&ps.indexOf(j)>=0&&SSM){ SSM=0; var t=j>FX.i?ps[ps.length-1]+1:ps[0]-1; if(t<0||t>=fxCards().length) return; return _go0.call(this,t); } }catch(e){} return _go0.apply(this,arguments); };
+  document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('#fxHead .fxarr, #fxNext')){ SSM=1; setTimeout(function(){ SSM=0; },80); } },true);
+  var st=document.createElement('style'); st.textContent='#progBox .ssintro{margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--soft,rgba(217,180,110,.12));color:var(--text,#fff);font-size:13.5px;line-height:1.45}#progBox .card.ex.ssg{border-inline-start:3px solid var(--gold,#d9b46e)}#progBox .card.ex .ssl b{display:inline-block;font-size:12.5px;color:var(--gold,#d9b46e);font-weight:800;margin-bottom:4px}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
