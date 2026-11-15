@@ -4351,6 +4351,35 @@ eatHelpDraw=function(){ var tot=document.getElementById('fTot'); if(!tot||FVIEW)
   fxGo=function(j){ try{ var ps=grpPos(FX.i); if(ps&&ps.indexOf(j)>=0&&SSM){ SSM=0; var t=j>FX.i?ps[ps.length-1]+1:ps[0]-1; if(t<0||t>=fxCards().length) return; return _go0.call(this,t); } }catch(e){} return _go0.apply(this,arguments); };
   document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('#fxHead .fxarr, #fxNext')){ SSM=1; setTimeout(function(){ SSM=0; },80); } },true);
   var st=document.createElement('style'); st.textContent='#progBox .ssintro{margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--soft,rgba(217,180,110,.12));color:var(--text,#fff);font-size:13.5px;line-height:1.45}#progBox .card.ex.ssg{border-inline-start:3px solid var(--gold,#d9b46e)}#progBox .card.ex .ssl b{display:inline-block;font-size:12.5px;color:var(--gold,#d9b46e);font-weight:800;margin-bottom:4px}'; document.head.appendChild(st); })();
+
+/* ===== 16.11.26 (אביאל, מור): יומן אוכל — הזנה ישירה למנה (שם + קלוריות + מאקרו), וסמל "?" בכל ארוחת תפריט שמראה מה התפריט מבקש ומה כבר נרשם. ה"?" מופעל לפי מתאמן ===== */
+var MEALHELP_NAMES=['מור דומני'];
+function mealHelpOn(){ try{ if(D&&D.feat&&D.feat.eff&&D.feat.eff.mealhelp!=null) return !!D.feat.eff.mealhelp; var n=String((D&&(D.name||D.fullName))||''); return MEALHELP_NAMES.some(function(x){ return n.indexOf(x)===0; })||MEALHELP_NAMES.some(function(x){ return String(D&&D.first||'')===x.split(' ')[0]&&n===''; }); }catch(e){ return false; } }
+(function(){
+  /* הזנה ישירה למנה, בתוך כרטיס ההוספה בשורה של "הוספה מהירה" */
+  function mount(){ var q=document.getElementById('fQuick'); if(!q||document.getElementById('fPort')) return;
+    var b=document.createElement('button'); b.type='button'; b.className='ghost sm'; b.id='fPort'; b.textContent='הוספה לפי מנה: קלוריות ומאקרו'; q.after(b);
+    var f=document.createElement('form'); f.id='fPortF'; f.className='fquick'; f.hidden=true;
+    f.innerHTML='<input id="fpN" placeholder="מה אכלת, למשל: סלט טופו" aria-label="שם" style="font-size:16px"><div class="fqg"><label>קלוריות<input id="fpK" inputmode="decimal"></label><label>חלבון<input id="fpP" inputmode="decimal"></label><label>פחמימה<input id="fpC" inputmode="decimal"></label><label>שומן<input id="fpF" inputmode="decimal"></label></div><div class="sub">הערכים לכל המנה שאכלת, לא ל-100 גרם. נרשם לארוחה שנבחרה למעלה.</div><button type="submit" class="installbtn">הוספה ליומן</button>';
+    b.after(f); b.onclick=function(){ f.hidden=!f.hidden; if(!f.hidden) document.getElementById('fpN').focus(); };
+    f.onsubmit=function(ev){ ev.preventDefault(); var v=function(id){ return Math.max(0,parseFloat(String(document.getElementById(id).value).replace(',','.'))||0); }, n=document.getElementById('fpN').value.trim(), k=v('fpK'), p=v('fpP'), c=v('fpC'), fa=v('fpF');
+      if(!n){ toast('כותבים מה אכלת',1); return; } if(!k&&!(p||c||fa)){ toast('ממלאים קלוריות או מאקרו',1); return; } if(!k) k=Math.round(p*4+c*4+fa*9); if(k>3000||p>300||c>500||fa>300){ toast('הערכים נראים גבוהים למנה אחת. בודקים?',1); return; }
+      var ml=(typeof fMeal==='function')?fMeal():'', sb=f.querySelector('button[type=submit]'); sb.disabled=true;
+      api('food',{f:n.slice(0,80),g:0,k:Math.round(k),p:Math.round(p*10)/10,c:Math.round(c*10)/10,fat:Math.round(fa*10)/10,m:ml}).then(function(r){ FDAY=r; f.reset(); f.hidden=true; sb.disabled=false; toast('נרשם ביומן: '+Math.round(k)+' קק״ל'); if(typeof renderFood==='function') renderFood(); }).catch(function(er){ sb.disabled=false; toast(er.message||'לא נשמר',1); }); }; }
+  var _rf=renderFood; renderFood=function(){ var r=_rf.apply(this,arguments); try{ mount(); }catch(e){} return r; };
+  /* "?" בכל ארוחה בתפריט */
+  var MAP={'בוקר':'בוקר','צהריים':'צהריים','ערב':'ערב','ביניים':'ביניים'};
+  function mealKey(t){ t=String(t||''); for(var k in MAP) if(t.indexOf(k)>=0) return MAP[k]; return ''; }
+  function eaten(key){ var s={k:0,p:0,c:0,f:0,n:0}; if(!key||!FDAY||FDAY.d!==TODAY) return s; (FDAY.items||[]).forEach(function(x){ if(x.m===key){ s.k+=+x.k||0; s.p+=+x.p||0; s.c+=+x.c||0; s.f+=+x.fat||0; s.n++; } }); return s; }
+  function help(){ if(!mealHelpOn()) return; document.querySelectorAll('#menuBox .card.meal').forEach(function(c){ var h=c.querySelector('.mealhead'); if(!h||h.querySelector('.mh')) return; var h3=c.querySelector('h3'), title=h3?(h3.firstChild?h3.firstChild.textContent:h3.textContent).trim():'', key=mealKey(title), vals='';
+      try{ ((P.menu&&P.menu.blocks)||[]).forEach(function(bl){ if(bl.title!==title) return; (bl.lines||[]).forEach(function(l){ if(/^ערכים ממוצעים|^ערכי הארוחה/.test(l)) vals=l.replace(/^[^:]*:\s*/,'').replace(/כ-/g,''); }); }); }catch(e){}
+      var b=document.createElement('button'); b.type='button'; b.className='mh'; b.setAttribute('aria-label','מה התפריט מבקש בארוחה הזאת'); b.textContent='?'; h.insertBefore(b,h.querySelector('.ate')||null);
+      var box=document.createElement('div'); box.className='mhbox'; box.hidden=true; c.insertBefore(box,h.nextSibling);
+      b.onclick=function(){ if(!box.hidden){ box.hidden=true; return; } var e=eaten(key), t=title;
+        box.innerHTML='<b>'+esc(t)+'</b><div>התפריט מבקש (ממוצע): <bdi dir="ltr">'+esc(vals||'אין ערכים בתפריט')+'</bdi></div>'+(key?'<div>נרשם ביומן עד עכשיו: '+(e.n?'<bdi dir="ltr">'+Math.round(e.k)+' קק״ל · '+Math.round(e.p)+' ג׳ חלבון · '+Math.round(e.c)+' ג׳ פחמימה · '+Math.round(e.f)+' ג׳ שומן</bdi>':'עוד כלום')+'</div>':'')+'<small>בוחרים אפשרות אחת מכל שורה. אם אכלת משהו אחר, מוסיפים ביומן עם הערכים שלו.</small>'; box.hidden=false; }; }); }
+  var _rm=renderMenu; renderMenu=function(){ var r=_rm.apply(this,arguments); try{ help(); }catch(e){} return r; };
+  var st=document.createElement('style'); st.textContent='#menuBox .mh{width:26px;height:26px;min-height:0;padding:0;border-radius:50%;font-size:14px;font-weight:800;border:1px solid var(--gold-d,#8a7043);color:var(--gold,#d9b46e);background:transparent;margin-inline:8px}#menuBox .mhbox{margin:6px 0 4px;padding:10px 12px;border-radius:12px;background:var(--soft,rgba(217,180,110,.12));font-size:13.5px;line-height:1.5;display:flex;flex-direction:column;gap:4px}#menuBox .mhbox small{color:var(--mute)}'; document.head.appendChild(st);
+})();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
