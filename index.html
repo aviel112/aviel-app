@@ -1354,7 +1354,7 @@ function scanStop(){ try{ if(SCAN.reader&&SCAN.reader.stopContinuousDecode) SCAN
   try{ (SCAN.stream&&SCAN.stream.getTracks()||[]).forEach(function(t){ t.enabled=false; }); }catch(e){} clearTimeout(SCAN.off); SCAN.off=setTimeout(camKill,180000); $('#scan').hidden=true; }
 document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden'&&$('#scan').hidden) camKill(); });
 function camFail(){ scanStop(); camKill(); toast('אין גישה למצלמה. מאשרים מצלמה בהגדרות הטלפון ומנסים שוב.',1); }
-function scanStart(){ $('#scan').hidden=false; var v=$('#scanV');
+function scanStart(){ if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){ toast('הדפדפן הזה חוסם מצלמה. פותחים את האפליקציה בספארי או בכרום ומנסים שוב, או מחפשים את המוצר בשם.',1); try{ $('#fQ').focus(); }catch(e){} return; } $('#scan').hidden=false; var v=$('#scanV');
   if(!window.BarcodeDetector&&!window.ZXing){ scanStop(); toast('הסורק עוד נטען, מנסים שוב בעוד רגע',1); return; }
   camGet().then(function(st){ if($('#scan').hidden) throw 'closed'; v.srcObject=st; v.setAttribute('playsinline',''); return v.play().then(function(){ return st; }); }).then(function(st){
     if(window.BarcodeDetector){ var det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});
