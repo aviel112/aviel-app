@@ -1409,9 +1409,9 @@ function mealShot(file){ var ov=document.createElement('div'); ov.className='mso
         '<button type="button" id="msLog"'+(on.length?'':' disabled')+'>לרשום ביומן ('+esc(ml)+')</button><button type="button" class="ghost" id="msX">בלי לרשום</button>';
       box.querySelectorAll('.msi').forEach(function(b){ b.onclick=function(){ var x=it[+b.dataset.i]; x.off=!x.off; draw(); }; });
       box.querySelector('#msX').onclick=close;
-      box.querySelector('#msLog').onclick=function(){ var bt=this; bt.disabled=true; bt.textContent='רושם…'; var q=Promise.resolve();
-        on.forEach(function(x){ q=q.then(function(){ return api('food',{f:x.n+' (צילום)',g:x.g||0,k:x.k,p:x.p,c:x.c,fat:x.f,m:ml}).then(function(r){ FDAY=r; }); }); });
-        q.then(function(){ api('mealdone',{id:pid,meal:ml,items:on.map(function(x){ return {n:x.n,g:x.g,k:x.k,p:x.p,c:x.c,f:x.f}; }),answers:ans,free:free}).catch(function(){}); close(); toast('נרשם ביומן: '+t.k+' קק״ל. אביאל רואה את הארוחה'); try{ renderFood(); }catch(e){} try{ renderTodayCard(); }catch(e){} }).catch(function(e){ bt.disabled=false; bt.textContent='לנסות שוב'; toast(e.message||'לא נרשם',1); }); }; };
+      box.querySelector('#msLog').onclick=function(){ var bt=this; if(bt.dataset.busy) return; bt.dataset.busy=1; bt.disabled=true; bt.textContent='רושם…'; var q=Promise.resolve();
+        on.forEach(function(x){ q=q.then(function(){ if(x.logged) return; return api('food',{f:x.n+' (צילום)',g:x.g||0,k:x.k,p:x.p,c:x.c,fat:x.f,m:ml}).then(function(r){ FDAY=r; x.logged=1; }); }); }); /* 18.11.26: 'לנסות שוב' לא רושם שוב מה שכבר נרשם */
+        q.then(function(){ api('mealdone',{id:pid,meal:ml,items:on.map(function(x){ return {n:x.n,g:x.g,k:x.k,p:x.p,c:x.c,f:x.f}; }),answers:ans,free:free}).catch(function(){}); close(); toast('נרשם ביומן: '+t.k+' קק״ל. אביאל רואה את הארוחה'); try{ renderFood(); }catch(e){} try{ renderTodayCard(); }catch(e){} }).catch(function(e){ delete bt.dataset.busy; bt.disabled=false; bt.textContent='לנסות שוב'; toast(e.message||'לא נרשם',1); }); }; };
     var ask=function(){ var pick={};
       box.innerHTML='<h2>רגע לפני שרושמים</h2><p class="sub">כמה שאלות קצרות, כדי שהמספרים יהיו מדויקים.</p><div class="msq">'+Q.map(function(q,i){ return '<div class="msqi"><b>'+esc(q.q)+'</b><div class="msqo">'+q.o.concat(['לא בטוח/ה']).map(function(o){ return '<button type="button" data-q="'+i+'" data-o="'+esc(o)+'">'+esc(o)+'</button>'; }).join('')+'</div></div>'; }).join('')+'</div>'+
         '<label class="msfree">משהו להוסיף? (לא חובה)<input id="msFree" placeholder="למשל: אכלתי רק חצי מהאורז"></label>'+
@@ -4388,6 +4388,18 @@ function mealHelpOn(){ try{ if(D&&D.feat&&D.feat.eff&&D.feat.eff.mealhelp!=null)
         box.innerHTML='<b>'+esc(t)+'</b><div>התפריט מבקש (ממוצע): <bdi dir="ltr">'+esc(vals||'אין ערכים בתפריט')+'</bdi></div>'+(key?'<div>נרשם ביומן עד עכשיו: '+(e.n?'<bdi dir="ltr">'+Math.round(e.k)+' קק״ל · '+Math.round(e.p)+' ג׳ חלבון · '+Math.round(e.c)+' ג׳ פחמימה · '+Math.round(e.f)+' ג׳ שומן</bdi>':'עוד כלום')+'</div>':'')+'<small>בוחרים אפשרות אחת מכל שורה. אם אכלת משהו אחר, מוסיפים ביומן עם הערכים שלו.</small>'; box.hidden=false; }; }); }
   var _rm=renderMenu; renderMenu=function(){ var r=_rm.apply(this,arguments); try{ help(); }catch(e){} return r; };
   var st=document.createElement('style'); st.textContent='#menuBox .mh{width:26px;height:26px;min-height:0;padding:0;border-radius:50%;font-size:14px;font-weight:800;border:1px solid var(--gold-d,#8a7043);color:var(--gold,#d9b46e);background:transparent;margin-inline:8px}#menuBox .mhbox{margin:6px 0 4px;padding:10px 12px;border-radius:12px;background:var(--soft,rgba(217,180,110,.12));font-size:13.5px;line-height:1.5;display:flex;flex-direction:column;gap:4px}#menuBox .mhbox small{color:var(--mute)}'; document.head.appendChild(st);
+})();
+
+/* ===== 18.11.26 (אבי אדרי): ארוחה מהתפריט נרשמה ביומן 4 פעמים (לחיצות כפולות + סימון מאכלים + "אכלתי הכל" במקביל).
+   שומר סף אחד לכל רישום מהתפריט: לפני רישום בודקים ביומן הטרי של היום. ארוחה שלמה שכבר רשומה — לא נרשמת שוב;
+   מאכל בודד מארוחה שכבר רשומה כשלמה — לא נרשם; אותו רישום שכבר בדרך — מחכים לו ולא שולחים שוב. ===== */
+(function(){ if(typeof api0!=='function') return; var _a0=api0, FLY={};
+  function menuMeal(f){ f=String(f||''); var m=f.match(/^(.*) \(מהתפריט\)$/); if(m) return {whole:m[1]}; m=f.match(/ · ([^·]+)$/); return m?{part:m[1].trim()}:null; }
+  function dupIn(fd,f,mm){ return ((fd&&fd.items)||[]).some(function(x){ var xf=String(x.f||''); return xf===f||(mm.part&&xf===mm.part+' (מהתפריט)'); }); }
+  api0=function(a,p){ var mm=a==='food'&&p&&(!p.d||p.d===TODAY)&&menuMeal(p.f); /* p.d=TODAY נקבע תמיד בשכבת התור */ if(!mm) return _a0.apply(this,arguments);
+    var key=String(p.f); if(FLY[key]) return FLY[key];
+    var self=this, args=arguments, pr=_a0.call(self,'foodday',{d:TODAY}).then(function(fd){ if(fd&&fd.d===TODAY&&dupIn(fd,key,mm)){ return fd; } return _a0.apply(self,args); });
+    FLY[key]=pr; var clr=function(){ delete FLY[key]; }; pr.then(clr,clr); return pr; };
 })();
 </script>
 <script>
