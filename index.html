@@ -4401,6 +4401,52 @@ function mealHelpOn(){ try{ if(D&&D.feat&&D.feat.eff&&D.feat.eff.mealhelp!=null)
     var self=this, args=arguments, pr=_a0.call(self,'foodday',{d:TODAY}).then(function(fd){ if(fd&&fd.d===TODAY&&dupIn(fd,key,mm)){ return fd; } return _a0.apply(self,args); });
     FLY[key]=pr; var clr=function(){ delete FLY[key]; }; pr.then(clr,clr); return pr; };
 })();
+
+/* ===== 18.11.26 (אביאל): "מה לאכול עכשיו" — כפתור בכרטיס "נשאר להיום". מציע את הארוחה הבאה מהתפריט שעוד לא נאכלה,
+   ואם כל הארוחות נאכלו ונשאר חלבון — מפנה להצעות שכבר קיימות ביומן האוכל. הכל מחושב מהתפריט והיומן, בלי שרת ===== */
+(function(){
+  var st=document.createElement('style'); st.textContent='.wnbtn{display:block;width:100%;margin-top:10px;padding:11px;border-radius:12px;border:0;background:var(--panel2);color:var(--text);font:inherit;font-weight:700;font-size:14.5px}.wnout{margin-top:10px;padding:12px;border-radius:12px;background:var(--panel2);font-size:14.5px;line-height:1.55}.wnout b{font-weight:800}.wnout .wnl{display:block;color:var(--mute);font-size:13px;margin-top:4px}.wnout button{margin-top:10px;padding:9px 14px;border-radius:10px;border:0;background:var(--gold,#d4ac5b);color:#111;font:inherit;font-weight:700;font-size:14px}.wnrow{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid rgba(128,128,128,.18)}.wnrow:last-of-type{border-bottom:0}';
+  document.head.appendChild(st);
+  var OPEN=false;
+  function blocks(){ var M=typeof P!=='undefined'&&P&&P.menu; return (M&&M.blocks||[]).filter(function(b){ return b.title&&!/לפני אימון|חופשי/.test(b.title)&&typeof mealVals==='function'&&mealVals(b); }); }
+  function items(){ return (typeof FDAY!=='undefined'&&FDAY&&FDAY.d===TODAY&&FDAY.items)||[]; }
+  function calc(){ var B=blocks(); if(!B.length) return null; var T={k:0,p:0,c:0,fat:0}, E={k:0,p:0,c:0,fat:0}, it=items(), ate=ls('aviel_ate_'+TODAY,[]);
+    B.forEach(function(b){ var v=mealVals(b); T.k+=v.k||0; T.p+=v.p||0; T.c+=v.c||0; T.fat+=v.fat||0; });
+    it.forEach(function(x){ if(x.m==='חופשי') return; E.k+=+x.k||0; E.p+=+x.p||0; E.c+=+x.c||0; E.fat+=+x.fat||0; });
+    var open=B.filter(function(b){ var tag=' · '+b.title; return ate.indexOf(b.title)<0&&!it.some(function(x){ var f=String(x.f||''); return f===b.title+' (מהתפריט)'||f.slice(-tag.length)===tag; }); });
+    return {left:{k:Math.round(T.k-E.k),p:Math.round(T.p-E.p)},open:open}; }
+  function html(){ var c=calc(); if(!c) return ''; var L=c.left;
+    if(L.k<=40) return '<b>הגעת ליעד הקלוריות של היום.</b><span class="wnl">אם יש רעב: ירקות ומים, והיעד נשמר.</span>';
+    if(c.open.length){ var hr=new Date().getHours(), want=hr<11?/בוקר/:hr<16?/צהר/:hr<18?/ביניים/:/ערב|לילה/, b=c.open.filter(function(x){ return want.test(x.title); })[0]||c.open[0], v=mealVals(b) /* לפי השעה: בערב מציעים ארוחת ערב ולא בוקר שלא סומן */, after=L.k-v.k, tight=after<-80;
+      return '<b>'+esc(b.title)+'</b> · כ-'+v.k+' קק״ל'+(v.p?' ו-'+v.p+' גרם חלבון':'')+
+        '<span class="wnl">'+(tight?'נשארו לך '+L.k+' קק״ל, פחות מהארוחה המלאה. עדיף את החלבון והירקות, ומהפחמימה חצי מנה.':(c.open.length>1?'אחריה יישארו כ-'+Math.max(0,after)+' קק״ל לשאר היום.':'זו הארוחה האחרונה שנשארה להיום.'))+'</span>'+
+        '<button type="button" id="wnGo" data-meal="'+esc(b.title)+'">לארוחה בתפריט</button>'; }
+    if(L.p>=15) return '<b>כל הארוחות נאכלו, ונשארו '+L.p+' גרם חלבון.</b><span class="wnl">ביומן האוכל יש הצעות מדויקות לפי מה שנשאר.</span><button type="button" id="wnDiary">ליומן האוכל</button>'; /* ההצעות עצמן כבר קיימות ביומן ("איך לסגור את היום?") — לא משכפלים */
+    return '<b>כל הארוחות נאכלו.</b><span class="wnl">נשארו כ-'+L.k+' קק״ל. אפשר לסגור את היום כאן.</span>'; }
+  function mount(){ var card=document.getElementById('mLeft'); if(!card||card.querySelector('.wnbtn')||!calc()) return;
+    card.insertAdjacentHTML('beforeend','<button type="button" class="wnbtn" aria-expanded="'+OPEN+'">מה לאכול עכשיו?</button>'+(OPEN?'<div class="wnout" role="status">'+html()+'</div>':''));
+    card.querySelector('.wnbtn').onclick=function(){ OPEN=!OPEN; var o=card.querySelector('.wnout'); if(o) o.remove(); this.remove(); mount(); };
+    var dg=card.querySelector('#wnDiary'); if(dg) dg.onclick=function(){ var t=document.querySelector('#tabs button[data-tab=food]'); if(t) t.click(); };
+    var go=card.querySelector('#wnGo'); if(go) go.onclick=function(){ var t=go.dataset.meal, h=[].filter.call(document.querySelectorAll('#menuBox .meal h3'),function(x){ return x.textContent===t; })[0]; if(h) h.scrollIntoView({behavior:'smooth',block:'start'}); }; }
+  var _rm=renderMenu; renderMenu=function(){ var r=_rm.apply(this,arguments); try{ mount(); }catch(e){} return r; };
+  if(typeof renderFood==='function'){ var _rf=renderFood; renderFood=function(){ var r=_rf.apply(this,arguments); try{ mount(); }catch(e){} return r; }; }
+})();
+
+/* ===== 18.11.26 (אביאל): "משהו לא עובד?" — דיווח על תקלה מתוך חלונית העזרה. נשלח לאביאל בערוץ דיווחי התקלות הקיים (apperr),
+   עם פרטי אבחון קצרים (מסך, מכשיר, מצב היומן), כדי שלא יהיה צורך בצילומי מסך והסברים בווטסאפ ===== */
+(function(run){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else setTimeout(run,0); })(function(){ if(typeof openHelp!=='function') return; /* חלונית העזרה נטענת אחרי הקובץ הזה */
+  var st=document.createElement('style'); st.textContent='.bugl{display:block;margin:14px auto 0;background:none!important;border:0;color:var(--mute)!important;font:inherit;font-size:13.5px;text-decoration:underline;width:auto!important;padding:6px!important}.bugt{width:100%;min-height:110px;margin:10px 0;padding:12px;border-radius:12px;border:1px solid rgba(128,128,128,.35);background:var(--panel2);color:var(--text);font:inherit;font-size:16px;box-sizing:border-box}.buge{color:#e5675f;font-size:13px;margin:-4px 0 8px}';
+  document.head.appendChild(st);
+  function diag(){ var ua=navigator.userAgent, dev=/iPhone|iPad/.test(ua)?'iPhone':/Android/.test(ua)?'Android':'מחשב', tab=''; try{ tab=typeof curTab==='function'?curTab():''; }catch(e){}
+    var it=(typeof FDAY!=='undefined'&&FDAY&&FDAY.items)||[], k=0; it.forEach(function(x){ k+=+x.k||0; });
+    return 'מסך '+(tab||'?')+' · '+dev+(window.matchMedia&&matchMedia('(display-mode: standalone)').matches?' מותקנת':' דפדפן')+' · יומן '+it.length+' רישומים, '+Math.round(k)+' קק״ל'; }
+  var _oh=openHelp; openHelp=function(k,done){ var r=_oh.apply(this,arguments); try{ if(k==='intro') return r; var all=document.querySelectorAll('.sheet'), s=all[all.length-1], box=s&&s.querySelector('.sheet-in'); if(!box) return r;
+      var b=document.createElement('button'); b.type='button'; b.className='bugl'; b.textContent='משהו לא עובד? לדווח לאביאל'; box.appendChild(b);
+      b.onclick=function(){ box.innerHTML='<button type="button" class="shx" aria-label="סגירה">×</button><h2 id="shT">מה לא עובד?</h2><p class="sub">כמה מילים על מה שקרה. פרטי המסך והמכשיר נשלחים לבד.</p><textarea class="bugt" id="bugT" maxlength="400" placeholder="למשל: סימנתי ארוחת צהריים והקלוריות קפצו"></textarea><div class="buge" id="bugE" hidden></div><button type="button" id="bugS">לשלוח לאביאל</button>';
+        var ta=box.querySelector('#bugT'), er=box.querySelector('#bugE'), sb=box.querySelector('#bugS'); box.querySelector('.shx').onclick=function(){ s.remove(); }; ta.focus(); ta.oninput=function(){ er.hidden=true; };
+        sb.onclick=function(){ var t=ta.value.trim(); if(t.length<5){ er.textContent='כמה מילים על התקלה, ואז לשלוח.'; er.hidden=false; return; } if(sb.dataset.busy) return; sb.dataset.busy=1; sb.disabled=true; sb.textContent='שולח…';
+          api0('apperr',{m:'דיווח מהמתאמן/ת: '+t,src:diag().slice(0,80),v:(navigator.userAgent.match(/OS (\d+_\d+)/)||[])[1]||''}) /* אותו ערוץ של דיווחי התקלות האוטומטיים — מגיע לאביאל בווטסאפ */.then(function(){ s.remove(); toast('נשלח לאביאל. תודה'); }).catch(function(e){ delete sb.dataset.busy; sb.disabled=false; sb.textContent='לנסות שוב'; er.textContent=(e&&e.message)||'לא נשלח, נסו שוב'; er.hidden=false; }); }; }; }catch(e){} return r; };
+});
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
