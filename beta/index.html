@@ -1761,9 +1761,13 @@ function storyCanvas(o){
   x.fillStyle=IV; x.font='700 76px '+sans; x.fillText('ק״ג',W/2,1030);
   if(o.like){ x.fillStyle=IV; x.font='600 60px '+sans; x.fillText('בערך כמו '+o.like,W/2,1130); var pc=liftedPic(o.vol); if(pc){ var per=Math.min(5,pc.n), sz=pc.n>5?96:130, rows=Math.ceil(pc.n/per); x.save(); x.font=sz+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; x.textAlign='center'; for(var k=0;k<pc.n;k++){ var row=Math.floor(k/per), inRow=Math.min(per,pc.n-row*per), col=k%per, gx=W/2+(col-(inRow-1)/2)*(sz+18); x.fillText(pc.e,gx,1150+sz+row*(sz+14)); } x.restore(); } }
   x.fillStyle='rgba(214,176,102,.35)'; x.fillRect(180,1500,W-360,2);
-  x.fillStyle=MU; x.font='600 46px '+sans; x.fillText(o.sets+' סטים'+(o.prs?'  ·  '+o.prs+' שיאים חדשים':'')+'  ·  אימון '+o.day,W/2,1580);
-  var d=new Date(); x.fillStyle=MU; x.font='600 40px '+sans; x.save(); x.direction='ltr'; x.fillText(('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear(),W/2,1680); x.restore();
-  x.fillStyle=G; x.font='800 48px '+sans; x.save(); x.direction='ltr'; x.fillText('@avielife1',W/2,1760); x.restore();
+  /* 19.11.26 (אביאל, לפי סיכום האימון של המתחרים): משך האימון, בכמה תרגילים השתפרו מהפעם הקודמת, ושורת הפניה מעל התיוג */
+  var dur=0, imp=0; try{ dur=WDUR_LAST||0; }catch(e){} try{ imp=(FIN_ROWS||[]).filter(function(r){ return r.v>0||(!r.v&&r.r>0); }).length; }catch(e){}
+  var line=o.sets+' סטים'+(o.prs?'  ·  '+(o.prs===1?'שיא אחד':o.prs+' שיאים'):'')+(dur?'  ·  '+dur+' דק׳':'')+'  ·  אימון '+o.day, fz=46; x.fillStyle=MU; x.font='600 '+fz+'px '+sans; while(fz>30&&x.measureText(line).width>W-200){ fz-=2; x.font='600 '+fz+'px '+sans; } x.fillText(line,W/2,1568);
+  if(imp){ x.fillStyle=G; x.font='700 44px '+sans; x.fillText(imp===1?'השתפרתי בתרגיל אחד מהפעם הקודמת':'השתפרתי ב-'+imp+' תרגילים מהפעם הקודמת',W/2,1634); }
+  var d=new Date(); x.fillStyle=MU; x.font='600 38px '+sans; x.save(); x.direction='ltr'; x.fillText(('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear(),W/2,imp?1694:1650); x.restore();
+  x.fillStyle=IV; x.font='600 36px '+sans; x.fillText('רוצים גם? דברו עם',W/2,1762);
+  x.fillStyle=G; x.font='800 48px '+sans; x.save(); x.direction='ltr'; x.fillText('@avielife1',W/2,1820); x.restore();
   return c;
 }
 function shareStory(btn,o){
@@ -2000,7 +2004,7 @@ function wireBlood(x){ var inp=x.querySelector('#bloodIn'); if(inp) inp.onchange
   var bs=x.querySelector('#bloodSkip'); if(bs) bs.onclick=function(){ lsSet('aviel_blood_skip','1'); renderExtras(document.getElementById('todayCard')); };
   var bx=x.querySelector('#bloodX'); if(bx) bx.onclick=function(){ lsSet('aviel_blood_seen',INBOX.blood.at); renderExtras(document.getElementById('todayCard')); };
   var bf=x.querySelector('#bloodForm'); if(bf) bf.onsubmit=function(e){ e.preventDefault(); var vals={}, n=0; BLOOD_M.forEach(function(m){ var v=bf.elements[m[0]].value.trim(); if(v){ vals[m[0]]=v; n++; } }); if(!n){ toast('ממלאים לפחות ערך אחד',1); return; }
-    bf.querySelector('button').disabled=true; api('bloodvals',{vals:vals}).then(function(r){ INBOX=INBOX||{}; INBOX.blood={at:new Date().toISOString(),text:r.text,flags:r.flags}; BLOOD_OPEN=false; toast('הניתוח מוכן'); renderExtras(document.getElementById('todayCard')); }).catch(function(e){ bf.querySelector('button').disabled=false; toast(e.message||'לא נשלח',1); }); }; }
+    bf.querySelector('button').disabled=true; api('bloodvals',{vals:vals}).then(function(r){ INBOX=INBOX||{}; INBOX.blood={at:new Date().toISOString(),text:r.text||'',flags:r.flags||[]}; BLOOD_OPEN=false; toast(r.pending?'התקבל. אביאל עובר על זה, והניתוח יגיע לכאן':'הניתוח מוכן'); renderExtras(document.getElementById('todayCard')); }).catch(function(e){ bf.querySelector('button').disabled=false; toast(e.message||'לא נשלח',1); }); }; }
 
 /* ===== התוספים שלך: רשימה שאביאל שלח — איך לוקחים, קישור לכל אחד, והמדריך המלא ===== */
 function suppHtml(){ var sp=INBOX&&INBOX.supp; if(!sp||!sp.at||!sp.items||!sp.items.length) return ''; if(ls('aviel_supp_seen','')===sp.at) return '';
@@ -4447,6 +4451,25 @@ function mealHelpOn(){ try{ if(D&&D.feat&&D.feat.eff&&D.feat.eff.mealhelp!=null)
         sb.onclick=function(){ var t=ta.value.trim(); if(t.length<5){ er.textContent='כמה מילים על התקלה, ואז לשלוח.'; er.hidden=false; return; } if(sb.dataset.busy) return; sb.dataset.busy=1; sb.disabled=true; sb.textContent='שולח…';
           api0('apperr',{m:'דיווח מהמתאמן/ת: '+t,src:diag().slice(0,80),v:(navigator.userAgent.match(/OS (\d+_\d+)/)||[])[1]||''}) /* אותו ערוץ של דיווחי התקלות האוטומטיים — מגיע לאביאל בווטסאפ */.then(function(){ s.remove(); toast('נשלח לאביאל. תודה'); }).catch(function(e){ delete sb.dataset.busy; sb.disabled=false; sb.textContent='לנסות שוב'; er.textContent=(e&&e.message)||'לא נשלח, נסו שוב'; er.hidden=false; }); }; }; }catch(e){} return r; };
 });
+
+/* ===== 19.11.26 (אביאל, לפי סיכום האימון של המתחרים): במסך הסיום, שורה לכל תרגיל מול הפעם הקודמת (חזרות ונפח).
+   מחושב ברגע הסיום (DAY מתחלף מיד אחרי), ונשמר ב-FIN_ROWS גם לתמונת הסטורי ===== */
+var FIN_ROWS=[];
+function finRows(){ var days=fxDays(), d=days[DAY]?applySwaps(days[DAY]):null, out=[]; if(!d) return out;
+  var sum=function(a,f){ return a.reduce(function(t,x){ return t+f(x); },0); }, rp=function(x){ return +x.reps||0; }, vl=function(x){ return (+x.kg||0)*(+x.reps||0); };
+  d.ex.forEach(function(e){ var L=P.lifts&&P.lifts[e.ex], h=L&&L.hist||[], td=h.filter(function(x){ return x.d===TODAY; }); if(!td.length) return;
+    var prev=h.filter(function(x){ return x.d&&x.d<TODAY; }), lastD=prev.length?prev[prev.length-1].d:'', ps=prev.filter(function(x){ return x.d===lastD; }), nm=String(e.ex).replace(/\s*\([^)]*\)\s*$/,'');
+    if(!ps.length){ out.push({n:nm,first:1,r:0,v:0}); return; }
+    out.push({n:nm,r:sum(td,rp)-sum(ps,rp),v:Math.round(sum(td,vl)-sum(ps,vl))}); });
+  return out; }
+(function(){ var _sfx=showFinish; showFinish=function(){ FIN_ROWS=[]; try{ FIN_ROWS=finRows(); }catch(e){} var r=_sfx.apply(this,arguments);
+  try{ var fin=document.querySelector('.sheet-in.fin'), rows=FIN_ROWS.filter(function(x){ return !x.first; }); if(fin&&rows.length){
+      var sg=function(n,u){ return '<span class="'+(n>0?'up':n<0?'dn':'eq')+'"><span class="num" dir="ltr">'+(n>0?'+':n<0?'−':'')+Math.abs(n).toLocaleString('he-IL')+'</span> '+u+'</span>'; };
+      var el=document.createElement('div'); el.className='fex'; el.innerHTML='<div class="fexh">תרגיל מול הפעם הקודמת</div>'+FIN_ROWS.slice(0,12).map(function(x){
+        return '<div class="fexr"><b>'+esc(x.n)+'</b>'+(x.first?'<span class="eq">פעם ראשונה</span>':(!x.r&&!x.v?'<span class="eq">כמו בפעם הקודמת</span>':sg(x.r,'חזרות')+sg(x.v,'ק״ג')))+'</div>'; }).join('');
+      var anchor=fin.querySelector('.fdur')||fin.querySelector('.fstats'); if(anchor) anchor.parentNode.insertBefore(el,anchor.nextSibling); else fin.appendChild(el);
+      fin.style.maxHeight='92vh'; fin.style.overflowY='auto'; } }catch(e){} return r; };
+  var st=document.createElement('style'); st.textContent='.fin .fex{margin:14px 0 4px;text-align:start}.fin .fexh{font-size:13px;color:var(--mute);margin-bottom:6px}.fin .fexr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:14px;align-items:baseline;padding:7px 0;font-size:14.5px}.fin .fexr+.fexr{border-top:1px solid var(--line)}.fin .fexr b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fin .fexr span{white-space:nowrap}.fin .fexr .up{color:var(--gold,#d9b46e);font-weight:700}.fin .fexr .dn,.fin .fexr .eq{color:var(--mute)}'; document.head.appendChild(st); })();
 </script>
 <script>
 (function(){ var b=document.getElementById('thBtn'); if(!b) return;
