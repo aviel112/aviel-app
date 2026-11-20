@@ -1156,10 +1156,10 @@ else {
   var drawAll=function(){ try{ render(); renderMenu(); renderTrain(); drawStrength(); }catch(e){} };
   var FRESH=false;
   if(CACHED){ var fromCache=function(){ if(FRESH) return; D=CACHED.D; if(CACHED.P&&!P) P=CACHED.P; bootUI(); drawAll(); }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fromCache); else setTimeout(fromCache,0); }
-  var BOOTP=window.BOOTP=api('boot',{d:TODAY}); BOOTP.then(function(b){ BOOTRES=b||{}; window.__bootDone(); },function(){ BOOTRES={}; window.__bootDone(); }); /* 28.10.26: פתיחה בבקשה אחת (מידע + תוכנית + הודעות + יומן) */
+  var PLANP=api0('plan'); PLANP.catch(function(){}); /* 20.11.26: התוכנית בבקשה מקבילה לנתונים — הפתיחה קצרה ב-2 שניות */ var BOOTP=window.BOOTP=api('boot',{d:TODAY,np:1}); BOOTP.then(function(b){ BOOTRES=b||{}; window.__bootDone(); },function(){ BOOTRES={}; window.__bootDone(); }); /* 28.10.26: פתיחה בבקשה אחת (מידע + תוכנית + הודעות + יומן) */
   BOOTP.then(function(b){ return b.data; }).then(function(r){ FRESH=true; D=r; bootUI(); drawAll(); saveC(); })
     .catch(function(er){ if(/הקישור לא בתוקף/.test(er&&er.message||'')){ try{ localStorage.setItem('aviel_tbad',T); localStorage.removeItem('aviel_tb'); localStorage.removeItem(CK); }catch(e){} document.querySelectorAll('section[data-view]').forEach(function(s){ s.hidden=true; }); showLogin(); } else if(LOCKED){} else if(BOOTED) toast(/אין חיבור/.test(er&&er.message||'')?'אין חיבור כרגע. מוצג המידע האחרון ששמור בטלפון':er.message,1); else fatal(er.message); });
-  BOOTP.then(function(b){ if(!b.plan) throw new Error(b.planErr||'plan'); return b.plan; }).then(function(r){ P=r; P.lifts=normLifts(P.lifts); if(D){ renderMenu(); renderTrain(); drawStrength(); } saveC(); }).catch(function(){ if(!P) P={menu:null,program:null,lifts:{}}; if(D){ renderMenu(); renderTrain(); } });
+  PLANP.then(function(r){ if(!r) throw new Error('plan'); P=r; P.lifts=normLifts(P.lifts); if(D){ renderMenu(); renderTrain(); drawStrength(); } saveC(); }).catch(function(){ if(!P) P={menu:null,program:null,lifts:{}}; if(D){ renderMenu(); renderTrain(); } });
   document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden') saveC(); });
 }
 </script>
