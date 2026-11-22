@@ -1931,6 +1931,8 @@ function renderExtras(el){ var x=document.getElementById('extras'), wf=document.
   wireAsk(x2);
   wireMonthly(x); wireCtasks(x);
   wireBlood(x); var sx=x.querySelector('#suppX'); if(sx) sx.onclick=function(){ lsSet('aviel_supp_seen',INBOX.supp.at); renderExtras(document.getElementById('todayCard')); };
+  /* 22.11.26 (אביאל): התוספים נכנסים לסימון היומי רק אחרי "קיבלתי" */
+  var sg=x.querySelector('#suppGot'); if(sg) sg.onclick=function(){ sg.disabled=true; sg.textContent='רגע...'; api('suppgot',{}).then(function(){ INBOX.supp.got=new Date().toISOString(); lsSet('aviel_supp_seen',INBOX.supp.at); toast('מעולה. התוספים נכנסו לסימון היומי'); renderExtras(document.getElementById('todayCard')); }).catch(function(){ sg.disabled=false; sg.textContent='קיבלתי את התוספים'; toast('לא הצלחתי לשמור, נסו שוב',1); }); };
   if(!BOARD_TRIED&&typeof api==='function'){ BOARD_TRIED=true; api('board',{}).then(function(r){ BOARD=r; renderExtras(el); }).catch(function(){}); } }
 
 /* ===== נגישות: גודל טקסט (רגיל / גדול / גדול מאוד), נשמר במכשיר ===== */
@@ -2008,7 +2010,7 @@ function wireBlood(x){ var inp=x.querySelector('#bloodIn'); if(inp) inp.onchange
 
 /* ===== התוספים שלך: רשימה שאביאל שלח — איך לוקחים, קישור לכל אחד, והמדריך המלא ===== */
 function suppHtml(){ var sp=INBOX&&INBOX.supp; if(!sp||!sp.at||!sp.items||!sp.items.length) return ''; if(ls('aviel_supp_seen','')===sp.at) return '';
-  return '<div class="news supp"><div class="row"><b>התוספים שלך</b><button type="button" class="linkbtn" id="suppX">קראתי</button></div>'+(sp.note?'<p>'+esc(sp.note)+'</p>':'')+'<div class="splist">'+sp.items.map(function(x){ return '<div class="sprow"><b>'+esc(x.t)+'</b><small>'+esc(x.dose)+(x.when?' · '+esc(x.when):'')+'</small>'+(x.url?'<a class="btn-link" href="'+esc(x.url)+'" target="_blank" rel="noopener">לרכישה</a>':'')+'</div>'; }).join('')+'</div>'+(sp.guide?'<a class="vplay" href="'+esc(sp.guide)+'" target="_blank" rel="noopener" style="text-decoration:none;margin-top:10px">המדריך המלא לתוספים (PDF)</a>':'')+'<div class="swaphint">מידע כללי מאביאל, לא ייעוץ רפואי. תרופות או מצב רפואי? מתייעצים עם רופא.</div></div>'; }
+  return '<div class="news supp"><div class="row"><b>התוספים שלך</b>'+(sp.got?'<button type="button" class="linkbtn" id="suppX">קראתי</button>':'')+'</div>'+(sp.note?'<p>'+esc(sp.note)+'</p>':'')+'<div class="splist">'+sp.items.map(function(x){ return '<div class="sprow"><b>'+esc(x.t)+'</b><small>'+esc(x.dose)+(x.when?' · '+esc(x.when):'')+'</small>'+(x.url?'<a class="btn-link" href="'+esc(x.url)+'" target="_blank" rel="noopener">לרכישה</a>':'')+'</div>'; }).join('')+'</div>'+(sp.guide?'<a class="vplay" href="'+esc(sp.guide)+'" target="_blank" rel="noopener" style="text-decoration:none;margin-top:10px">המדריך המלא לתוספים (PDF)</a>':'')+(sp.got?'':'<button type="button" class="vplay" id="suppGot" style="margin-top:10px">קיבלתי את התוספים</button><div class="swaphint">כשהתוספים אצלך, לוחצים כאן והם נכנסים לסימון היומי.</div>')+'<div class="swaphint">מידע כללי מאביאל, לא ייעוץ רפואי. תרופות או מצב רפואי? מתייעצים עם רופא.</div></div>'; }
 
 /* ===== שאלון חודשי קצר לפני הפגישה (5 שאלות) ===== */
 var MONTHLY_Q=['מה היה הכי קשה החודש?','מה הכי עבד לך?','מה היית רוצה לשנות בתפריט?','איך האנרגיה והשינה (1–10)?','מה המטרה שלך לחודש הבא?'], MONTHLY_OPEN=false;
